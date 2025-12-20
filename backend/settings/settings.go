@@ -32,12 +32,6 @@ type Window struct {
 	LeftbarWidth int `json:"leftbarWidth"`
 }
 
-// Database stores database location settings
-type Database struct {
-	Folder string `json:"folder"` // base folder for data files (exports go in folder/exports)
-	File   string `json:"file"`   // database filename (e.g., poetry.db, art-history.db)
-}
-
 // CollapsedState stores UI collapse states
 type CollapsedState struct {
 	Outgoing      bool `json:"outgoing"`      // default true (collapsed)
@@ -58,7 +52,7 @@ type TableSort struct {
 // Settings stores user preferences
 type Settings struct {
 	Window            Window               `json:"window"`
-	Database          Database             `json:"database"`
+	ExportFolder      string               `json:"exportFolder"`
 	LastWordID        int                  `json:"lastWordId"`
 	NavigationHistory []int                `json:"navigationHistory"` // list of recently visited item IDs
 	LastView          string               `json:"lastView"`          // dashboard, graph, search, item, export
@@ -95,6 +89,12 @@ func NewManager() (*Manager, error) {
 	settingsPath := filepath.Join(configDir, "settings.json")
 	searchPath := filepath.Join(configDir, "search.json")
 
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user home directory: %w", err)
+	}
+	defaultExportFolder := filepath.Join(homeDir, "Documents", "Poetry", "exports")
+
 	m := &Manager{
 		settingsPath: settingsPath,
 		searchPath:   searchPath,
@@ -106,10 +106,8 @@ func NewManager() (*Manager, error) {
 				Height:       768,
 				LeftbarWidth: 260,
 			},
-			Database: Database{
-				File: "poetry.db", // default database filename
-			},
-			TableSorts: make(map[string]TableSort),
+			ExportFolder: defaultExportFolder,
+			TableSorts:   make(map[string]TableSort),
 			Collapsed: CollapsedState{
 				Outgoing: true,  // default collapsed
 				Incoming: false, // default expanded
@@ -403,14 +401,8 @@ func (m *Manager) UpdateCurrentSearch(query string) error {
 	return m.Save()
 }
 
-// UpdateDataFolder updates the data folder path
-func (m *Manager) UpdateDataFolder(folder string) error {
-	m.settings.Database.Folder = folder
-	return m.Save()
-}
-
-// UpdateDatabaseFile updates the database filename
-func (m *Manager) UpdateDatabaseFile(filename string) error {
-	m.settings.Database.File = filename
+// UpdateExportFolder updates the export folder path
+func (m *Manager) UpdateExportFolder(folder string) error {
+	m.settings.ExportFolder = folder
 	return m.Save()
 }

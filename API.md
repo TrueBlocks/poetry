@@ -24,7 +24,7 @@ This document describes all public API methods exposed by the Go backend through
 
 **Actions**:
 - Initializes settings manager
-- Determines database path from `DataFolder` and `DatabaseFile` settings
+- Determines database path from `constants.GetDatabasePath()`
 - Opens SQLite database connection with FTS5 enabled
 
 ---
@@ -366,18 +366,20 @@ Returns current settings object.
 **Returns**:
 ```go
 type Settings struct {
-    DataFolder          string
-    DatabaseFile        string
-    WindowX, WindowY    int
-    WindowWidth, WindowHeight int
-    LastWord            int
-    LastView            string
-    RevealMarkdown      bool
-    OutgoingCollapsed   bool
-    IncomingCollapsed   bool
-    RecentSearches      []string
-    SavedSearches       []SavedSearch
-    // ... collapse states for reports
+    Window            Window
+    ExportFolder      string
+    LastWordID        int
+    NavigationHistory []int
+    LastView          string
+    LastTable         string
+    TabSelections     map[string]string
+    RevealMarkdown    bool
+    ShowMarked        bool
+    Collapsed         CollapsedState
+    TableSorts        map[string]TableSort
+    CurrentSearch     string
+    ManagerOldType    string
+    ManagerNewType    string
 }
 ```
 
@@ -488,37 +490,29 @@ Saves collapse state for Missing Definitions report.
 
 ---
 
-### `SelectDataFolder() (string, error)`
+### `SelectExportFolder() (string, error)`
 
-Opens native folder picker dialog for selecting data directory.
+Opens native folder picker dialog for selecting export directory.
+If the selected folder is not named "exports", it appends "/exports" to the path.
+Updates the `ExportFolder` setting.
 
 **Returns**: Selected folder path or empty string if cancelled
 
 **Frontend Usage**:
 ```typescript
-const folder = await SelectDataFolder()
+const folder = await SelectExportFolder()
 if (folder) {
-  await SaveDataFolder(folder)
+  console.log("Export folder set to:", folder)
 }
 ```
 
 ---
 
-### `SaveDataFolder(folder string) error`
+### `GetDatabasePath() (string, error)`
 
-Saves data folder path to settings.
+Returns the absolute path to the database file.
 
-**Parameters**:
-- `folder` (string): Absolute path to data folder
-
----
-
-### `SaveDatabaseFile(filename string) error`
-
-Saves database filename to settings.
-
-**Parameters**:
-- `filename` (string): Database filename (e.g., `"poetry.db"`)
+**Returns**: Database path (e.g., `~/.local/share/trueblocks/poetry/poetry.db`)
 
 ---
 
@@ -707,8 +701,8 @@ Exports entire database to JSON file.
 {
   "metadata": {
     "version": "1.0",
-    "databaseFile": "poetry.db",
-    "dataFolder": "/path/to/data",
+    "databasePath": "/path/to/poetry.db",
+    "exportFolder": "/path/to/exports",
     "itemCount": 3500
   },
   "references": [...],

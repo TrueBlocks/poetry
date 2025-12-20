@@ -5,8 +5,7 @@ import { notifications } from '@mantine/notifications'
 
 export default function Export() {
   const [exporting, setExporting] = useState(false)
-  const [dataFolder, setDataFolder] = useState<string>('')
-  const [databaseFile, setDatabaseFile] = useState<string>('poetry.db')
+  const [exportFolder, setExportFolder] = useState<string>('')
   const [loadingSettings, setLoadingSettings] = useState(true)
 
   useEffect(() => {
@@ -14,8 +13,7 @@ export default function Export() {
       try {
         const { GetSettings } = await import('../../wailsjs/go/main/App.js')
         const settings = await GetSettings()
-        setDataFolder(settings.database?.folder || '')
-        setDatabaseFile(settings.database?.file || 'poetry.db')
+        setExportFolder(settings.exportFolder || '')
       } catch (error) {
         console.error('Failed to load settings:', error)
       } finally {
@@ -27,14 +25,14 @@ export default function Export() {
 
   const selectFolder = async () => {
     try {
-      const { SelectDataFolder } = await import('../../wailsjs/go/main/App.js')
-      const folder = await SelectDataFolder()
+      const { SelectExportFolder } = await import('../../wailsjs/go/main/App.js')
+      const folder = await SelectExportFolder()
       
       if (folder) {
-        setDataFolder(folder)
+        setExportFolder(folder)
         notifications.show({
           title: 'Folder Selected',
-          message: `Exports will be saved to: ${folder}/exports`,
+          message: `Exports will be saved to: ${folder}`,
           color: 'blue',
         })
       }
@@ -49,23 +47,23 @@ export default function Export() {
   }
 
   const ensureFolderSelected = async (): Promise<boolean> => {
-    if (dataFolder) {
+    if (exportFolder) {
       return true
     }
     
     // Prompt user to select folder
     try {
-      const { SelectDataFolder } = await import('../../wailsjs/go/main/App.js')
-      const folder = await SelectDataFolder()
+      const { SelectExportFolder } = await import('../../wailsjs/go/main/App.js')
+      const folder = await SelectExportFolder()
       
       if (folder) {
-        setDataFolder(folder)
+        setExportFolder(folder)
         return true
       }
       
       notifications.show({
         title: 'Folder Required',
-        message: 'Please select a data folder to continue',
+        message: 'Please select an export folder to continue',
         color: 'orange',
       })
       return false
@@ -177,25 +175,11 @@ export default function Export() {
       <Card shadow="sm" padding="lg" radius="md" withBorder mb="lg">
         <Group justify="space-between" align="flex-start">
           <div>
-            <Title order={4} mb={4}>Current Database</Title>
-            {loadingSettings ? (
-              <Text size="sm" c="dimmed">Loading...</Text>
-            ) : (
-              <>
-                <Text size="sm" fw={500}>{databaseFile}</Text>
-                {dataFolder && (
-                  <Text size="xs" c="dimmed">{dataFolder}</Text>
-                )}
-              </>
-            )}
-          </div>
-          
-          <div>
             <Title order={4} mb={4}>Export Location</Title>
             {loadingSettings ? (
               <Text size="sm" c="dimmed">Loading...</Text>
-            ) : dataFolder ? (
-              <Text size="sm" c="dimmed">{dataFolder}/exports</Text>
+            ) : exportFolder ? (
+              <Text size="sm" c="dimmed">{exportFolder}</Text>
             ) : (
               <Text size="sm" c="orange">No folder selected - will prompt on first export</Text>
             )}
@@ -206,7 +190,7 @@ export default function Export() {
             leftSection={<FolderOpen size={20} />}
             variant="light"
           >
-            {dataFolder ? 'Change Folder' : 'Select Folder'}
+            {exportFolder ? 'Change Folder' : 'Select Folder'}
           </Button>
         </Group>
       </Card>

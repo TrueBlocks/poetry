@@ -94,6 +94,10 @@ export function GetDatabaseFileSize() {
   return window['go']['main']['App']['GetDatabaseFileSize']();
 }
 
+export function GetDatabasePath() {
+  return window['go']['main']['App']['GetDatabasePath']();
+}
+
 export function GetDuplicateItems() {
   return window['go']['main']['App']['GetDuplicateItems']();
 }
@@ -210,10 +214,6 @@ export function MergeLiteraryTerm(arg1) {
   return window['go']['main']['App']['MergeLiteraryTerm'](arg1);
 }
 
-export function ReconnectDatabase() {
-  return window['go']['main']['App']['ReconnectDatabase']();
-}
-
 export function RemoveRecentSearch(arg1) {
   return window['go']['main']['App']['RemoveRecentSearch'](arg1);
 }
@@ -224,14 +224,6 @@ export function RunAdHocQuery(arg1) {
 
 export function SaveCurrentSearch(arg1) {
   return window['go']['main']['App']['SaveCurrentSearch'](arg1);
-}
-
-export function SaveDataFolder(arg1) {
-  return window['go']['main']['App']['SaveDataFolder'](arg1);
-}
-
-export function SaveDatabaseFile(arg1) {
-  return window['go']['main']['App']['SaveDatabaseFile'](arg1);
 }
 
 export function SaveIncomingCollapsed(arg1) {
@@ -294,8 +286,8 @@ export function SearchItemsWithOptions(arg1) {
   return window['go']['main']['App']['SearchItemsWithOptions'](arg1);
 }
 
-export function SelectDataFolder() {
-  return window['go']['main']['App']['SelectDataFolder']();
+export function SelectExportFolder() {
+  return window['go']['main']['App']['SelectExportFolder']();
 }
 
 export function SpeakWord(arg1, arg2, arg3, arg4) {

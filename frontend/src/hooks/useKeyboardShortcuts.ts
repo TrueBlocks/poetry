@@ -91,18 +91,18 @@ export default function useKeyboardShortcuts(commandPaletteOpen: boolean, setCom
         
         const handleExport = async () => {
           try {
-            const { SelectDataFolder, ExportToJSON, ExportToMarkdown } = await import('../../wailsjs/go/main/App.js')
+            const { SelectExportFolder, ExportToJSON, ExportToMarkdown } = await import('../../wailsjs/go/main/App.js')
             
             // Check if folder is selected
             const settings = await GetSettings()
-            let folder = settings.database?.folder
+            let folder = settings.exportFolder
             
             if (!folder) {
-              folder = await SelectDataFolder()
+              folder = await SelectExportFolder()
               if (!folder) {
                 notifications.show({
                   title: 'Folder Required',
-                  message: 'Please select a data folder to continue',
+                  message: 'Please select an export folder to continue',
                   color: 'orange',
                 })
                 return

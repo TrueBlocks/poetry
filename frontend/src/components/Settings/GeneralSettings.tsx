@@ -1,13 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Title, Text, Paper, Table, Loader, Alert, Group, Badge, Button, TextInput, Stack } from '@mantine/core'
-import { GetAllSettings, GetEnvVars, GetEnvLocation, SelectDataFolder, GetTTSCacheInfo, GetImageCacheInfo, GetDatabaseFileSize, GetItem } from '../../../wailsjs/go/main/App.js'
+import { GetAllSettings, GetEnvVars, GetEnvLocation, GetTTSCacheInfo, GetImageCacheInfo, GetDatabaseFileSize, GetItem } from '../../../wailsjs/go/main/App.js'
 import { AlertCircle, FolderOpen, Search } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useState, useRef, useEffect } from 'react'
 
 export function GeneralSettings() {
   const queryClient = useQueryClient()
-  const [changingFolder, setChangingFolder] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -29,6 +28,14 @@ export function GeneralSettings() {
     queryKey: ['allSettings'],
     queryFn: GetAllSettings,
     refetchInterval: 500, // Refetch every 500ms to show window changes in real-time
+  })
+
+  const { data: dbPath } = useQuery({
+    queryKey: ['databasePath'],
+    queryFn: async () => {
+        const { GetDatabasePath } = await import('../../../wailsjs/go/main/App.js')
+        return GetDatabasePath()
+    },
   })
 
   const { data: envVars, isLoading: envLoading, error: envError } = useQuery({
@@ -62,30 +69,6 @@ export function GeneralSettings() {
     enabled: !!settings?.lastWordId,
   })
 
-  const handleChangeDataFolder = async () => {
-    setChangingFolder(true)
-    try {
-      const selectedFolder = await SelectDataFolder()
-      if (selectedFolder) {
-        queryClient.invalidateQueries()
-        notifications.show({
-          title: 'Data Folder Changed',
-          message: `Database moved to: ${selectedFolder}`,
-          color: 'green',
-        })
-      }
-    } catch (error) {
-      notifications.show({
-        title: 'Error',
-        message: `Failed to change data folder: ${(error as Error).message}`,
-        color: 'red',
-        autoClose: false,
-      })
-    } finally {
-      setChangingFolder(false)
-    }
-  }
-
   if (settingsLoading || envLoading) {
     return (
       <Stack align="center" justify="center" style={{ height: '50vh' }}>
@@ -113,14 +96,6 @@ export function GeneralSettings() {
             <Title order={3}>Database Information</Title>
             <Badge color="teal">Active Database</Badge>
           </Group>
-          <Button
-            leftSection={<FolderOpen size={16} />}
-            onClick={handleChangeDataFolder}
-            loading={changingFolder}
-            variant="light"
-          >
-            Change Data Folder
-          </Button>
         </Group>
 
         {settingsError ? (
@@ -138,13 +113,9 @@ export function GeneralSettings() {
               </Table.Thead>
               <Table.Tbody>
                 {[
-                  { key: 'Database File', value: settings.database?.file || 'poetry.db' },
-                  { key: 'Data Folder', value: settings.database?.folder || 'Not set (using current directory)' },
                   { 
-                    key: 'Full Path', 
-                    value: (settings.database?.folder 
-                      ? `${settings.database.folder}/${settings.database.file || 'poetry.db'}`
-                      : settings.database?.file || 'poetry.db') + 
+                    key: 'Database Path', 
+                    value: (dbPath || 'Loading...') + 
                       (dbSizeLoading ? '' : dbFileSize ? ` (${(dbFileSize / 1024 / 1024).toFixed(2)} MB)` : '')
                   },
                   { 

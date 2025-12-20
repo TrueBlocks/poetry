@@ -411,20 +411,6 @@ export namespace settings {
 	        this.itemHealth = source["itemHealth"];
 	    }
 	}
-	export class Database {
-	    folder: string;
-	    file: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new Database(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.folder = source["folder"];
-	        this.file = source["file"];
-	    }
-	}
 	export class SavedSearch {
 	    name: string;
 	    query: string;
@@ -483,7 +469,7 @@ export namespace settings {
 	}
 	export class Settings {
 	    window: Window;
-	    database: Database;
+	    exportFolder: string;
 	    lastWordId: number;
 	    navigationHistory: number[];
 	    lastView: string;
@@ -504,7 +490,7 @@ export namespace settings {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.window = this.convertValues(source["window"], Window);
-	        this.database = this.convertValues(source["database"], Database);
+	        this.exportFolder = source["exportFolder"];
 	        this.lastWordId = source["lastWordId"];
 	        this.navigationHistory = source["navigationHistory"];
 	        this.lastView = source["lastView"];

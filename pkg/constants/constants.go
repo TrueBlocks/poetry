@@ -41,3 +41,11 @@ func GetEnvPath() (string, error) {
 	}
 	return filepath.Join(configDir, ".env"), nil
 }
+
+func GetDatabasePath() (string, error) {
+	configDir, err := GetConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(configDir, "poetry.db"), nil
+}

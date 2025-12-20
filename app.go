@@ -72,23 +72,10 @@ func (a *App) startup(ctx context.Context) {
 	// Show window after positioning
 	runtime.WindowShow(ctx)
 
-	// Determine database path from settings
-	dbFile := a.settings.Get().Database.File
-	if dbFile == "" {
-		dbFile = "poetry.db" // fallback to default
-	}
-
-	var dbPath string
-	if a.settings.Get().Database.Folder != "" {
-		// User has set a custom data folder
-		dbPath = filepath.Join(a.settings.Get().Database.Folder, dbFile)
-	} else {
-		// Default: store database in app config directory
-		configDir, err := constants.GetConfigDir()
-		if err != nil {
-			log.Fatal("Failed to get config directory:", err)
-		}
-		dbPath = filepath.Join(configDir, dbFile)
+	// Determine database path from constants
+	dbPath, err := constants.GetDatabasePath()
+	if err != nil {
+		log.Fatal("Failed to get database path:", err)
 	}
 
 	log.Printf("Database path: %s", dbPath)
@@ -110,42 +97,6 @@ func (a *App) startup(ctx context.Context) {
 // RunAdHocQuery executes a raw SQL query
 func (a *App) RunAdHocQuery(query string) ([]map[string]interface{}, error) {
 	return a.adhoc.RunAdHocQuery(query)
-}
-
-// ReconnectDatabase closes current database and reopens with current settings
-func (a *App) ReconnectDatabase() error {
-	// Close existing database
-	if a.db != nil {
-		a.db.Close()
-	}
-
-	// Determine database path from current settings
-	dbFile := a.settings.Get().Database.File
-	if dbFile == "" {
-		dbFile = "poetry.db"
-	}
-
-	var dbPath string
-	if a.settings.Get().Database.Folder != "" {
-		dbPath = filepath.Join(a.settings.Get().Database.Folder, dbFile)
-	} else {
-		configDir, err := constants.GetConfigDir()
-		if err != nil {
-			return fmt.Errorf("failed to get config directory: %w", err)
-		}
-		dbPath = filepath.Join(configDir, dbFile)
-	}
-
-	log.Printf("Reconnecting to database at: %s", dbPath)
-
-	// Open new database connection
-	db, err := database.NewDB(dbPath)
-	if err != nil {
-		return fmt.Errorf("failed to reconnect database: %w", err)
-	}
-	a.db = db
-
-	return nil
 }
 
 // domReady is called after front-end resources have been loaded
@@ -239,20 +190,9 @@ func (a *App) GetStats() (map[string]int, error) {
 
 // GetDatabaseFileSize returns the size of the database file in bytes
 func (a *App) GetDatabaseFileSize() (int64, error) {
-	dbFile := a.settings.Get().Database.File
-	if dbFile == "" {
-		dbFile = "poetry.db"
-	}
-
-	var dbPath string
-	if a.settings.Get().Database.Folder != "" {
-		dbPath = filepath.Join(a.settings.Get().Database.Folder, dbFile)
-	} else {
-		configDir, err := constants.GetConfigDir()
-		if err != nil {
-			return 0, fmt.Errorf("failed to get config directory: %w", err)
-		}
-		dbPath = filepath.Join(configDir, dbFile)
+	dbPath, err := constants.GetDatabasePath()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get database path: %w", err)
 	}
 
 	fileInfo, err := os.Stat(dbPath)
@@ -550,18 +490,15 @@ func (a *App) ExportToJSON() (string, error) {
 	// Get settings
 	s := a.settings.Get()
 
-	// Get database info from settings
-	dbFile := s.Database.File
-	if dbFile == "" {
-		dbFile = "poetry.db"
-	}
-	exportDataFolder := s.Database.Folder
+	// Get database info
+	dbPath, _ := constants.GetDatabasePath()
+	exportFolder := s.ExportFolder
 
 	data := map[string]interface{}{
 		"metadata": map[string]interface{}{
 			"version":        "1.0",
-			"databaseFile":   dbFile,
-			"dataFolder":     exportDataFolder,
+			"databasePath":   dbPath,
+			"exportFolder":   exportFolder,
 			"itemCount":      len(items),
 			"referenceCount": len(references),
 			"writerCount":    len(writers),
@@ -590,25 +527,24 @@ func (a *App) ExportToJSON() (string, error) {
 		return "", fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 
-	// Get export path from settings or use home directory
-	dataFolder := s.Database.Folder
-	if dataFolder == "" {
+	// Get export path from settings or use default
+	exportFolder = s.ExportFolder
+	if exportFolder == "" {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
 			return "", fmt.Errorf("failed to get home directory: %w", err)
 		}
-		dataFolder = homeDir
+		exportFolder = filepath.Join(homeDir, "Documents", "Poetry", "exports")
 	}
 
-	// Create exports subdirectory
-	exportDir := filepath.Join(dataFolder, "exports")
-	if err := os.MkdirAll(exportDir, 0755); err != nil {
-		return "", fmt.Errorf("failed to create exports directory: %w", err)
+	// Create export directory
+	if err := os.MkdirAll(exportFolder, 0755); err != nil {
+		return "", fmt.Errorf("failed to create export directory: %w", err)
 	}
 
 	// Create filename
 	filename := "poetry-database.json"
-	fullPath := filepath.Join(exportDir, filename)
+	fullPath := filepath.Join(exportFolder, filename)
 
 	err = os.WriteFile(fullPath, jsonData, 0644)
 	if err != nil {
@@ -661,22 +597,15 @@ func (a *App) ExportToMarkdown() (string, error) {
 	// Get settings for database info and export path
 	s := a.settings.Get()
 
-	// Get database info from settings
-	dbFile := s.Database.File
-	if dbFile == "" {
-		dbFile = "poetry.db"
-	}
-	exportDataFolder := s.Database.Folder
+	// Get database info
+	dbPath, _ := constants.GetDatabasePath()
+	exportFolder := s.ExportFolder
 
 	var markdown strings.Builder
 	markdown.WriteString("<a name=\"top\"></a>\n\n")
 	markdown.WriteString("# Poetry Database Export\n\n")
-	if exportDataFolder != "" {
-		markdown.WriteString(fmt.Sprintf("**Database:** %s  \n", dbFile))
-		markdown.WriteString(fmt.Sprintf("**Location:** %s  \n\n", exportDataFolder))
-	} else {
-		markdown.WriteString(fmt.Sprintf("**Database:** %s  \n\n", dbFile))
-	}
+	markdown.WriteString(fmt.Sprintf("**Database Path:** %s  \n", dbPath))
+	markdown.WriteString(fmt.Sprintf("**Export Folder:** %s  \n\n", exportFolder))
 	markdown.WriteString(fmt.Sprintf("**Total Items:** %d\n\n", len(items)))
 	markdown.WriteString(fmt.Sprintf("- References: %d\n", len(references)))
 	markdown.WriteString(fmt.Sprintf("- Writers: %d\n", len(writers)))
@@ -955,25 +884,24 @@ func (a *App) ExportToMarkdown() (string, error) {
 		markdown.WriteString("✓ No unknown tags found.\n\n")
 	}
 
-	// Get export path from settings or use home directory
-	dataFolder := s.Database.Folder
-	if dataFolder == "" {
+	// Get export path from settings or use default
+	exportFolder = s.ExportFolder
+	if exportFolder == "" {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
 			return "", fmt.Errorf("failed to get home directory: %w", err)
 		}
-		dataFolder = homeDir
+		exportFolder = filepath.Join(homeDir, "Documents", "PoetryExports")
 	}
 
-	// Create exports subdirectory
-	exportDir := filepath.Join(dataFolder, "exports")
-	if err := os.MkdirAll(exportDir, 0755); err != nil {
-		return "", fmt.Errorf("failed to create exports directory: %w", err)
+	// Create export directory
+	if err := os.MkdirAll(exportFolder, 0755); err != nil {
+		return "", fmt.Errorf("failed to create export directory: %w", err)
 	}
 
 	// Create filename
 	filename := "poetry-database.md"
-	fullPath := filepath.Join(exportDir, filename)
+	fullPath := filepath.Join(exportFolder, filename)
 
 	err = os.WriteFile(fullPath, []byte(markdown.String()), 0644)
 	if err != nil {
@@ -986,6 +914,11 @@ func (a *App) ExportToMarkdown() (string, error) {
 // GetSettings returns current settings
 func (a *App) GetSettings() *settings.Settings {
 	return a.settings.Get()
+}
+
+// GetDatabasePath returns the current database path
+func (a *App) GetDatabasePath() (string, error) {
+	return constants.GetDatabasePath()
 }
 
 // UpdateSettings updates all settings
@@ -1164,24 +1097,11 @@ func (a *App) GetImageCacheInfo() (*ImageCacheInfo, error) {
 	}, nil
 }
 
-// SelectDataFolder opens a directory selection dialog and saves the chosen folder
-func (a *App) SelectDataFolder() (string, error) {
-	// Get current database path before changing folder
-	currentDbFile := a.settings.Get().Database.File
-	if currentDbFile == "" {
-		currentDbFile = "poetry.db"
-	}
-	currentDataFolder := a.settings.Get().Database.Folder
-	var currentDbPath string
-	if currentDataFolder != "" {
-		currentDbPath = filepath.Join(currentDataFolder, currentDbFile)
-	} else {
-		currentDbPath = currentDbFile
-	}
-
+// SelectExportFolder opens a directory selection dialog and saves the chosen folder
+func (a *App) SelectExportFolder() (string, error) {
 	// Open directory selection dialog
 	folder, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Select Data Folder",
+		Title: "Select Export Folder",
 	})
 
 	if err != nil {
@@ -1193,58 +1113,19 @@ func (a *App) SelectDataFolder() (string, error) {
 		return "", nil
 	}
 
-	// If folder ends with "exports", strip it before saving
-	folderToSave := folder
-	if filepath.Base(folder) == "exports" {
-		folderToSave = filepath.Dir(folder)
+	// If the selected folder is not already named "exports",
+	// append "exports" to keep the files organized in a subdirectory.
+	base := filepath.Base(folder)
+	if !strings.EqualFold(base, "exports") {
+		folder = filepath.Join(folder, "exports")
 	}
 
-	// If folder hasn't actually changed, just return
-	if folderToSave == currentDataFolder {
-		return folderToSave, nil
+	// Save the selected folder
+	if err := a.settings.UpdateExportFolder(folder); err != nil {
+		return "", fmt.Errorf("failed to save export folder: %w", err)
 	}
 
-	// Construct new database path
-	newDbPath := filepath.Join(folderToSave, currentDbFile)
-
-	// Check if database exists at current location
-	if _, err := os.Stat(currentDbPath); err == nil {
-		// Database exists at old location - move it to new location
-
-		// Check if database already exists at new location
-		if _, err := os.Stat(newDbPath); err == nil {
-			return "", fmt.Errorf("database file already exists at %s - please remove it first or choose a different folder", newDbPath)
-		}
-
-		// Move database file to new location
-		if err := os.Rename(currentDbPath, newDbPath); err != nil {
-			return "", fmt.Errorf("failed to move database from %s to %s: %w", currentDbPath, newDbPath, err)
-		}
-
-		log.Printf("Database moved from %s to %s", currentDbPath, newDbPath)
-	}
-
-	// Save the selected folder (without "exports" suffix)
-	if err := a.settings.UpdateDataFolder(folderToSave); err != nil {
-		return "", fmt.Errorf("failed to save data folder: %w", err)
-	}
-
-	// Reconnect to database at new location
-	if err := a.ReconnectDatabase(); err != nil {
-		return "", fmt.Errorf("failed to reconnect database: %w", err)
-	}
-
-	return folderToSave, nil
-}
-
-// SaveDataFolder saves the data folder path to settings
-func (a *App) SaveDataFolder(folder string) error {
-	return a.settings.UpdateDataFolder(folder)
-}
-
-// SaveDatabaseFile saves the database filename to settings
-func (a *App) SaveDatabaseFile(filename string) error {
-	return a.settings.UpdateDatabaseFile(filename)
+	return folder, nil
 }
 
 // GetRecentSearches returns the list of recent searches
@@ -1282,7 +1163,7 @@ func (a *App) GetAllSettings() map[string]interface{} {
 	s := a.settings.Get()
 	return map[string]interface{}{
 		"window":         s.Window,
-		"database":       s.Database,
+		"exportFolder":   s.ExportFolder,
 		"lastWordId":     s.LastWordID,
 		"lastView":       s.LastView,
 		"revealMarkdown": s.RevealMarkdown,

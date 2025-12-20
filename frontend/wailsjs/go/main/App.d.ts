@@ -50,6 +50,8 @@ export function GetDanglingLinks():Promise<Array<Record<string, any>>>;
 
 export function GetDatabaseFileSize():Promise<number>;
 
+export function GetDatabasePath():Promise<string>;
+
 export function GetDuplicateItems():Promise<Array<Record<string, any>>>;
 
 export function GetEnvLocation():Promise<string>;
@@ -108,17 +110,11 @@ export function MergeDuplicateItems(arg1:number,arg2:Array<number>):Promise<void
 
 export function MergeLiteraryTerm(arg1:number):Promise<void>;
 
-export function ReconnectDatabase():Promise<void>;
-
 export function RemoveRecentSearch(arg1:string):Promise<void>;
 
 export function RunAdHocQuery(arg1:string):Promise<Array<Record<string, any>>>;
 
 export function SaveCurrentSearch(arg1:string):Promise<void>;
-
-export function SaveDataFolder(arg1:string):Promise<void>;
-
-export function SaveDatabaseFile(arg1:string):Promise<void>;
 
 export function SaveIncomingCollapsed(arg1:boolean):Promise<void>;
 
@@ -150,7 +146,7 @@ export function SearchItems(arg1:string):Promise<Array<database.Item>>;
 
 export function SearchItemsWithOptions(arg1:database.SearchOptions):Promise<Array<database.Item>>;
 
-export function SelectDataFolder():Promise<string>;
+export function SelectExportFolder():Promise<string>;
 
 export function SpeakWord(arg1:string,arg2:string,arg3:string,arg4:number):Promise<main.TTSResult>;
 
