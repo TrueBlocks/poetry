@@ -148,12 +148,12 @@ func (a *App) ReconnectDatabase() error {
 // }
 
 // shutdown is called at application termination
-// func (a *App) shutdown(ctx context.Context) {
-// 	// Close database connection and checkpoint WAL
-// 	if a.db != nil {
-// 		a.db.Close()
-// 	}
-// }
+func (a *App) shutdown(ctx context.Context) {
+	// Close database connection and checkpoint WAL
+	if a.db != nil {
+		a.db.Close()
+	}
+}
 
 // CheckpointDatabase flushes WAL to main database file
 func (a *App) CheckpointDatabase() error {
