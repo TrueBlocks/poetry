@@ -223,7 +223,7 @@ export default function ItemDetail({ onEnterEditMode }: { onEnterEditMode?: () =
         message: 'The item has been deleted successfully',
         color: 'green',
       })
-      navigate('/reports')
+      navigate('/')
     },
     onError: (error) => {
       LogError(`Failed to delete item: ${error}`)
