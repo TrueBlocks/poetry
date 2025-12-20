@@ -298,8 +298,8 @@ export function SelectDataFolder() {
   return window['go']['main']['App']['SelectDataFolder']();
 }
 
-export function SpeakWord(arg1, arg2, arg3) {
-  return window['go']['main']['App']['SpeakWord'](arg1, arg2, arg3);
+export function SpeakWord(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['SpeakWord'](arg1, arg2, arg3, arg4);
 }
 
 export function ToggleItemMark(arg1, arg2) {

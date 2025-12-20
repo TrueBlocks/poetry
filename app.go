@@ -355,6 +355,15 @@ func (a *App) CreateItem(item database.Item) (int, error) {
 
 // UpdateItem updates an existing item
 func (a *App) UpdateItem(item database.Item) error {
+	// Delete TTS cache for this item
+	cacheDir, err := constants.GetTTSCacheDir()
+	if err == nil {
+		cacheFile := fmt.Sprintf("%s/%d.mp3", cacheDir, item.ItemID)
+		if err := os.Remove(cacheFile); err != nil && !os.IsNotExist(err) {
+			log.Printf("Warning: failed to delete TTS cache for item %d: %v", item.ItemID, err)
+		}
+	}
+
 	return a.db.UpdateItem(item)
 }
 
@@ -366,7 +375,22 @@ func (a *App) ToggleItemMark(itemID int, marked bool) error {
 // DeleteItem deletes an item
 func (a *App) DeleteItem(itemID int) error {
 	log.Printf("[App] DeleteItem called for itemID: %d", itemID)
-	err := a.db.DeleteItem(itemID)
+
+	// Delete TTS cache for this item
+	cacheDir, err := constants.GetTTSCacheDir()
+	if err == nil {
+		cacheFile := fmt.Sprintf("%s/%d.mp3", cacheDir, itemID)
+		if err := os.Remove(cacheFile); err != nil && !os.IsNotExist(err) {
+			log.Printf("Warning: failed to delete TTS cache for item %d: %v", itemID, err)
+		}
+	}
+
+	// Delete Image cache for this item
+	if err := a.DeleteItemImage(itemID); err != nil {
+		log.Printf("Warning: failed to delete image cache for item %d: %v", itemID, err)
+	}
+
+	err = a.db.DeleteItem(itemID)
 	if err != nil {
 		log.Printf("[App] DeleteItem failed: %v", err)
 		return err
@@ -1364,7 +1388,7 @@ func (a *App) GetEnvLocation() string {
 }
 
 // SpeakWord uses OpenAI's text-to-speech API to pronounce text with gender-matched voices and caching
-func (a *App) SpeakWord(text string, itemType string, itemWord string) TTSResult {
+func (a *App) SpeakWord(text string, itemType string, itemWord string, itemID int) TTSResult {
 	// Set up cache directory
 	cacheDir, err := constants.GetTTSCacheDir()
 	if err != nil {
@@ -1398,20 +1422,19 @@ func (a *App) SpeakWord(text string, itemType string, itemWord string) TTSResult
 		}
 	}
 
-	// Create a hash of the input text for the cache filename
-	hash := sha256.Sum256([]byte(text))
-	cacheFile := fmt.Sprintf("%s/%x.mp3", cacheDir, hash)
+	// Use ItemID for cache filename
+	cacheFile := fmt.Sprintf("%s/%d.mp3", cacheDir, itemID)
 
 	// Check if cached file exists
 	if cachedData, err := os.ReadFile(cacheFile); err == nil {
-		log.Printf("Using cached TTS audio for text (hash: %x)", hash[:8])
+		log.Printf("Using cached TTS audio for item %d", itemID)
 		return TTSResult{
 			AudioData: cachedData,
 			Cached:    true,
 		}
 	}
 
-	log.Printf("Cache miss, calling OpenAI API for text (hash: %x)", hash[:8])
+	log.Printf("Cache miss, calling OpenAI API for item %d", itemID)
 
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {

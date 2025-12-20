@@ -152,7 +152,7 @@ export function SearchItemsWithOptions(arg1:database.SearchOptions):Promise<Arra
 
 export function SelectDataFolder():Promise<string>;
 
-export function SpeakWord(arg1:string,arg2:string,arg3:string):Promise<main.TTSResult>;
+export function SpeakWord(arg1:string,arg2:string,arg3:string,arg4:number):Promise<main.TTSResult>;
 
 export function ToggleItemMark(arg1:number,arg2:boolean):Promise<void>;
 

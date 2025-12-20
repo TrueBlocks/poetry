@@ -673,7 +673,7 @@ export default function ItemDetail({ onEnterEditMode }: { onEnterEditMode?: () =
                         autoClose: false,
                       })
                       try {
-                        const result = await SpeakWord(item.word, item.type, item.word)
+                        const result = await SpeakWord(item.word, item.type, item.word, item.itemId)
                         LogInfo(`Received TTS result, cached: ${result.cached}, error: ${result.error || 'none'}`)
                         
                         // Check for errors
@@ -843,7 +843,7 @@ export default function ItemDetail({ onEnterEditMode }: { onEnterEditMode?: () =
                       })
                       
                       try {
-                        const result = await SpeakWord(finalText, item?.type || '', item?.word || '')
+                        const result = await SpeakWord(finalText, item?.type || '', item?.word || '', item.itemId)
                         LogInfo(`Received quote TTS result, cached: ${result.cached}, error: ${result.error || 'none'}`)
                         
                         // Check for errors
