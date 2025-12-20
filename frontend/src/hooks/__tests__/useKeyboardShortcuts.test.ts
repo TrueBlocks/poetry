@@ -35,7 +35,7 @@ describe('useKeyboardShortcuts', () => {
     const event = new KeyboardEvent('keydown', { key: 'n' })
     document.dispatchEvent(event)
     
-    expect(mockNavigate).toHaveBeenCalledWith('/item/new')
+    expect(mockNavigate).toHaveBeenCalledWith('/item/new?tab=detail')
   })
 
   test('navigates to home on h key', () => {

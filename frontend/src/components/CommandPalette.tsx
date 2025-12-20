@@ -87,7 +87,7 @@ export default function CommandPalette({ open, onOpenChange }: CommandPalettePro
 
             <Command.Group heading="Actions" style={{ padding: '0.5rem' }}>
               <Command.Item
-                onSelect={() => runCommand(() => navigate('/item/new'))}
+                onSelect={() => runCommand(() => navigate('/item/new?tab=detail'))}
                 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer' }}
               >
                 <Plus size={16} style={{ color: '#4B5563' }} />

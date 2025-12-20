@@ -82,7 +82,7 @@ export default function Dashboard({ }: DashboardProps) {
           <Title order={1}>Dashboard</Title>
           <Text c="dimmed">Your literary ecosystem at a glance</Text>
         </div>
-        <Button component={Link} to="/item/new" leftSection={<Plus size={20} />}>
+        <Button component={Link} to="/item/new?tab=detail" leftSection={<Plus size={20} />}>
           New Item
         </Button>
       </Group>

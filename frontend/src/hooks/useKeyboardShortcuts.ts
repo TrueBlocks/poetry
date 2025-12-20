@@ -63,7 +63,7 @@ export default function useKeyboardShortcuts(commandPaletteOpen: boolean, setCom
       // Cmd+N or Ctrl+N to create new item
       if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
         e.preventDefault()
-        navigate('/item/new')
+        navigate('/item/new?tab=detail')
         return
       }
 
@@ -155,7 +155,7 @@ export default function useKeyboardShortcuts(commandPaletteOpen: boolean, setCom
         case 'n':
           if (!commandPaletteOpen) {
             e.preventDefault()
-            navigate('/item/new')
+            navigate('/item/new?tab=detail')
           }
           break
 
