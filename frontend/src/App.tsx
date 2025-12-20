@@ -13,7 +13,7 @@ import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts'
 import { useWindowPersistence } from './hooks/useWindowPersistence'
-import { GetStats, GetSettings, SaveLastView, GetItem, GetItemByWord, GetEnvVars } from '../wailsjs/go/main/App.js'
+import { GetStats, GetSettings, SaveLastView, GetItem, GetItemByWord, GetEnvVars, HasEnvFile } from '../wailsjs/go/main/App.js'
 import { LogInfo } from '../wailsjs/runtime/runtime.js'
 import { FirstRunModal } from './components/FirstRunModal'
 
@@ -93,16 +93,14 @@ function App() {
     Promise.all([
       GetStats(),
       GetSettings(),
-      GetEnvVars()
+      HasEnvFile()
     ])
-      .then(([statsData, settings, envVars]) => {
+      .then(([statsData, settings, hasEnv]) => {
         setStats(statsData)
 
         // Check for First Run condition
-        const hasApiKey = !!envVars['OPENAI_API_KEY']
-        const optedOut = settings.aiOptOut
-        
-        if (!hasApiKey && !optedOut) {
+        // If .env file does not exist, show First Run Modal
+        if (!hasEnv) {
           setFirstRunModalOpen(true)
         }
         

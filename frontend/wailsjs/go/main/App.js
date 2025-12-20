@@ -206,6 +206,10 @@ export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
 }
 
+export function HasEnvFile() {
+  return window['go']['main']['App']['HasEnvFile']();
+}
+
 export function MergeDuplicateItems(arg1, arg2) {
   return window['go']['main']['App']['MergeDuplicateItems'](arg1, arg2);
 }
@@ -294,8 +298,8 @@ export function SelectExportFolder() {
   return window['go']['main']['App']['SelectExportFolder']();
 }
 
-export function SetAiOptOut(arg1) {
-  return window['go']['main']['App']['SetAiOptOut'](arg1);
+export function SkipAiSetup() {
+  return window['go']['main']['App']['SkipAiSetup']();
 }
 
 export function SpeakWord(arg1, arg2, arg3, arg4) {

@@ -1321,12 +1321,49 @@ func (a *App) SaveEnvVar(key, value string) error {
 		return fmt.Errorf("failed to write .env file: %w", err)
 	}
 
+	// Update in-memory environment variable so changes take effect immediately
+	if err := os.Setenv(key, value); err != nil {
+		log.Printf("Warning: failed to update in-memory environment variable: %v", err)
+	}
+
 	return nil
 }
 
-// SetAiOptOut updates the AI opt-out setting
-func (a *App) SetAiOptOut(optOut bool) error {
-	return a.settings.UpdateAiOptOut(optOut)
+// HasEnvFile checks if the .env file exists
+func (a *App) HasEnvFile() bool {
+	envPath, err := constants.GetEnvPath()
+	if err != nil {
+		return false
+	}
+	_, err = os.Stat(envPath)
+	return err == nil
+}
+
+// SkipAiSetup creates the .env file with a marker if it doesn't exist
+func (a *App) SkipAiSetup() error {
+	envPath, err := constants.GetEnvPath()
+	if err != nil {
+		return fmt.Errorf("failed to get env path: %w", err)
+	}
+
+	// Check if file already exists
+	if _, err := os.Stat(envPath); err == nil {
+		return nil
+	}
+
+	// Ensure directory exists
+	dir := filepath.Dir(envPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	// Create file with a comment
+	content := "# AI Setup Skipped\n"
+	if err := os.WriteFile(envPath, []byte(content), 0600); err != nil {
+		return fmt.Errorf("failed to write .env file: %w", err)
+	}
+
+	return nil
 }
 
 // GetEnvLocation returns the path to the .env file being used

@@ -1,23 +1,26 @@
 import { useState } from 'react'
 import { Modal, Button, Text, TextInput, Stack, Group, Title, PasswordInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { SaveEnvVar, SetAiOptOut } from '../../wailsjs/go/main/App'
+import { SaveEnvVar } from '../../wailsjs/go/main/App'
 import { Check, X, Sparkles } from 'lucide-react'
 
 interface FirstRunModalProps {
   opened: boolean
   onClose: () => void
+  mode?: 'first-run' | 'edit'
+  initialKey?: string
 }
 
-export function FirstRunModal({ opened, onClose }: FirstRunModalProps) {
-  const [step, setStep] = useState<'ask' | 'key'>('ask')
-  const [apiKey, setApiKey] = useState('')
+export function FirstRunModal({ opened, onClose, mode = 'first-run', initialKey = '' }: FirstRunModalProps) {
+  const [step, setStep] = useState<'ask' | 'key'>(mode === 'edit' ? 'key' : 'ask')
+  const [apiKey, setApiKey] = useState(initialKey)
   const [loading, setLoading] = useState(false)
 
   const handleOptOut = async () => {
     setLoading(true)
     try {
-      await SetAiOptOut(true)
+      // Save empty key to indicate user has seen this but opted out
+      await SaveEnvVar('OPENAI_API_KEY', '')
       notifications.show({
         title: 'AI Features Disabled',
         message: 'You can enable them later in Settings.',
@@ -48,7 +51,6 @@ export function FirstRunModal({ opened, onClose }: FirstRunModalProps) {
     setLoading(true)
     try {
       await SaveEnvVar('OPENAI_API_KEY', apiKey.trim())
-      await SetAiOptOut(false) // Ensure opt-out is false
       notifications.show({
         title: 'AI Configured',
         message: 'Your OpenAI API Key has been saved.',
@@ -70,14 +72,14 @@ export function FirstRunModal({ opened, onClose }: FirstRunModalProps) {
   return (
     <Modal 
       opened={opened} 
-      onClose={() => {}} // Prevent closing by clicking outside or escape
-      withCloseButton={false}
+      onClose={mode === 'edit' ? onClose : () => {}} // Allow closing in edit mode
+      withCloseButton={mode === 'edit'}
       centered
       size="md"
       title={
         <Group gap="xs">
           <Sparkles size={20} color="#228be6" />
-          <Text fw={700}>Welcome to Poetry</Text>
+          <Text fw={700}>{mode === 'edit' ? 'Edit Environment Variables' : 'Welcome to Poetry'}</Text>
         </Group>
       }
     >
@@ -117,11 +119,13 @@ export function FirstRunModal({ opened, onClose }: FirstRunModalProps) {
             The key will be stored locally in your app data folder.
           </Text>
           <Group justify="flex-end" mt="md">
-            <Button variant="subtle" onClick={() => setStep('ask')} disabled={loading}>
-              Back
-            </Button>
+            {mode === 'first-run' && (
+              <Button variant="subtle" onClick={() => setStep('ask')} disabled={loading}>
+                Back
+              </Button>
+            )}
             <Button onClick={handleSaveKey} loading={loading}>
-              Save & Continue
+              {mode === 'edit' ? 'Save Changes' : 'Save & Continue'}
             </Button>
           </Group>
         </Stack>

@@ -2,15 +2,22 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { Anchor, ActionIcon, useMantineColorScheme } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { SpeakWord, GetItemImage } from '../../../wailsjs/go/main/App.js'
+import { SpeakWord, GetItemImage, GetEnvVars } from '../../../wailsjs/go/main/App.js'
 import { LogInfo, LogError } from '../../../wailsjs/runtime/runtime.js'
 import { Network, Volume2, Copy } from 'lucide-react'
 import { stripPossessive, REFERENCE_COLOR_MAP } from '../../utils/references'
 
 const COLOR_MAP = REFERENCE_COLOR_MAP
 
+import { useQuery } from '@tanstack/react-query'
+
 function ReferenceLink({ matchedItem, displayWord, color, hasQuotedText, stopAudio, currentAudioRef, parentItem }: any) {
   const [imageUrl, setImageUrl] = useState<string | null>(null)
+  
+  const { data: envVars } = useQuery({
+    queryKey: ['envVars'],
+    queryFn: GetEnvVars,
+  })
 
   useEffect(() => {
     // LogInfo(`[ReferenceLink] Checking item: ${matchedItem.word}, Type: ${matchedItem.type}, ID: ${matchedItem.itemId}`)
@@ -108,7 +115,8 @@ function ReferenceLink({ matchedItem, displayWord, color, hasQuotedText, stopAud
               display: 'inline-block',
               verticalAlign: 'middle',
             }}
-            title="Read quoted text"
+            title={envVars?.['OPENAI_API_KEY'] ? "Read quoted text" : "Configure OpenAI API Key in Settings to enable TTS"}
+            disabled={!envVars?.['OPENAI_API_KEY']}
             onClick={async (e: React.MouseEvent) => {
               e.preventDefault()
               e.stopPropagation()
@@ -404,7 +412,8 @@ export function DefinitionRenderer({ text, allItems, stopAudio, currentAudioRef,
                     display: 'inline-block',
                     verticalAlign: 'middle',
                   }}
-                  title="Read quoted text"
+                  title={envVars?.['OPENAI_API_KEY'] ? "Read quoted text" : "Configure OpenAI API Key in Settings to enable TTS"}
+                  disabled={!envVars?.['OPENAI_API_KEY']}
                   onClick={async (e: React.MouseEvent) => {
                     e.preventDefault()
                     e.stopPropagation()

@@ -1,13 +1,15 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Title, Text, Paper, Table, Loader, Alert, Group, Badge, Button, TextInput, Stack, Switch, PasswordInput } from '@mantine/core'
-import { GetAllSettings, GetEnvVars, GetEnvLocation, GetTTSCacheInfo, GetImageCacheInfo, GetDatabaseFileSize, GetItem, SaveEnvVar, SetAiOptOut } from '../../../wailsjs/go/main/App.js'
-import { AlertCircle, FolderOpen, Search, Sparkles } from 'lucide-react'
+import { GetAllSettings, GetEnvVars, GetEnvLocation, GetTTSCacheInfo, GetImageCacheInfo, GetDatabaseFileSize, GetItem } from '../../../wailsjs/go/main/App.js'
+import { AlertCircle, FolderOpen, Search, Sparkles, Edit } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useState, useRef, useEffect } from 'react'
+import { FirstRunModal } from '../FirstRunModal'
 
 export function GeneralSettings() {
   const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
+  const [editEnvModalOpen, setEditEnvModalOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Keyboard shortcut for search
@@ -69,43 +71,9 @@ export function GeneralSettings() {
     enabled: !!settings?.lastWordId,
   })
 
-  const handleAiToggle = async (optOut: boolean) => {
-    try {
-      await SetAiOptOut(optOut)
-      queryClient.invalidateQueries({ queryKey: ['allSettings'] })
-      notifications.show({
-        title: optOut ? 'AI Features Disabled' : 'AI Features Enabled',
-        message: 'Your preference has been saved.',
-        color: 'blue',
-      })
-    } catch (error) {
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to update settings.',
-        color: 'red',
-      })
-    }
-  }
 
-  const handleSaveApiKey = async (key: string) => {
-    if (!key) return // Don't save empty key on blur if user just clicked in and out
-    
-    try {
-      await SaveEnvVar('OPENAI_API_KEY', key.trim())
-      queryClient.invalidateQueries({ queryKey: ['envVars'] })
-      notifications.show({
-        title: 'API Key Saved',
-        message: 'Your OpenAI API Key has been updated.',
-        color: 'green',
-      })
-    } catch (error) {
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to save API Key.',
-        color: 'red',
-      })
-    }
-  }
+
+
 
   if (settingsLoading || envLoading) {
     return (
@@ -127,42 +95,7 @@ export function GeneralSettings() {
         mb="xs"
       />
 
-      {/* AI Configuration Section */}
-      <Paper shadow="sm" radius="md" withBorder p="sm" mb="xs">
-        <Group justify="space-between" mb="xs">
-          <Group>
-            <Sparkles size={20} color="#228be6" />
-            <Title order={3}>AI Configuration</Title>
-          </Group>
-          <Badge color={settings?.aiOptOut ? "gray" : "blue"}>
-            {settings?.aiOptOut ? "Disabled" : "Enabled"}
-          </Badge>
-        </Group>
-        
-        <Stack gap="xs">
-          <Group justify="space-between">
-            <div>
-              <Text fw={500}>Enable AI Features</Text>
-              <Text size="sm" c="dimmed">Text-to-Speech, automated definitions, etc.</Text>
-            </div>
-            <Switch 
-              checked={!settings?.aiOptOut} 
-              onChange={(e) => handleAiToggle(!e.currentTarget.checked)}
-              label={settings?.aiOptOut ? "Disabled" : "Enabled"}
-            />
-          </Group>
-          
-          {!settings?.aiOptOut && (
-             <PasswordInput 
-               label="OpenAI API Key"
-               placeholder="sk-..."
-               defaultValue={envVars?.['OPENAI_API_KEY'] === '***REDACTED***' ? '' : envVars?.['OPENAI_API_KEY']}
-               description={envVars?.['OPENAI_API_KEY'] ? "Key is set (hidden for security)" : "No key set"}
-               onBlur={(e) => handleSaveApiKey(e.currentTarget.value)}
-             />
-          )}
-        </Stack>
-      </Paper>
+
 
       {/* Database Information Section */}
       <Paper shadow="sm" radius="md" withBorder p="sm" mb="xs">
@@ -303,9 +236,19 @@ export function GeneralSettings() {
 
       {/* Environment Variables Section */}
       <Paper shadow="sm" radius="md" withBorder p="sm">
-        <Group mb="xs" gap="xs">
-          <Title order={3}>Environment Variables</Title>
-          <Badge color="green">.env</Badge>
+        <Group mb="xs" justify="space-between">
+          <Group gap="xs">
+            <Title order={3}>Environment Variables</Title>
+            <Badge color="green">.env</Badge>
+          </Group>
+          <Button 
+            leftSection={<Edit size={16} />} 
+            variant="light" 
+            size="xs"
+            onClick={() => setEditEnvModalOpen(true)}
+          >
+            Edit .env
+          </Button>
         </Group>
         <Text size="sm" c="dimmed">
           Location: {envLocation || 'Loading...'}
@@ -348,6 +291,16 @@ export function GeneralSettings() {
           </Alert>
         )}
       </Paper>
+
+      <FirstRunModal 
+        opened={editEnvModalOpen} 
+        onClose={() => {
+          setEditEnvModalOpen(false)
+          queryClient.invalidateQueries({ queryKey: ['envVars'] })
+        }}
+        mode="edit"
+        initialKey={envVars?.['OPENAI_API_KEY'] === '***REDACTED***' ? '' : envVars?.['OPENAI_API_KEY']}
+      />
     </>
   )
 }

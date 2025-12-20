@@ -106,6 +106,8 @@ export function GetUnlinkedReferences():Promise<Array<Record<string, any>>>;
 
 export function Greet(arg1:string):Promise<string>;
 
+export function HasEnvFile():Promise<boolean>;
+
 export function MergeDuplicateItems(arg1:number,arg2:Array<number>):Promise<void>;
 
 export function MergeLiteraryTerm(arg1:number):Promise<void>;
@@ -150,7 +152,7 @@ export function SearchItemsWithOptions(arg1:database.SearchOptions):Promise<Arra
 
 export function SelectExportFolder():Promise<string>;
 
-export function SetAiOptOut(arg1:boolean):Promise<void>;
+export function SkipAiSetup():Promise<void>;
 
 export function SpeakWord(arg1:string,arg2:string,arg3:string,arg4:number):Promise<main.TTSResult>;
 

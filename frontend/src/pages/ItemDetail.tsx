@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Container, Title, Text, Button, Group, Stack, Paper, Loader, Badge, ActionIcon, Divider, Alert, useMantineColorScheme, Modal, Grid, Box } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { GetItem, GetItemLinks, DeleteItem, SearchItems, GetSettings, SaveRevealMarkdown, UpdateItem, SpeakWord, GetItemByWord, SaveOutgoingCollapsed, SaveIncomingCollapsed, DeleteLinkByItems, CreateLinkOrRemoveTags, GetItemImage } from '../../wailsjs/go/main/App.js'
+import { GetItem, GetItemLinks, DeleteItem, SearchItems, GetSettings, SaveRevealMarkdown, UpdateItem, SpeakWord, GetItemByWord, SaveOutgoingCollapsed, SaveIncomingCollapsed, DeleteLinkByItems, CreateLinkOrRemoveTags, GetItemImage, GetEnvVars } from '../../wailsjs/go/main/App.js'
 import { LogInfo, LogError, BrowserOpenURL } from '../../wailsjs/runtime/runtime.js'
 import { ArrowLeft, Edit, Trash2, Network, Sparkles, AlertTriangle, PilcrowIcon, Check, Volume2, Copy, ChevronDown, ChevronRight } from 'lucide-react'
 import { useState, useEffect, useMemo, useRef } from 'react'
@@ -84,6 +84,11 @@ export default function ItemDetail({ onEnterEditMode }: { onEnterEditMode?: () =
   const { data: item, isLoading } = useQuery({
     queryKey: ['item', id],
     queryFn: () => GetItem(Number(id)),
+  })
+
+  const { data: envVars } = useQuery({
+    queryKey: ['envVars'],
+    queryFn: GetEnvVars,
   })
 
 
@@ -659,7 +664,8 @@ export default function ItemDetail({ onEnterEditMode }: { onEnterEditMode?: () =
                     size="lg"
                     variant="light"
                     color="blue"
-                    title="Pronounce word"
+                    title={envVars?.['OPENAI_API_KEY'] ? "Pronounce word" : "Configure OpenAI API Key in Settings to enable TTS"}
+                    disabled={!envVars?.['OPENAI_API_KEY']}
                     onClick={async () => {
                       // Stop any currently playing audio
                       stopAudio()
