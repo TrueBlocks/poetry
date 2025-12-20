@@ -330,6 +330,31 @@ func (a *App) DeleteItem(itemID int) error {
 		log.Printf("Warning: failed to delete image cache for item %d: %v", itemID, err)
 	}
 
+	// Update settings: remove from history and update lastWordId if needed
+	settings := a.settings.Get()
+
+	// Remove from NavigationHistory
+	newHistory := make([]int, 0, len(settings.NavigationHistory))
+	for _, id := range settings.NavigationHistory {
+		if id != itemID {
+			newHistory = append(newHistory, id)
+		}
+	}
+	settings.NavigationHistory = newHistory
+
+	// Check LastWordID
+	if settings.LastWordID == itemID {
+		if len(settings.NavigationHistory) > 0 {
+			settings.LastWordID = settings.NavigationHistory[0]
+		} else {
+			settings.LastWordID = 0
+		}
+	}
+
+	if err := a.settings.Save(); err != nil {
+		log.Printf("Warning: failed to save settings after deleting item: %v", err)
+	}
+
 	err = a.db.DeleteItem(itemID)
 	if err != nil {
 		log.Printf("[App] DeleteItem failed: %v", err)
