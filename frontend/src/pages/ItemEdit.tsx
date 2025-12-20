@@ -28,6 +28,8 @@ export default function ItemEdit({ onSave, onCancel }: { onSave?: () => void; on
 
   const [pastedImage, setPastedImage] = useState<string | null>(null)
   const [cachedImage, setCachedImage] = useState<string | null>(null)
+  const [isImageLoading, setIsImageLoading] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
 
   // Reference validation for definition field
   const { getMissingReferences, getExistingReferences, isValidating } = useReferenceValidation(formData.definition)
@@ -83,11 +85,15 @@ export default function ItemEdit({ onSave, onCancel }: { onSave?: () => void; on
         mark: item.mark || '',
       })
       // Load cached image if it exists
+      setIsImageLoading(true)
       GetItemImage(item.itemId).then((imageData) => {
         if (imageData) {
           setCachedImage(imageData)
+        } else {
+          setCachedImage(null)
         }
       }).catch(console.error)
+      .finally(() => setIsImageLoading(false))
     } else if (isNew) {
       // Reset form when creating new item
       setFormData({
@@ -181,7 +187,9 @@ export default function ItemEdit({ onSave, onCancel }: { onSave?: () => void; on
       
       // Save or delete image based on current state
       try {
-        if (pastedImage) {
+        if (isImageLoading) {
+          console.warn('Image is still loading, skipping image update to prevent accidental deletion')
+        } else if (pastedImage) {
           // Save the new pasted image
           await SaveItemImage(savedItemId, pastedImage)
           setCachedImage(pastedImage)
@@ -451,12 +459,21 @@ export default function ItemEdit({ onSave, onCancel }: { onSave?: () => void; on
 
             {/* Image Paste Area */}
             <Box>
-              <Text size="sm" fw={500} mb="xs">Image</Text>
+              <Group justify="space-between" mb="xs">
+                <Text size="sm" fw={500}>Image</Text>
+                {isFocused && !pastedImage && !cachedImage && (
+                  <Badge color="blue" variant="light" size="sm">
+                    Paste image now (Cmd+V)
+                  </Badge>
+                )}
+              </Group>
               <Paper
                 ref={imageBoxRef}
                 tabIndex={0}
                 p="md"
                 withBorder
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
                 style={{
                   minHeight: '200px',
                   display: 'flex',
@@ -465,10 +482,15 @@ export default function ItemEdit({ onSave, onCancel }: { onSave?: () => void; on
                   cursor: 'pointer',
                   backgroundColor: (pastedImage || cachedImage) ? 'transparent' : 'var(--mantine-color-gray-0)',
                   outline: 'none',
+                  borderColor: isFocused ? 'var(--mantine-color-blue-filled)' : undefined,
+                  boxShadow: isFocused ? '0 0 0 2px var(--mantine-color-blue-light)' : undefined,
+                  transition: 'all 0.2s ease',
                 }}
                 onClick={() => imageBoxRef.current?.focus()}
               >
-                {(pastedImage || cachedImage) ? (
+                {isImageLoading ? (
+                  <Loader size="sm" />
+                ) : (pastedImage || cachedImage) ? (
                   <Box style={{ position: 'relative', width: '100%', maxWidth: '600px' }}>
                     <img
                       src={pastedImage || cachedImage || ''}
@@ -487,8 +509,10 @@ export default function ItemEdit({ onSave, onCancel }: { onSave?: () => void; on
                   </Box>
                 ) : (
                   <Stack align="center" gap="xs">
-                    <ImageIcon size={48} style={{ opacity: 0.3 }} />
-                    <Text size="sm" c="dimmed">Click here and press Cmd+V to paste an image</Text>
+                    <ImageIcon size={48} style={{ opacity: isFocused ? 0.8 : 0.3, color: isFocused ? 'var(--mantine-color-blue-filled)' : undefined }} />
+                    <Text size="sm" c={isFocused ? 'blue' : 'dimmed'}>
+                      {isFocused ? 'Paste image now (Cmd+V)' : 'Click here and press Cmd+V to paste an image'}
+                    </Text>
                     <Text size="xs" c="dimmed">Press Delete or Backspace to remove</Text>
                   </Stack>
                 )}
