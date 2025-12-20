@@ -18,6 +18,7 @@ import (
 
 	"github.com/TrueBlocks/trueblocks-poetry/backend/components"
 	"github.com/TrueBlocks/trueblocks-poetry/backend/database"
+	"github.com/TrueBlocks/trueblocks-poetry/backend/seeding"
 	"github.com/TrueBlocks/trueblocks-poetry/backend/settings"
 	"github.com/TrueBlocks/trueblocks-poetry/pkg/constants"
 
@@ -91,6 +92,11 @@ func (a *App) startup(ctx context.Context) {
 	}
 
 	log.Printf("Database path: %s", dbPath)
+
+	// Ensure data is seeded before opening database
+	if err := seeding.EnsureDataSeeded(filepath.Dir(dbPath)); err != nil {
+		log.Printf("Warning: Failed to seed data: %v", err)
+	}
 
 	// Initialize database
 	db, err := database.NewDB(dbPath)

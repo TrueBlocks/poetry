@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "start": "wails dev -tags fts5",
-    "test": "go test -tags fts5 ./backend/database/... && cd frontend && yarn test"
+    "test": "go test -tags fts5 ./backend/database/... && cd frontend && yarn test",
+    "freshen": "rm -rf data && mkdir data && cp $HOME/.local/share/trueblocks/poetry/poetry.db data/ && cp -r $HOME/.local/share/trueblocks/poetry/images data/ && cp -r $HOME/.local/share/trueblocks/poetry/tts-cache data/ && sqlite3 data/poetry.db 'VACUUM; PRAGMA wal_checkpoint(TRUNCATE);' && rm -f data/poetry.db-wal data/poetry.db-shm && tar -czf data.tar.gz -C data . && mkdir -p backend/seeding && mv data.tar.gz backend/seeding/"
   }
 }
