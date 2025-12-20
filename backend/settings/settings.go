@@ -65,6 +65,7 @@ type Settings struct {
 	CurrentSearch     string               `json:"currentSearch"`        // current table search query
 	ManagerOldType    string               `json:"managerOldType"`       // Item Manager: last selected old type
 	ManagerNewType    string               `json:"managerNewType"`       // Item Manager: last selected new type
+	AiOptOut          bool                 `json:"aiOptOut"`             // User opted out of AI features
 }
 
 // Manager handles settings persistence
@@ -245,6 +246,12 @@ func (m *Manager) UpdateOutgoingCollapsed(collapsed bool) error {
 // UpdateIncomingCollapsed updates the incoming collapsed setting
 func (m *Manager) UpdateIncomingCollapsed(collapsed bool) error {
 	m.settings.Collapsed.Incoming = collapsed
+	return m.Save()
+}
+
+// UpdateAiOptOut updates the AI opt-out setting
+func (m *Manager) UpdateAiOptOut(optOut bool) error {
+	m.settings.AiOptOut = optOut
 	return m.Save()
 }
 

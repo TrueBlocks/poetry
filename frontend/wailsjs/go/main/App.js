@@ -226,6 +226,10 @@ export function SaveCurrentSearch(arg1) {
   return window['go']['main']['App']['SaveCurrentSearch'](arg1);
 }
 
+export function SaveEnvVar(arg1, arg2) {
+  return window['go']['main']['App']['SaveEnvVar'](arg1, arg2);
+}
+
 export function SaveIncomingCollapsed(arg1) {
   return window['go']['main']['App']['SaveIncomingCollapsed'](arg1);
 }
@@ -288,6 +292,10 @@ export function SearchItemsWithOptions(arg1) {
 
 export function SelectExportFolder() {
   return window['go']['main']['App']['SelectExportFolder']();
+}
+
+export function SetAiOptOut(arg1) {
+  return window['go']['main']['App']['SetAiOptOut'](arg1);
 }
 
 export function SpeakWord(arg1, arg2, arg3, arg4) {

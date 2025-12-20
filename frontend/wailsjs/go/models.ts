@@ -482,6 +482,7 @@ export namespace settings {
 	    currentSearch: string;
 	    managerOldType: string;
 	    managerNewType: string;
+	    aiOptOut: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Settings(source);
@@ -503,6 +504,7 @@ export namespace settings {
 	        this.currentSearch = source["currentSearch"];
 	        this.managerOldType = source["managerOldType"];
 	        this.managerNewType = source["managerNewType"];
+	        this.aiOptOut = source["aiOptOut"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

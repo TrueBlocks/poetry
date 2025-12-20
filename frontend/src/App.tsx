@@ -13,8 +13,9 @@ import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts'
 import { useWindowPersistence } from './hooks/useWindowPersistence'
-import { GetStats, GetSettings, SaveLastView, GetItem, GetItemByWord } from '../wailsjs/go/main/App.js'
+import { GetStats, GetSettings, SaveLastView, GetItem, GetItemByWord, GetEnvVars } from '../wailsjs/go/main/App.js'
 import { LogInfo } from '../wailsjs/runtime/runtime.js'
+import { FirstRunModal } from './components/FirstRunModal'
 
 function AppContent({ initialPath }: { initialPath: string }) {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
@@ -85,15 +86,25 @@ function App() {
   const [stats, setStats] = useState<Record<string, number> | null>(null)
   const [loading, setLoading] = useState(true)
   const [initialPath, setInitialPath] = useState<string>('/')
+  const [firstRunModalOpen, setFirstRunModalOpen] = useState(false)
 
   useEffect(() => {
     // Load initial stats and settings
     Promise.all([
       GetStats(),
-      GetSettings()
+      GetSettings(),
+      GetEnvVars()
     ])
-      .then(([statsData, settings]) => {
+      .then(([statsData, settings, envVars]) => {
         setStats(statsData)
+
+        // Check for First Run condition
+        const hasApiKey = !!envVars['OPENAI_API_KEY']
+        const optedOut = settings.aiOptOut
+        
+        if (!hasApiKey && !optedOut) {
+          setFirstRunModalOpen(true)
+        }
         
         // Determine initial path based on lastView preference
         if (settings.lastView) {
@@ -170,6 +181,7 @@ function App() {
   return (
     <BrowserRouter>
       <AppContent initialPath={initialPath} />
+      <FirstRunModal opened={firstRunModalOpen} onClose={() => setFirstRunModalOpen(false)} />
     </BrowserRouter>
   )
 }

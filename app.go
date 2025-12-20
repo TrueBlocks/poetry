@@ -1270,6 +1270,65 @@ func (a *App) GetEnvVars() map[string]string {
 	return envVars
 }
 
+// SaveEnvVar saves an environment variable to the .env file
+func (a *App) SaveEnvVar(key, value string) error {
+	// Determine .env path (prioritize ~/.local/share/trueblocks/poetry/.env)
+	envPath, err := constants.GetEnvPath()
+	if err != nil {
+		return fmt.Errorf("failed to get env path: %w", err)
+	}
+
+	// Read existing file
+	content := ""
+	if data, err := os.ReadFile(envPath); err == nil {
+		content = string(data)
+	}
+
+	// Normalize content
+	content = strings.TrimSpace(content)
+
+	var lines []string
+	if content != "" {
+		lines = strings.Split(content, "\n")
+	}
+
+	found := false
+	var newLines []string
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, key+"=") {
+			newLines = append(newLines, fmt.Sprintf("%s=%s", key, value))
+			found = true
+		} else {
+			newLines = append(newLines, line)
+		}
+	}
+
+	if !found {
+		newLines = append(newLines, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	// Write back to file
+	output := strings.Join(newLines, "\n") + "\n"
+	// Ensure directory exists
+	dir := filepath.Dir(envPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	if err := os.WriteFile(envPath, []byte(output), 0600); err != nil {
+		return fmt.Errorf("failed to write .env file: %w", err)
+	}
+
+	return nil
+}
+
+// SetAiOptOut updates the AI opt-out setting
+func (a *App) SetAiOptOut(optOut bool) error {
+	return a.settings.UpdateAiOptOut(optOut)
+}
+
 // GetEnvLocation returns the path to the .env file being used
 func (a *App) GetEnvLocation() string {
 	cwd, err := os.Getwd()
