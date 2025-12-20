@@ -844,7 +844,7 @@ type SearchOptions struct {
 All API methods return errors following Go conventions:
 
 ```go
-func (a *App) GetItem(id int) (*database.Item, error) {
+func (a *App) GetItem(itemID int) (*database.Item, error) {
     // Returns (item, nil) on success
     // Returns (nil, error) on failure
 }

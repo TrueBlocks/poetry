@@ -2,6 +2,8 @@
 
 A desktop application for managing literary references, definitions, and relationships built with Wails, Go, and React.
 
+![Dashboard Screenshot](images/screenshot.png)
+
 ## Features
 
 ### Core Functionality

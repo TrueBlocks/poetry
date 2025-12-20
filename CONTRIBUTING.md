@@ -16,7 +16,7 @@ Thank you for your interest in contributing to dbPoetry! This document provides 
 1. Clone the repository:
    ```fish
    git clone <repository-url>
-   cd dbPoetry_ddr
+   cd poetry
    ```
 
 2. Install dependencies:

@@ -13,7 +13,7 @@ This document describes the technical architecture and design decisions of the d
 
 ### UI & Styling
 - **Mantine v7**: Component library for consistent UI
-- **React Flow**: Interactive graph visualization
+- **@xyflow/react**: Interactive graph visualization (formerly React Flow)
 - **D3.js**: Force simulation for graph layouts
 - **Lucide React**: Icon library
 
@@ -62,10 +62,12 @@ This document describes the technical architecture and design decisions of the d
 ## Project Structure
 
 ```
-dbPoetry_ddr/
+poetry/
 ├── app.go                    # Main application API methods
 ├── main.go                   # Entry point, Wails app initialization
 ├── backend/
+│   ├── components/
+│   │   └── adhoc.go         # Ad-hoc query component
 │   ├── database/
 │   │   ├── database.go      # SQLite operations, queries, CRUD
 │   │   └── database_test.go # Backend unit tests
@@ -128,8 +130,8 @@ const item = await GetItem(123)  // Direct Go function call
 
 ```go
 // Backend (Go)
-func (a *App) GetItem(id int) (*database.Item, error) {
-    return a.db.GetItem(id)
+func (a *App) GetItem(itemID int) (*database.Item, error) {
+    return a.db.GetItem(itemID)
 }
 ```
 
@@ -355,11 +357,11 @@ const mutation = useMutation({
 ### Backend
 
 ```go
-func (a *App) GetItem(id int) (*database.Item, error) {
-    if id <= 0 {
-        return nil, fmt.Errorf("invalid item ID: %d", id)
+func (a *App) GetItem(itemID int) (*database.Item, error) {
+    if itemID <= 0 {
+        return nil, fmt.Errorf("invalid item ID: %d", itemID)
     }
-    return a.db.GetItem(id)
+    return a.db.GetItem(itemID)
 }
 ```
 
