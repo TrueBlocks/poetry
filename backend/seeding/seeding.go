@@ -6,6 +6,7 @@ import (
 	"embed"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -16,9 +17,12 @@ import (
 var seedData embed.FS
 
 // EnsureDataSeeded checks if the data folder is populated and seeds it if necessary.
-// It extracts poetry.db only if it doesn't exist.
-// It extracts images and tts files if they don't exist.
 func EnsureDataSeeded(dataFolder string) error {
+	return ensureDataSeededWithFS(dataFolder, seedData)
+}
+
+// ensureDataSeededWithFS performs the seeding using the provided file system
+func ensureDataSeededWithFS(dataFolder string, sourceFS fs.FS) error {
 	log.Printf("[Seeding] Checking data folder: %s", dataFolder)
 
 	// Ensure data folder exists
@@ -27,7 +31,7 @@ func EnsureDataSeeded(dataFolder string) error {
 	}
 
 	// Open the embedded tar.gz file
-	f, err := seedData.Open("data.tar.gz")
+	f, err := sourceFS.Open("data.tar.gz")
 	if err != nil {
 		// If the file is missing (e.g. dev environment without publish run), just warn and return
 		log.Printf("[Seeding] Warning: data.tar.gz not found in embedded assets. Skipping seeding.")

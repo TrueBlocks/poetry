@@ -98,6 +98,22 @@ views/[viewname]/
 
 ### Testing
 
+We follow a "Pragmatic Testing" philosophy. We value high-value tests over 100% coverage.
+
+#### Philosophy
+- **High Value:** Test complex logic (regex, data transformation) and critical backend paths (database init, seeding).
+- **Avoid Brittle Tests:** Do not write snapshot tests or complex DOM mocking for React components unless they contain heavy business logic.
+- **No Mocks for Logic:** Pure logic functions should be tested with real inputs and outputs.
+
+#### Frontend Tests
+- Place tests in a `__tests__` directory next to the file being tested.
+- Example: `frontend/src/components/ItemDetail/__tests__/DefinitionRenderer.regex.test.tsx`
+- Run tests: `cd frontend && yarn test`
+
+#### Backend Tests
+- Place tests in the same package as the code (e.g., `seeding_test.go` next to `seeding.go`).
+- Run tests: `go test ./...`
+
 #### Before Committing
 ```fish
 # Run all tests
