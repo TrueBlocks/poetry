@@ -1,0 +1,9 @@
+{
+  "name": "poetry-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "wails dev -tags fts5",
+    "test": "go test -tags fts5 ./backend/database/... && cd frontend && yarn test"
+  }
+}
