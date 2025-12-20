@@ -1,4 +1,4 @@
-# dbPoetry
+# Poetry DB
 
 A desktop application for managing literary references, definitions, and relationships built with Wails, Go, and React.
 
