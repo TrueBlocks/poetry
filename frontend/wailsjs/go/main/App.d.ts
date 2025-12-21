@@ -88,6 +88,8 @@ export function GetRecentItems(arg1:number):Promise<Array<database.Item>>;
 
 export function GetRecentSearches():Promise<Array<string>>;
 
+export function GetReferencePattern():Promise<string>;
+
 export function GetSavedSearches():Promise<Array<settings.SavedSearch>>;
 
 export function GetSelfReferentialItems():Promise<Array<Record<string, any>>>;

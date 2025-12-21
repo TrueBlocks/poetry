@@ -170,6 +170,10 @@ export function GetRecentSearches() {
   return window['go']['main']['App']['GetRecentSearches']();
 }
 
+export function GetReferencePattern() {
+  return window['go']['main']['App']['GetReferencePattern']();
+}
+
 export function GetSavedSearches() {
   return window['go']['main']['App']['GetSavedSearches']();
 }

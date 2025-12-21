@@ -471,7 +471,6 @@ export namespace settings {
 	    window: Window;
 	    exportFolder: string;
 	    lastWordId: number;
-	    navigationHistory: number[];
 	    lastView: string;
 	    lastTable: string;
 	    tabSelections: Record<string, string>;
@@ -492,7 +491,6 @@ export namespace settings {
 	        this.window = this.convertValues(source["window"], Window);
 	        this.exportFolder = source["exportFolder"];
 	        this.lastWordId = source["lastWordId"];
-	        this.navigationHistory = source["navigationHistory"];
 	        this.lastView = source["lastView"];
 	        this.lastTable = source["lastTable"];
 	        this.tabSelections = source["tabSelections"];

@@ -48,6 +48,7 @@ export function extractReferenceType(refType: string): 'Reference' | 'Writer' | 
  */
 export function parseReferences(text: string | null | undefined): string[] {
   if (!text) return []
+  // Matches backend ReferenceTagPattern in pkg/parser/parser.go
   const regex = /\{(word|writer|title):\s*([^}]+)\}/gi
   const matches = text.matchAll(regex)
   const refs: string[] = []

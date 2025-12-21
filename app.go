@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/TrueBlocks/trueblocks-poetry/backend/seeding"
 	"github.com/TrueBlocks/trueblocks-poetry/backend/settings"
 	"github.com/TrueBlocks/trueblocks-poetry/pkg/constants"
+	"github.com/TrueBlocks/trueblocks-poetry/pkg/parser"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -97,6 +97,11 @@ func (a *App) startup(ctx context.Context) {
 // RunAdHocQuery executes a raw SQL query
 func (a *App) RunAdHocQuery(query string) ([]map[string]interface{}, error) {
 	return a.adhoc.RunAdHocQuery(query)
+}
+
+// GetReferencePattern returns the regex pattern for reference tags
+func (a *App) GetReferencePattern() string {
+	return parser.GetReferencePattern()
 }
 
 // domReady is called after front-end resources have been loaded
@@ -334,18 +339,14 @@ func (a *App) DeleteItem(itemID int) error {
 	settings := a.settings.Get()
 
 	// Remove from NavigationHistory
-	newHistory := make([]int, 0, len(settings.NavigationHistory))
-	for _, id := range settings.NavigationHistory {
-		if id != itemID {
-			newHistory = append(newHistory, id)
-		}
+	if err := a.settings.RemoveFromHistory(itemID); err != nil {
+		log.Printf("Warning: failed to remove item from history: %v", err)
 	}
-	settings.NavigationHistory = newHistory
 
 	// Check LastWordID
 	if settings.LastWordID == itemID {
-		if len(settings.NavigationHistory) > 0 {
-			settings.LastWordID = settings.NavigationHistory[0]
+		if a.settings.GetHistoryLength() > 0 {
+			settings.LastWordID = a.settings.GetHistoryItem(0)
 		} else {
 			settings.LastWordID = 0
 		}
@@ -443,18 +444,9 @@ func (a *App) GetAllLinks() ([]database.Link, error) {
 // resolveTagsForMarkdown converts {x:value} tags to bold small caps in markdown
 // Example: {w:shakespeare} becomes **<small>SHAKESPEARE</small>**
 func resolveTagsForMarkdown(text string) string {
-	// Match any tag pattern {x:value} where x is one or more letters
-	re := regexp.MustCompile(`\{[a-zA-Z]+:\s*([^}]+)\}`)
-	return re.ReplaceAllStringFunc(text, func(match string) string {
-		// Extract the value part (everything after the colon)
-		re := regexp.MustCompile(`\{[a-zA-Z]+:\s*([^}]+)\}`)
-		matches := re.FindStringSubmatch(match)
-		if len(matches) > 1 {
-			value := strings.TrimSpace(matches[1])
-			// Convert to uppercase for small caps effect and wrap in bold + small tag
-			return fmt.Sprintf("**<small>%s</small>**", strings.ToUpper(value))
-		}
-		return match
+	return parser.ReplaceTags(text, func(ref parser.Reference) string {
+		// Convert to uppercase for small caps effect and wrap in bold + small tag
+		return fmt.Sprintf("**<small>%s</small>**", strings.ToUpper(ref.Value))
 	})
 }
 
@@ -1573,61 +1565,43 @@ func (a *App) GetUnlinkedReferences() ([]map[string]interface{}, error) {
 			continue
 		}
 
-		// Find all {w:}, {p:}, {t:} references in definition
+		// Find all {word:}, {writer:}, {title:} references in definition
 		unlinkedRefs := []map[string]string{}
 
-		// Simple regex matching
-		def := *item.Definition
-		for {
-			startIdx := strings.Index(def, "{")
-			if startIdx == -1 {
-				break
-			}
-			endIdx := strings.Index(def[startIdx:], "}")
-			if endIdx == -1 {
-				break
-			}
-			endIdx += startIdx
+		// Use centralized parser
+		refs := parser.ParseReferences(*item.Definition)
+		for _, ref := range refs {
+			refType := ref.Type
+			refWord := ref.Value
 
-			refStr := def[startIdx+1 : endIdx]
-			parts := strings.SplitN(refStr, ":", 2)
-			if len(parts) == 2 {
-				refType := strings.TrimSpace(parts[0])
-				refWord := strings.TrimSpace(parts[1])
-
-				if refType == "word" || refType == "writer" || refType == "title" {
-					// Strip possessive 's or s' from writer references
-					matchWord := refWord
-					if refType == "writer" {
-						lowerWord := strings.ToLower(refWord)
-						if strings.HasSuffix(lowerWord, "'s") {
-							matchWord = refWord[:len(refWord)-2]
-						} else if strings.HasSuffix(lowerWord, "s'") {
-							matchWord = refWord[:len(refWord)-1]
-						}
-					}
-
-					// Check if this reference exists in items
-					matchedItem := itemsByWord[strings.ToLower(matchWord)]
-					if matchedItem == nil {
-						// Item doesn't exist
-						unlinkedRefs = append(unlinkedRefs, map[string]string{
-							"ref":    refWord,
-							"reason": "missing",
-						})
-					} else {
-						// Item exists, check if it's linked
-						if linksMap[item.ItemID] == nil || !linksMap[item.ItemID][matchedItem.ItemID] {
-							unlinkedRefs = append(unlinkedRefs, map[string]string{
-								"ref":    refWord,
-								"reason": "unlinked",
-							})
-						}
-					}
+			// Strip possessive 's or s' from writer references
+			matchWord := refWord
+			if refType == "writer" {
+				lowerWord := strings.ToLower(refWord)
+				if strings.HasSuffix(lowerWord, "'s") {
+					matchWord = refWord[:len(refWord)-2]
+				} else if strings.HasSuffix(lowerWord, "s'") {
+					matchWord = refWord[:len(refWord)-1]
 				}
 			}
 
-			def = def[endIdx+1:]
+			// Check if this reference exists in items
+			matchedItem := itemsByWord[strings.ToLower(matchWord)]
+			if matchedItem == nil {
+				// Item doesn't exist
+				unlinkedRefs = append(unlinkedRefs, map[string]string{
+					"ref":    refWord,
+					"reason": "missing",
+				})
+			} else {
+				// Item exists, check if it's linked
+				if linksMap[item.ItemID] == nil || !linksMap[item.ItemID][matchedItem.ItemID] {
+					unlinkedRefs = append(unlinkedRefs, map[string]string{
+						"ref":    refWord,
+						"reason": "unlinked",
+					})
+				}
+			}
 		}
 
 		if len(unlinkedRefs) > 0 {
@@ -1804,10 +1778,7 @@ func (a *App) GetSelfReferentialItems() ([]map[string]interface{}, error) {
 		}
 
 		// Construct regex pattern: \{prefix:\s*word\}
-		// Need to escape word for regex
-		escapedWord := regexp.QuoteMeta(word)
-		pattern := fmt.Sprintf(`(?i)\{%s:\s*%s\}`, prefix, escapedWord)
-		re, err := regexp.Compile(pattern)
+		re, err := parser.GetSpecificReferenceRegex(prefix, word)
 		if err != nil {
 			continue
 		}
@@ -2113,33 +2084,15 @@ func (a *App) GetUnknownTags() ([]map[string]interface{}, error) {
 		seenTags := make(map[string]bool)
 
 		for _, text := range fieldsToCheck {
-			textCopy := text
-			for {
-				startIdx := strings.Index(textCopy, "{")
-				if startIdx == -1 {
-					break
-				}
-				endIdx := strings.Index(textCopy[startIdx:], "}")
-				if endIdx == -1 {
-					break
-				}
-				endIdx += startIdx
-
-				refStr := textCopy[startIdx+1 : endIdx]
-				parts := strings.SplitN(refStr, ":", 2)
-				if len(parts) == 2 {
-					tagType := strings.TrimSpace(parts[0])
-					// Check if it's an unknown tag (not word, writer, or title)
-					if tagType != "word" && tagType != "writer" && tagType != "title" {
-						fullTag := "{" + refStr + "}"
-						if !seenTags[fullTag] {
-							unknownTags = append(unknownTags, fullTag)
-							seenTags[fullTag] = true
-						}
+			refs := parser.ParseAllTags(text)
+			for _, ref := range refs {
+				// Check if it's an unknown tag (not word, writer, or title)
+				if ref.Type != "word" && ref.Type != "writer" && ref.Type != "title" {
+					if !seenTags[ref.Original] {
+						unknownTags = append(unknownTags, ref.Original)
+						seenTags[ref.Original] = true
 					}
 				}
-
-				textCopy = textCopy[endIdx+1:]
 			}
 		}
 

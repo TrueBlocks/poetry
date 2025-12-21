@@ -49,30 +49,36 @@ type TableSort struct {
 	Dir2   string `json:"dir2,omitempty"`
 }
 
+// History stores navigation history
+type History struct {
+	NavigationHistory []int `json:"navigationHistory"` // list of recently visited item IDs
+}
+
 // Settings stores user preferences
 type Settings struct {
-	Window            Window               `json:"window"`
-	ExportFolder      string               `json:"exportFolder"`
-	LastWordID        int                  `json:"lastWordId"`
-	NavigationHistory []int                `json:"navigationHistory"` // list of recently visited item IDs
-	LastView          string               `json:"lastView"`          // dashboard, graph, search, item, export
-	LastTable         string               `json:"lastTable"`         // last viewed table in Tables view
-	TabSelections     map[string]string    `json:"tabSelections"`     // view/component ID -> selected tab ID
-	RevealMarkdown    bool                 `json:"revealMarkdown"`
-	ShowMarked        bool                 `json:"showMarked"`           // toggle between Workbench and Top Hubs
-	Collapsed         CollapsedState       `json:"collapsed"`            // UI collapse states
-	TableSorts        map[string]TableSort `json:"tableSorts,omitempty"` // sorting state per table
-	CurrentSearch     string               `json:"currentSearch"`        // current table search query
-	ManagerOldType    string               `json:"managerOldType"`       // Item Manager: last selected old type
-	ManagerNewType    string               `json:"managerNewType"`       // Item Manager: last selected new type
+	Window         Window               `json:"window"`
+	ExportFolder   string               `json:"exportFolder"`
+	LastWordID     int                  `json:"lastWordId"`
+	LastView       string               `json:"lastView"`      // dashboard, graph, search, item, export
+	LastTable      string               `json:"lastTable"`     // last viewed table in Tables view
+	TabSelections  map[string]string    `json:"tabSelections"` // view/component ID -> selected tab ID
+	RevealMarkdown bool                 `json:"revealMarkdown"`
+	ShowMarked     bool                 `json:"showMarked"`           // toggle between Workbench and Top Hubs
+	Collapsed      CollapsedState       `json:"collapsed"`            // UI collapse states
+	TableSorts     map[string]TableSort `json:"tableSorts,omitempty"` // sorting state per table
+	CurrentSearch  string               `json:"currentSearch"`        // current table search query
+	ManagerOldType string               `json:"managerOldType"`       // Item Manager: last selected old type
+	ManagerNewType string               `json:"managerNewType"`       // Item Manager: last selected new type
 }
 
 // Manager handles settings persistence
 type Manager struct {
 	settingsPath string
 	searchPath   string
+	historyPath  string
 	settings     *Settings
 	search       *Search
+	history      *History
 }
 
 // NewManager creates a new settings manager
@@ -88,6 +94,7 @@ func NewManager() (*Manager, error) {
 
 	settingsPath := filepath.Join(configDir, "settings.json")
 	searchPath := filepath.Join(configDir, "search.json")
+	historyPath := filepath.Join(configDir, "history.json")
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -98,6 +105,7 @@ func NewManager() (*Manager, error) {
 	m := &Manager{
 		settingsPath: settingsPath,
 		searchPath:   searchPath,
+		historyPath:  historyPath,
 		settings: &Settings{
 			Window: Window{
 				X:            100,
@@ -117,11 +125,15 @@ func NewManager() (*Manager, error) {
 			RecentSearches: []string{},
 			SavedSearches:  []SavedSearch{},
 		},
+		history: &History{
+			NavigationHistory: []int{},
+		},
 	}
 
 	// Load existing settings if available
 	m.Load()
 	m.LoadSearch()
+	m.LoadHistory()
 
 	return m, nil
 }
@@ -200,20 +212,21 @@ func (m *Manager) UpdateLastWord(wordID int) error {
 	// Update history
 	if wordID > 0 {
 		// Remove if already exists (to move to front)
-		filtered := make([]int, 0, len(m.settings.NavigationHistory))
-		for _, id := range m.settings.NavigationHistory {
+		filtered := make([]int, 0, len(m.history.NavigationHistory))
+		for _, id := range m.history.NavigationHistory {
 			if id != wordID {
 				filtered = append(filtered, id)
 			}
 		}
 
 		// Add to front
-		m.settings.NavigationHistory = append([]int{wordID}, filtered...)
+		m.history.NavigationHistory = append([]int{wordID}, filtered...)
 
-		// Limit to 10
-		if len(m.settings.NavigationHistory) > 10 {
-			m.settings.NavigationHistory = m.settings.NavigationHistory[:10]
+		// Limit to 50
+		if len(m.history.NavigationHistory) > 50 {
+			m.history.NavigationHistory = m.history.NavigationHistory[:50]
 		}
+		m.SaveHistory()
 	}
 
 	return m.Save()
@@ -221,10 +234,70 @@ func (m *Manager) UpdateLastWord(wordID int) error {
 
 // GetNavigationHistory returns the navigation history
 func (m *Manager) GetNavigationHistory() []int {
-	return m.settings.NavigationHistory
+	// Return only the first 10 items for display
+	if len(m.history.NavigationHistory) > 10 {
+		return m.history.NavigationHistory[:10]
+	}
+	return m.history.NavigationHistory
 }
 
-// UpdateLastView updates the last viewed page
+// LoadHistory reads history from disk
+func (m *Manager) LoadHistory() error {
+	data, err := os.ReadFile(m.historyPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// File doesn't exist yet, check if we have history in settings to migrate
+			// Note: We are not doing a migration as requested by the user
+			return nil
+		}
+		return fmt.Errorf("failed to read history: %w", err)
+	}
+
+	if err := json.Unmarshal(data, m.history); err != nil {
+		return fmt.Errorf("failed to parse history: %w", err)
+	}
+
+	return nil
+}
+
+// SaveHistory writes history to disk
+func (m *Manager) SaveHistory() error {
+	data, err := json.MarshalIndent(m.history, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal history: %w", err)
+	}
+
+	if err := os.WriteFile(m.historyPath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write history: %w", err)
+	}
+
+	return nil
+}
+
+// RemoveFromHistory removes an item ID from the navigation history
+func (m *Manager) RemoveFromHistory(itemID int) error {
+	filtered := make([]int, 0, len(m.history.NavigationHistory))
+	for _, id := range m.history.NavigationHistory {
+		if id != itemID {
+			filtered = append(filtered, id)
+		}
+	}
+	m.history.NavigationHistory = filtered
+	return m.SaveHistory()
+}
+
+// GetHistoryItem returns the item at the specified index, or 0 if out of bounds
+func (m *Manager) GetHistoryItem(index int) int {
+	if index >= 0 && index < len(m.history.NavigationHistory) {
+		return m.history.NavigationHistory[index]
+	}
+	return 0
+}
+
+// GetHistoryLength returns the number of items in history
+func (m *Manager) GetHistoryLength() int {
+	return len(m.history.NavigationHistory)
+}
 func (m *Manager) UpdateLastView(view string) error {
 	m.settings.LastView = view
 	return m.Save()

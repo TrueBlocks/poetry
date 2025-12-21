@@ -7,7 +7,7 @@ import { LogInfo, LogError, BrowserOpenURL } from '../../wailsjs/runtime/runtime
 import { ArrowLeft, Edit, Trash2, Network, Sparkles, AlertTriangle, PilcrowIcon, Check, Volume2, Copy, ChevronDown, ChevronRight } from 'lucide-react'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { getItemColor } from '../utils/colors'
-import { parseReferences } from '../utils/references'
+import { parseReferences, stripPossessive } from '../utils/references'
 import { DefinitionRenderer } from '../components/ItemDetail/DefinitionRenderer'
 
 // Alias for backward compatibility
@@ -289,15 +289,27 @@ export default function ItemDetail({ onEnterEditMode }: { onEnterEditMode?: () =
         }
 
         // 2. If no own image, and it's a Title, try to get Writer's image
-        if (item.type === 'Title' && linkedItemsQueries.data) {
-           const linkedItems = Object.values(linkedItemsQueries.data as any)
-           const writer: any = linkedItems.find((i: any) => i.type === 'Writer')
-           if (writer) {
-              const writerImage = await GetItemImage(writer.itemId)
-              if (isMounted && writerImage) {
-                 setItemImage(writerImage)
-                 return
-              }
+        // Only if the definition contains "Written by: {writer: Name}"
+        if (item.type === 'Title' && linkedItemsQueries.data && item.definition) {
+           const writtenByRegex = /Written by:\s*\{writer:\s*([^}]+)\}/i
+           const match = item.definition.match(writtenByRegex)
+           
+           if (match) {
+             const writerName = stripPossessive(match[1].trim())
+             const linkedItems = Object.values(linkedItemsQueries.data as any)
+             
+             // Find the writer item that matches the name
+             const writer: any = linkedItems.find((i: any) => 
+               i.type === 'Writer' && i.word.toLowerCase() === writerName.toLowerCase()
+             )
+             
+             if (writer) {
+                const writerImage = await GetItemImage(writer.itemId)
+                if (isMounted && writerImage) {
+                   setItemImage(writerImage)
+                   return
+                }
+             }
            }
         }
         

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TrueBlocks/trueblocks-poetry/pkg/parser"
 	"github.com/mattn/go-sqlite3"
 )
 
@@ -781,10 +782,12 @@ func (db *DB) CreateLinkOrRemoveTags(sourceItemID int, refWord string) (bool, st
 	log.Printf("[CreateLinkOrRemoveTags] Got source item: word='%s'", sourceItem.Word)
 
 	// Build regex to match reference tags with optional possessive forms
-	escapedWord := regexp.QuoteMeta(matchWord)
-	regexPattern := `(?i)\{(?:word|writer|title):\s*(` + escapedWord + `(?:'s|'s|s'|s')?)\}`
-	log.Printf("[CreateLinkOrRemoveTags] Regex pattern: %s", regexPattern)
-	regex := regexp.MustCompile(regexPattern)
+	regex, err := parser.GetPossessiveReferenceRegex(matchWord)
+	if err != nil {
+		log.Printf("[CreateLinkOrRemoveTags] Failed to compile regex: %v", err)
+		return false, "", fmt.Errorf("failed to compile regex: %w", err)
+	}
+	log.Printf("[CreateLinkOrRemoveTags] Regex pattern: %s", regex.String())
 
 	// Remove tags from all text fields, keeping the actual word
 	updatedDefinition := ""
@@ -908,14 +911,11 @@ func normalizeDefinitionReferences(text *string) {
 		return
 	}
 
-	wordRe := regexp.MustCompile(`\{word:\s*([^}]+)\}`)
-
-	*text = wordRe.ReplaceAllStringFunc(*text, func(match string) string {
-		if submatch := wordRe.FindStringSubmatch(match); len(submatch) > 1 {
-			lowerRef := strings.ToLower(submatch[1])
-			return "{word: " + strings.TrimSpace(lowerRef) + "}"
+	*text = parser.ReplaceTags(*text, func(ref parser.Reference) string {
+		if ref.Type == "word" {
+			return "{word: " + strings.TrimSpace(strings.ToLower(ref.Value)) + "}"
 		}
-		return match
+		return ref.Original
 	})
 }
 
