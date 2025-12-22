@@ -291,6 +291,11 @@ func (a *App) GetRandomItem() (*database.Item, error) {
 	return a.db.GetRandomItem()
 }
 
+// GetPoetIds returns a list of item IDs for writers that have an image and at least one poem
+func (a *App) GetPoetIds() ([]int, error) {
+	return a.db.GetPoetIds()
+}
+
 // CreateLinkOrRemoveTags attempts to create a link to the referenced word.
 // If the referenced word doesn't exist, it removes the reference tags from the source item's text fields.
 func (a *App) CreateLinkOrRemoveTags(sourceItemID int, refWord string) (*LinkOrTagResult, error) {

@@ -162,6 +162,10 @@ export function GetOrphanedItems() {
   return window['go']['main']['App']['GetOrphanedItems']();
 }
 
+export function GetPoetIds() {
+  return window['go']['main']['App']['GetPoetIds']();
+}
+
 export function GetRandomItem() {
   return window['go']['main']['App']['GetRandomItem']();
 }

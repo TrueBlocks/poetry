@@ -43,6 +43,7 @@ export namespace database {
 	    quoteCount: number;
 	    citedCount: number;
 	    writerCount: number;
+	    poetCount: number;
 	    titleCount: number;
 	    wordCount: number;
 	    errorCount: number;
@@ -58,6 +59,7 @@ export namespace database {
 	        this.quoteCount = source["quoteCount"];
 	        this.citedCount = source["citedCount"];
 	        this.writerCount = source["writerCount"];
+	        this.poetCount = source["poetCount"];
 	        this.titleCount = source["titleCount"];
 	        this.wordCount = source["wordCount"];
 	        this.errorCount = source["errorCount"];

@@ -4,10 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/TrueBlocks/trueblocks-poetry/pkg/constants"
 	"github.com/TrueBlocks/trueblocks-poetry/pkg/parser"
 	"github.com/mattn/go-sqlite3"
 )
@@ -125,6 +128,7 @@ type DashboardStats struct {
 	QuoteCount  int `json:"quoteCount"`  // Definitions with quotes
 	CitedCount  int `json:"citedCount"`  // Items with a Source
 	WriterCount int `json:"writerCount"` // Items of type 'Writer'
+	PoetCount   int `json:"poetCount"`   // Writers with image and poems
 	TitleCount  int `json:"titleCount"`  // Items of type 'Title'
 	WordCount   int `json:"wordCount"`   // Items of type 'Reference' (Words)
 	ErrorCount  int `json:"errorCount"`  // Sum of Orphans + Stubs
@@ -311,6 +315,49 @@ func (db *DB) GetExtendedStats() (*DashboardStats, error) {
 		return nil, fmt.Errorf("failed to count writers: %w", err)
 	}
 
+	// Poets (Writers with image and poems)
+	rows, err := db.conn.Query("SELECT item_id FROM items WHERE type = 'Writer'")
+	if err != nil {
+		return nil, fmt.Errorf("failed to query writers for poet count: %w", err)
+	}
+	defer rows.Close()
+
+	imagesDir, err := constants.GetImagesDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get images dir: %w", err)
+	}
+
+	poetCount := 0
+	for rows.Next() {
+		var itemId int
+		if err := rows.Scan(&itemId); err != nil {
+			continue
+		}
+
+		// Check image
+		imagePath := filepath.Join(imagesDir, fmt.Sprintf("%d.png", itemId))
+		if _, err := os.Stat(imagePath); os.IsNotExist(err) {
+			continue
+		}
+
+		// Check linked poems (incoming links from Titles)
+		var poemCount int
+		queryPoems := `
+			SELECT COUNT(*) 
+			FROM links l 
+			JOIN items i ON l.source_item_id = i.item_id 
+			WHERE l.destination_item_id = ? AND i.type = 'Title'
+		`
+		if err := db.conn.QueryRow(queryPoems, itemId).Scan(&poemCount); err != nil {
+			continue
+		}
+
+		if poemCount > 0 {
+			poetCount++
+		}
+	}
+	stats.PoetCount = poetCount
+
 	// Titles
 	queryTitles := `SELECT COUNT(*) FROM items WHERE type = 'Title'`
 	if err := db.conn.QueryRow(queryTitles).Scan(&stats.TitleCount); err != nil {
@@ -328,7 +375,7 @@ func (db *DB) GetExtendedStats() (*DashboardStats, error) {
 	querySelfRef := `SELECT item_id, word, type, definition, derivation, appendicies FROM items 
               WHERE definition LIKE '%{%' OR derivation LIKE '%{%' OR appendicies LIKE '%{%'`
 
-	rows, err := db.conn.Query(querySelfRef)
+	rows, err = db.conn.Query(querySelfRef)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query self ref items: %w", err)
 	}
@@ -386,6 +433,52 @@ func (db *DB) GetExtendedStats() (*DashboardStats, error) {
 	stats.ErrorCount = orphanCount + stubCount + selfRefCount
 
 	return stats, nil
+}
+
+// GetPoetIds returns a list of item IDs for writers that have an image and at least one poem
+func (db *DB) GetPoetIds() ([]int, error) {
+	rows, err := db.conn.Query("SELECT item_id FROM items WHERE type = 'Writer'")
+	if err != nil {
+		return nil, fmt.Errorf("failed to query writers: %w", err)
+	}
+	defer rows.Close()
+
+	imagesDir, err := constants.GetImagesDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get images dir: %w", err)
+	}
+
+	var poetIds []int
+	for rows.Next() {
+		var itemId int
+		if err := rows.Scan(&itemId); err != nil {
+			continue
+		}
+
+		// Check image
+		imagePath := filepath.Join(imagesDir, fmt.Sprintf("%d.png", itemId))
+		if _, err := os.Stat(imagePath); os.IsNotExist(err) {
+			continue
+		}
+
+		// Check linked poems (incoming links from Titles)
+		var poemCount int
+		queryPoems := `
+			SELECT COUNT(*) 
+			FROM links l 
+			JOIN items i ON l.source_item_id = i.item_id 
+			WHERE l.destination_item_id = ? AND i.type = 'Title'
+		`
+		if err := db.conn.QueryRow(queryPoems, itemId).Scan(&poemCount); err != nil {
+			continue
+		}
+
+		if poemCount > 0 {
+			poetIds = append(poetIds, itemId)
+		}
+	}
+
+	return poetIds, nil
 }
 
 // GetTopHubs returns items with the most connections

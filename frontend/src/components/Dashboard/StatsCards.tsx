@@ -8,6 +8,7 @@ import {
   Heading,
   Type,
   AlertTriangle,
+  PenTool,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { database } from "../../../wailsjs/go/models";
@@ -61,6 +62,15 @@ export function StatsCards({ stats }: StatsCardsProps) {
       icon: Book,
       color: "green",
       to: "/tables?table=items&filter=cited",
+      disabled: true,
+    },
+    {
+      title: "Poets",
+      value: stats.poetCount,
+      icon: PenTool,
+      color: "teal",
+      to: "/tables?table=items&filter=poets",
+      disabled: false,
     },
     {
       title: "Titles",
@@ -80,9 +90,11 @@ export function StatsCards({ stats }: StatsCardsProps) {
 
   return (
     <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md">
-      {items.map((item) => (
-        <Paper
-          key={item.title}
+      {items
+        .filter((item) => !item.disabled)
+        .map((item) => (
+          <Paper
+            key={item.title}
           component={Link}
           to={item.to}
           withBorder

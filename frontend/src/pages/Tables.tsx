@@ -33,6 +33,7 @@ import {
   RunAdHocQuery,
   AddRecentSearch,
   ToggleItemMark,
+  GetPoetIds,
 } from "../../wailsjs/go/main/App.js";
 import { LogInfo, LogError } from "../../wailsjs/runtime/runtime.js";
 import {
@@ -314,6 +315,13 @@ export default function Tables() {
     enabled: selectedTable === "sources",
   });
 
+  // Fetch poet IDs
+  const { data: poetIds, isLoading: poetIdsLoading } = useQuery({
+    queryKey: ["poetIds"],
+    queryFn: () => GetPoetIds(),
+    enabled: selectedTable === "items" && filterType === "poets",
+  });
+
   // Fetch ad-hoc query results
   const {
     data: adHocResults,
@@ -333,7 +341,8 @@ export default function Tables() {
     namesLoading ||
     literaryTermsLoading ||
     sourcesLoading ||
-    adHocLoading;
+    adHocLoading ||
+    poetIdsLoading;
 
   // Calculate link counts for items
   const linkCounts = useMemo(() => {
@@ -538,6 +547,8 @@ export default function Tables() {
             return row.type === "Title";
           case "cited":
             return row.source && row.source !== "";
+          case "poets":
+            return poetIds ? poetIds.includes(row.itemId) : false;
           default:
             return true;
         }

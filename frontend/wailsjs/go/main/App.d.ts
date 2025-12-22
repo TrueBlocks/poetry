@@ -84,6 +84,8 @@ export function GetNavigationHistory():Promise<Array<database.Item>>;
 
 export function GetOrphanedItems():Promise<Array<Record<string, any>>>;
 
+export function GetPoetIds():Promise<Array<number>>;
+
 export function GetRandomItem():Promise<database.Item>;
 
 export function GetRecentItems(arg1:number):Promise<Array<database.Item>>;
