@@ -99,6 +99,14 @@ func (a *App) RunAdHocQuery(query string) ([]map[string]interface{}, error) {
 	return a.adhoc.RunAdHocQuery(query)
 }
 
+// GetConstants returns shared constants to the frontend
+func (a *App) GetConstants() map[string]string {
+	return map[string]string{
+		"ReferenceTagPattern": parser.ReferenceTagPattern,
+		"GenericTagPattern":   parser.GenericTagPattern,
+	}
+}
+
 // GetReferencePattern returns the regex pattern for reference tags
 func (a *App) GetReferencePattern() string {
 	return parser.GetReferencePattern()
@@ -442,7 +450,7 @@ func (a *App) GetAllLinks() ([]database.Link, error) {
 }
 
 // resolveTagsForMarkdown converts {x:value} tags to bold small caps in markdown
-// Example: {w:shakespeare} becomes **<small>SHAKESPEARE</small>**
+// Example: {word:shakespeare} becomes **<small>SHAKESPEARE</small>**
 func resolveTagsForMarkdown(text string) string {
 	return parser.ReplaceTags(text, func(ref parser.Reference) string {
 		// Convert to uppercase for small caps effect and wrap in bold + small tag
@@ -889,7 +897,7 @@ func (a *App) ExportToMarkdown() (string, error) {
 	markdown.WriteString(fmt.Sprintf("## Unknown Tags (%d)\n\n", len(unknownTags)))
 	markdown.WriteString("[↑ Back to top](#top)\n\n")
 	if len(unknownTags) > 0 {
-		markdown.WriteString("Items with tags other than {w:}, {p:}, or {t:}.\n\n")
+		markdown.WriteString("Items with tags other than {word:}, {writer:}, or {title:}.\n\n")
 		markdown.WriteString("| Word | Type | Unknown Tag Count |\n")
 		markdown.WriteString("|------|------|-------------------|\n")
 		for _, item := range unknownTags {
@@ -1910,7 +1918,7 @@ func (a *App) GetLinkedItemsNotInDefinition() ([]map[string]interface{}, error) 
 			itemData["derivation"].(string) + " " +
 			itemData["appendicies"].(string)
 
-		// Strip possessives from text (e.g., {p:Larry Stark's} -> {p:larry stark})
+		// Strip possessives from text (e.g., {writer:Larry Stark's} -> {writer:larry stark})
 		allText := strings.ToLower(combinedText)
 		// Replace 's} with } (straight apostrophe)
 		allText = strings.ReplaceAll(allText, "'s}", "}")
@@ -2052,7 +2060,7 @@ func (a *App) GetItemsWithUnknownTypes() ([]map[string]interface{}, error) {
 	return results, nil
 }
 
-// GetUnknownTags returns items with tags other than {w:, {p:, or {t:
+// GetUnknownTags returns items with tags other than {word:, {writer:, or {title:
 func (a *App) GetUnknownTags() ([]map[string]interface{}, error) {
 	// Get all items
 	allItems, err := a.db.SearchItems("")

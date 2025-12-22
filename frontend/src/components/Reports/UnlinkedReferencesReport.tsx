@@ -7,6 +7,7 @@ import { LogInfo } from '../../../wailsjs/runtime/runtime.js'
 import { AlertTriangle } from 'lucide-react'
 import { UnlinkedRefResult } from './types'
 import { lookupItemByRef } from './utils'
+import { Patterns } from '../../utils/constants'
 
 export function UnlinkedReferencesReport() {
   const queryClient = useQueryClient()
@@ -69,9 +70,12 @@ export function UnlinkedReferencesReport() {
 
       // Remove all reference tags that match this word (case-insensitive)
       // Tags are in format: {word:text}, {writer:text}, {title:text}
-      const escapedRef = refWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      const tagRegex = new RegExp(`\\{(word|writer|title):\\s*${escapedRef}\\s*\\}`, 'gi')
-      const updatedDefinition = item.definition.replace(tagRegex, refWord)
+      const updatedDefinition = item.definition.replace(Patterns.ReferenceTag, (match, _type, content) => {
+        if (content.trim() === refWord) {
+          return refWord
+        }
+        return match
+      })
       
       LogInfo(`[UnlinkedReferencesReport] Original definition length: ${item.definition.length}`)
       LogInfo(`[UnlinkedReferencesReport] Updated definition length: ${updatedDefinition.length}`)

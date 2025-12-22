@@ -1,3 +1,5 @@
+import { Patterns } from './constants'
+
 /**
  * Reference parsing utilities for dbPoetry
  * Handles extraction and parsing of {word:}, {writer:}, and {title:} reference tags
@@ -49,8 +51,7 @@ export function extractReferenceType(refType: string): 'Reference' | 'Writer' | 
 export function parseReferences(text: string | null | undefined): string[] {
   if (!text) return []
   // Matches backend ReferenceTagPattern in pkg/parser/parser.go
-  const regex = /\{(word|writer|title):\s*([^}]+)\}/gi
-  const matches = text.matchAll(regex)
+  const matches = text.matchAll(Patterns.ReferenceTag)
   const refs: string[] = []
   for (const match of matches) {
     const refType = match[1].toLowerCase()

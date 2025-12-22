@@ -1,19 +1,22 @@
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { Tabs } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { BookOpen, Network } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useState } from 'react'
 import ItemDetail from './ItemDetail'
 import Graph from './Graph'
 import ItemEdit from './ItemEdit'
-import { GetSettings, SaveTabSelection, GetItem, GetItemByWord, SaveLastWord } from '../../wailsjs/go/main/App.js'
+import { GetSettings, GetItem, GetItemByWord } from '../../wailsjs/go/main/App.js'
+import { useUIStore } from '../stores/useUIStore'
 
 export default function ItemPage() {
   const { id } = useParams<{ id: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const isNewItem = id === 'new'
+  const { setLastWordId, tabSelections, setTabSelection } = useUIStore()
   
   const { data: settings } = useQuery({
     queryKey: ['allSettings'],
@@ -31,7 +34,7 @@ export default function ItemPage() {
       GetItemByWord('poetry')
         .then(poetryItem => {
           if (poetryItem) {
-            SaveLastWord(poetryItem.itemId).catch(console.error)
+            setLastWordId(poetryItem.itemId)
             navigate(`/item/${poetryItem.itemId}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`, { replace: true })
             notifications.show({
               title: 'Item Not Found',
@@ -42,17 +45,17 @@ export default function ItemPage() {
         })
         .catch(console.error)
     }
-  }, [error, id, isNewItem, navigate, searchParams])
+  }, [error, id, isNewItem, navigate, searchParams, setLastWordId])
 
   useEffect(() => {
     if (item?.itemId && id && !isNewItem) {
-      SaveLastWord(Number(id)).catch(console.error)
+      setLastWordId(Number(id))
     }
-  }, [id, item?.itemId, isNewItem])
+  }, [id, item?.itemId, isNewItem, setLastWordId])
 
   const tabFromUrl = searchParams.get('tab')
   const editModeFromUrl = searchParams.get('edit') === 'true'
-  const activeTab = tabFromUrl || settings?.tabSelections?.['itemView'] || 'detail'
+  const activeTab = tabFromUrl || tabSelections['itemView'] || 'detail'
   const [isEditMode, setIsEditMode] = useState(editModeFromUrl || isNewItem)
 
   // Update edit mode when URL changes
@@ -60,12 +63,18 @@ export default function ItemPage() {
     setIsEditMode(editModeFromUrl || isNewItem)
   }, [editModeFromUrl, isNewItem])
 
+  // Sync active tab to store
+  useEffect(() => {
+    if (activeTab && activeTab !== tabSelections['itemView']) {
+      setTabSelection('itemView', activeTab)
+    }
+  }, [activeTab, tabSelections, setTabSelection])
+
   const handleTabChange = (value: string | null) => {
     if (value) {
       // Clear edit mode when switching tabs
       setSearchParams({ tab: value })
       setIsEditMode(false)
-      SaveTabSelection('itemView', value).catch(console.error)
     }
   }
 

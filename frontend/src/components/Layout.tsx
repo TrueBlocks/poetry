@@ -1,11 +1,10 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { AppShell, NavLink, Group, Title, Text, Button, Stack, Divider } from '@mantine/core'
-import { Home, Search, Network, BookOpen, Moon, Sun, Download, Settings as SettingsIcon, FileText, Table2 } from 'lucide-react'
+import { Home, Search, BookOpen, Moon, Sun, Download, Settings as SettingsIcon, FileText, Table2 } from 'lucide-react'
 import useDarkMode from '../hooks/useDarkMode'
 import Footer from './Footer'
 import { LogInfo } from '../../wailsjs/runtime/runtime.js'
-import { GetSettings, SaveLeftbarWidth } from '../../wailsjs/go/main/App.js'
-import { useState, useEffect } from 'react'
+import { useUIStore } from '../stores/useUIStore'
 
 interface LayoutProps {
   stats: Record<string, number> | null
@@ -14,35 +13,13 @@ interface LayoutProps {
 export default function Layout({ stats }: LayoutProps) {
   const location = useLocation()
   const { isDark, toggle } = useDarkMode()
-  const [sidebarWidth, setSidebarWidth] = useState(260)
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [lastWordID, setLastWordID] = useState<number>(0)
+  const { sidebarWidth, setSidebarWidth, lastWordId } = useUIStore()
   
   // Icon-only mode when sidebar is narrower than 120px
   // Minimum width is 60px to accommodate icons
   const iconOnlyThreshold = 120
   const minWidth = 60
   const showLabels = sidebarWidth >= iconOnlyThreshold
-
-  // Load sidebar width and lastWordID from backend settings
-  useEffect(() => {
-    GetSettings().then(settings => {
-      if (settings.window?.leftbarWidth) {
-        setSidebarWidth(settings.window.leftbarWidth)
-      }
-      if (settings.lastWordId) {
-        setLastWordID(settings.lastWordId)
-      }
-      setIsLoaded(true)
-    })
-  }, [])
-
-  // Save sidebar width to backend settings
-  useEffect(() => {
-    if (isLoaded) {
-      SaveLeftbarWidth(sidebarWidth).catch(console.error)
-    }
-  }, [sidebarWidth, isLoaded])
 
   return (
     <AppShell
@@ -85,7 +62,7 @@ export default function Layout({ stats }: LayoutProps) {
             />
             <NavLink
               component={Link}
-              to={lastWordID ? `/item/${lastWordID}?tab=detail` : `/item/1?tab=detail`}
+              to={lastWordId ? `/item/${lastWordId}?tab=detail` : `/item/1?tab=detail`}
               label={showLabels ? "Item" : undefined}
               leftSection={<BookOpen size={20} />}
               active={location.pathname.startsWith('/item')}

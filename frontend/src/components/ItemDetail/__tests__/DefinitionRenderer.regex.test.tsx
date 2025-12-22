@@ -1,8 +1,9 @@
 import { describe, test, expect } from 'vitest'
+import { Patterns } from '../../../utils/constants'
 
 describe('DefinitionRenderer regex matching', () => {
   test('regex matches {word:} tag', () => {
-    const regex = /\{(word|writer|title):\s*([^}]+)\}/gi
+    const regex = new RegExp(Patterns.ReferenceTag)
     const text = 'A type of {word: acrostic}'
     const matches = Array.from(text.matchAll(regex))
     
@@ -12,7 +13,7 @@ describe('DefinitionRenderer regex matching', () => {
   })
 
   test('regex matches {writer:} tag', () => {
-    const regex = /\{(word|writer|title):\s*([^}]+)\}/gi
+    const regex = new RegExp(Patterns.ReferenceTag)
     const text = 'By {writer: Shakespeare}'
     const matches = Array.from(text.matchAll(regex))
     
@@ -22,7 +23,7 @@ describe('DefinitionRenderer regex matching', () => {
   })
 
   test('regex matches {title:} tag', () => {
-    const regex = /\{(word|writer|title):\s*([^}]+)\}/gi
+    const regex = new RegExp(Patterns.ReferenceTag, 'gi')
     const text = 'In {title: Hamlet}'
     const matches = Array.from(text.matchAll(regex))
     
@@ -32,7 +33,7 @@ describe('DefinitionRenderer regex matching', () => {
   })
 
   test('regex matches multiple tags', () => {
-    const regex = /\{(word|writer|title):\s*([^}]+)\}/gi
+    const regex = new RegExp(Patterns.ReferenceTag, 'gi')
     const text = '{writer: Shakespeare} wrote {title: Hamlet} with {word: poetry}'
     const matches = Array.from(text.matchAll(regex))
     
@@ -43,7 +44,7 @@ describe('DefinitionRenderer regex matching', () => {
   })
 
   test('regex does NOT match old format {w:} tag', () => {
-    const regex = /\{(word|writer|title):\s*([^}]+)\}/gi
+    const regex = new RegExp(Patterns.ReferenceTag, 'gi')
     const text = 'A type of {w: acrostic}'
     const matches = Array.from(text.matchAll(regex))
     
@@ -51,7 +52,7 @@ describe('DefinitionRenderer regex matching', () => {
   })
 
   test('regex does NOT match old format {p:} tag', () => {
-    const regex = /\{(word|writer|title):\s*([^}]+)\}/gi
+    const regex = new RegExp(Patterns.ReferenceTag, 'gi')
     const text = 'By {p: Shakespeare}'
     const matches = Array.from(text.matchAll(regex))
     
@@ -59,7 +60,7 @@ describe('DefinitionRenderer regex matching', () => {
   })
 
   test('regex does NOT match old format {t:} tag', () => {
-    const regex = /\{(word|writer|title):\s*([^}]+)\}/gi
+    const regex = new RegExp(Patterns.ReferenceTag, 'gi')
     const text = 'In {t: Hamlet}'
     const matches = Array.from(text.matchAll(regex))
     
@@ -67,7 +68,7 @@ describe('DefinitionRenderer regex matching', () => {
   })
 
   test('regex matches with extra whitespace', () => {
-    const regex = /\{(word|writer|title):\s*([^}]+)\}/gi
+    const regex = new RegExp(Patterns.ReferenceTag, 'gi')
     const text = 'A {word:  acrostic  }'
     const matches = Array.from(text.matchAll(regex))
     

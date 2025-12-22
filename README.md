@@ -9,7 +9,7 @@ A desktop application for managing literary references, definitions, and relatio
 ### Core Functionality
 - **Item Management**: Create and manage References, Definitions, Terms, Concepts, Titles, and Writers
 - **Full-Text Search**: Powered by SQLite FTS5 with Boolean operators (AND, OR, NOT), regex support, and advanced filters
-- **Reference Linking**: Automatic parsing and linking of `{w: word}`, `{p: person}`, and `{t: title}` references in definitions
+- **Reference Linking**: Automatic parsing and linking of `{word: word}`, `{writer: person}`, and `{title: title}` references in definitions
 - **Real-Time Validation**: Live validation of references as you type with quick-create for missing items
 - **Interactive Graph**: Visualize relationships between items with filtering by type and connection count
 - **Text-to-Speech**: Pronunciation support using OpenAI TTS API with intelligent caching
@@ -164,7 +164,7 @@ dbPoetry_ddr/
 ### Key Patterns
 - **Direct CGO Bridge**: Frontend calls Go functions directly (no REST API)
 - **Type Safety**: Auto-generated TypeScript types from Go structs
-- **Reference System**: `{w:}, {p:}, {t:}` tags for semantic linking
+- **Reference System**: `{word:}, {writer:}, {title:}` tags for semantic linking
 - **Optimistic Updates**: UI updates immediately with background sync
 - **Streaming Data**: Progressive loading for large datasets
 

@@ -7,6 +7,7 @@ import { LogInfo, LogError } from '../../../wailsjs/runtime/runtime.js'
 import { Network, Volume2, Copy } from 'lucide-react'
 import { stripPossessive, REFERENCE_COLOR_MAP } from '../../utils/references'
 import { PoemRenderer } from './PoemRenderer'
+import { Patterns } from '../../utils/constants'
 
 const COLOR_MAP = REFERENCE_COLOR_MAP
 
@@ -336,7 +337,8 @@ export function DefinitionRenderer({ text, allItems, stopAudio, currentAudioRef,
   // Helper to process text for links (moved up to be accessible)
   const renderTextWithLinks = (segmentText: string, startKey: number | string) => {
     const parts: React.ReactElement[] = []
-    const regex = /\{(word|writer|title):\s*([^}]+)\}/gi
+    // Create new regex instance to avoid shared state issues with lastIndex
+    const regex = new RegExp(Patterns.ReferenceTag)
     let lastIndex = 0
     let match
     let keyCounter = 0

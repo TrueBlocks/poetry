@@ -3,10 +3,11 @@ import { useDebouncedValue, useDisclosure } from '@mantine/hooks'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { SearchItems, GetAllLinks, GetAllCliches, GetAllNames, GetAllLiteraryTerms, MergeLiteraryTerm, DeleteLiteraryTerm, GetAllSources, GetSettings, UpdateSettings, SaveTableSort, SaveCurrentSearch, GetItemImage, RunAdHocQuery, AddRecentSearch, ToggleItemMark } from '../../wailsjs/go/main/App.js'
+import { SearchItems, GetAllLinks, GetAllCliches, GetAllNames, GetAllLiteraryTerms, MergeLiteraryTerm, DeleteLiteraryTerm, GetAllSources, GetSettings, GetItemImage, RunAdHocQuery, AddRecentSearch, ToggleItemMark } from '../../wailsjs/go/main/App.js'
 import { LogInfo, LogError } from '../../wailsjs/runtime/runtime.js'
 import { ArrowUp, ArrowDown, ChevronsUpDown, Search, AlertTriangle, Merge } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
+import { useUIStore } from '../stores/useUIStore'
 // import { getItemColor } from '../utils/colors'
 // import { DefinitionRenderer } from '../components/ItemDetail/DefinitionRenderer'
 
@@ -102,22 +103,26 @@ function SortableTable({ columns, data, keyField, onSort, getSortIcon, getSortIn
   )
 }
 
+import { useUIStore } from '../stores/useUIStore'
+
 export default function Tables() {
   const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
-  const [selectedTable, setSelectedTable] = useState<string>('items')
+  const { lastTable, setLastTable, tableSorts, setTableSort, currentSearch, setCurrentSearch } = useUIStore()
+  const [selectedTable, setSelectedTable] = useState<string>(lastTable || 'items')
   const [filterType, setFilterType] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(currentSearch || '')
   const [debouncedSearchQuery] = useDebouncedValue(searchQuery, 500)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchInitialized = useRef(false)
-  const [sortState, setSortState] = useState<SortState>({
+  
+  const sortState = tableSorts[selectedTable] || {
     field1: '',
     dir1: '',
     field2: '',
     dir2: ''
-  })
+  }
 
   // Keyboard shortcut for search
   useEffect(() => {
@@ -334,9 +339,7 @@ export default function Tables() {
       }
     }
 
-    setSortState(newState)
-    SaveTableSort(selectedTable, newState.field1, newState.dir1, newState.field2, newState.dir2)
-      .catch(console.error)
+    setTableSort(selectedTable, newState)
   }
 
   // Get sort icon for a column
@@ -521,7 +524,7 @@ export default function Tables() {
 
   // Save search query to settings when it changes
   useEffect(() => {
-    SaveCurrentSearch(debouncedSearchQuery).catch(console.error)
+    setCurrentSearch(debouncedSearchQuery)
   }, [debouncedSearchQuery])
 
   // Keyboard navigation for pagination
@@ -553,20 +556,18 @@ export default function Tables() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [totalPages])
 
-  // Load last table from settings if not in URL
+  // Load last table from store if not in URL
   useEffect(() => {
-    if (settings?.lastTable && !searchParams.get('table')) {
-      setSelectedTable(settings.lastTable)
+    if (lastTable && !searchParams.get('table')) {
+      setSelectedTable(lastTable)
     }
-  }, [settings, searchParams])
+  }, [lastTable, searchParams])
 
   const handleTableChange = (value: string | null) => {
     if (value) {
       setSelectedTable(value)
       setCurrentPage(1)
-      if (settings) {
-        UpdateSettings({ ...settings, lastTable: value }).catch(console.error)
-      }
+      setLastTable(value)
     }
   }
 

@@ -13,15 +13,18 @@ import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts'
 import { useWindowPersistence } from './hooks/useWindowPersistence'
-import { GetStats, GetSettings, SaveLastView, GetItem, GetItemByWord, GetEnvVars, HasEnvFile } from '../wailsjs/go/main/App.js'
+import { GetStats, GetSettings, GetItem, GetItemByWord, GetEnvVars, HasEnvFile, GetConstants } from '../wailsjs/go/main/App.js'
 import { LogInfo } from '../wailsjs/runtime/runtime.js'
 import { FirstRunModal } from './components/FirstRunModal'
+import { useUIStore } from './stores/useUIStore'
+import { updatePatterns } from './utils/constants'
 
 function AppContent({ initialPath }: { initialPath: string }) {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const hasNavigated = useRef(false)
+  const { setLastView } = useUIStore()
   
   useKeyboardShortcuts(commandPaletteOpen, setCommandPaletteOpen)
   useWindowPersistence()
@@ -56,8 +59,8 @@ function AppContent({ initialPath }: { initialPath: string }) {
     }
     
     LogInfo(`[App] View changed to: ${view}`)
-    SaveLastView(view).catch(console.error)
-  }, [location.pathname])
+    setLastView(view)
+  }, [location.pathname, setLastView])
 
   return (
     <>
@@ -93,9 +96,11 @@ function App() {
     Promise.all([
       GetStats(),
       GetSettings(),
-      HasEnvFile()
+      HasEnvFile(),
+      GetConstants()
     ])
-      .then(([statsData, settings, hasEnv]) => {
+      .then(([statsData, settings, hasEnv, constants]) => {
+        if (constants) updatePatterns(constants)
         setStats(statsData)
 
         // Check for First Run condition

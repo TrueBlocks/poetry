@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useRef } from 'react'
 import { useHotkeys } from '@mantine/hooks'
 import { Container, Title, Text, Button, Group, Stack, Loader, Badge, Paper, Grid, ScrollArea } from '@mantine/core'
-import { GetRandomItem, GetExtendedStats, GetNavigationHistory, GetMarkedItems, GetTopHubs, GetSettings, UpdateSettings, GetAllItems } from '../../wailsjs/go/main/App.js'
+import { GetRandomItem, GetExtendedStats, GetNavigationHistory, GetMarkedItems, GetTopHubs, GetAllItems } from '../../wailsjs/go/main/App.js'
 import { Sparkles, Plus } from 'lucide-react'
 import { StatsCards } from '../components/Dashboard/StatsCards'
 import { NavigationHistory } from '../components/Dashboard/NavigationHistory'
@@ -11,6 +11,7 @@ import { Workbench } from '../components/Dashboard/Workbench'
 import { HubsList } from '../components/Dashboard/HubsList'
 import { DefinitionRenderer } from '../components/ItemDetail/DefinitionRenderer'
 import { REFERENCE_COLOR_MAP } from '../utils/references'
+import { useUIStore } from '../stores/useUIStore'
 
 interface DashboardProps {
   // stats: Record<string, number> | null // Deprecated, we fetch extended stats now
@@ -19,6 +20,7 @@ interface DashboardProps {
 export default function Dashboard({ }: DashboardProps) {
   const queryClient = useQueryClient()
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const { showMarked, setShowMarked } = useUIStore()
 
   const { data: allItems } = useQuery({
     queryKey: ['allItems'],
@@ -52,11 +54,6 @@ export default function Dashboard({ }: DashboardProps) {
     queryFn: () => GetTopHubs(20),
   })
 
-  const { data: settings } = useQuery({
-    queryKey: ['allSettings'],
-    queryFn: GetSettings,
-  })
-
   useHotkeys([
     ['mod+r', (e) => {
       e.preventDefault()
@@ -65,14 +62,7 @@ export default function Dashboard({ }: DashboardProps) {
   ])
 
   const handleToggleShowMarked = async () => {
-    if (!settings) return
-    const newSettings = { ...settings, showMarked: !settings.showMarked }
-    try {
-      await UpdateSettings(newSettings)
-      queryClient.invalidateQueries({ queryKey: ['allSettings'] })
-    } catch (error) {
-      console.error('Failed to update settings:', error)
-    }
+    setShowMarked(!showMarked)
   }
 
   return (
@@ -101,7 +91,7 @@ export default function Dashboard({ }: DashboardProps) {
         {/* Left Column: Workbench & Hubs */}
         <Grid.Col span={{ base: 12, md: 6 }}>
           <Stack gap="md">
-            {settings?.showMarked ? (
+            {showMarked ? (
               <Workbench items={markedItems || []} onToggle={handleToggleShowMarked} />
             ) : (
               <HubsList hubs={topHubs || []} onToggle={handleToggleShowMarked} />

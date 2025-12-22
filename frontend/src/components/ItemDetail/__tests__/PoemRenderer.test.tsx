@@ -88,7 +88,11 @@ Line Three
 Line Four
 
 2
-Line Five`;
+Line Five
+Line Six
+Line Seven
+Line Eight
+Line Nine`;
 
     renderWithMantine(<PoemRenderer content={poem} />);
     

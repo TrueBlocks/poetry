@@ -458,6 +458,7 @@ export default function ItemEdit({ onSave, onCancel }: { onSave?: () => void; on
             </Grid>
 
             {/* Image Paste Area */}
+            {formData.type === 'Writer' && (
             <Box>
               <Group justify="space-between" mb="xs">
                 <Text size="sm" fw={500}>Image</Text>
@@ -518,6 +519,7 @@ export default function ItemEdit({ onSave, onCancel }: { onSave?: () => void; on
                 )}
               </Paper>
             </Box>
+            )}
 
             <TextInput
               label="Mark / Tag"

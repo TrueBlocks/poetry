@@ -86,6 +86,10 @@ export function GetAllSources() {
   return window['go']['main']['App']['GetAllSources']();
 }
 
+export function GetConstants() {
+  return window['go']['main']['App']['GetConstants']();
+}
+
 export function GetDanglingLinks() {
   return window['go']['main']['App']['GetDanglingLinks']();
 }

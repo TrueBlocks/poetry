@@ -74,7 +74,7 @@ export function PoemRenderer({ content, renderLine }: PoemRendererProps) {
               <div style={textStyle}>
                 {/* Ensure empty lines take up space even with custom renderer */}
                 {line.length === 0 
-                  ? '\u00A0' 
+                  ? <br /> 
                   : (renderLine ? renderLine(line, i) : line)
                 }
               </div>

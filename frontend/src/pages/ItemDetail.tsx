@@ -2,13 +2,14 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Container, Title, Text, Button, Group, Stack, Paper, Loader, Badge, ActionIcon, Divider, Alert, useMantineColorScheme, Modal, Grid, Box } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { GetItem, GetItemLinks, DeleteItem, SearchItems, GetSettings, SaveRevealMarkdown, UpdateItem, SpeakWord, GetItemByWord, SaveOutgoingCollapsed, SaveIncomingCollapsed, DeleteLinkByItems, CreateLinkOrRemoveTags, GetItemImage, GetEnvVars } from '../../wailsjs/go/main/App.js'
+import { GetItem, GetItemLinks, DeleteItem, SearchItems, UpdateItem, SpeakWord, GetItemByWord, DeleteLinkByItems, CreateLinkOrRemoveTags, GetItemImage, GetEnvVars } from '../../wailsjs/go/main/App.js'
 import { LogInfo, LogError, BrowserOpenURL } from '../../wailsjs/runtime/runtime.js'
 import { ArrowLeft, Edit, Trash2, Network, Sparkles, AlertTriangle, PilcrowIcon, Check, Volume2, Copy, ChevronDown, ChevronRight } from 'lucide-react'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { getItemColor } from '../utils/colors'
-import { parseReferences, stripPossessive } from '../utils/references'
+import { parseReferences } from '../utils/references'
 import { DefinitionRenderer } from '../components/ItemDetail/DefinitionRenderer'
+import { useUIStore } from '../stores/useUIStore'
 
 // Alias for backward compatibility
 const parseDefinitionReferences = parseReferences
@@ -18,11 +19,18 @@ export default function ItemDetail({ onEnterEditMode }: { onEnterEditMode?: () =
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { colorScheme } = useMantineColorScheme()
-  const [revealMarkdown, setRevealMarkdown] = useState(false)
+  
+  const { 
+    revealMarkdown, 
+    setRevealMarkdown,
+    outgoingCollapsed,
+    setOutgoingCollapsed,
+    incomingCollapsed,
+    setIncomingCollapsed
+  } = useUIStore()
+
   const [creatingLinkFor, setCreatingLinkFor] = useState<string | null>(null)
   const [deletingLinkFor, setDeletingLinkFor] = useState<string | null>(null)
-  const [outgoingCollapsed, setOutgoingCollapsed] = useState(true) // default collapsed
-  const [incomingCollapsed, setIncomingCollapsed] = useState(false) // default expanded
   const [missingDefinitionModalOpen, setMissingDefinitionModalOpen] = useState(false)
   const [imageModalOpen, setImageModalOpen] = useState(false)
   const [itemImage, setItemImage] = useState<string | null>(null)
@@ -49,34 +57,19 @@ export default function ItemDetail({ onEnterEditMode }: { onEnterEditMode?: () =
     return () => document.removeEventListener('click', handleClick)
   }, [])
 
-  // Load settings from backend
-  useEffect(() => {
-    GetSettings().then((settings) => {
-      setRevealMarkdown(settings.revealMarkdown || false)
-      setOutgoingCollapsed(settings.collapsed?.outgoing !== undefined ? settings.collapsed.outgoing : true)
-      setIncomingCollapsed(settings.collapsed?.incoming !== undefined ? settings.collapsed.incoming : false)
-    })
-  }, [])
-
-  // Toggle reveal markdown and save to settings
-  const toggleRevealMarkdown = async () => {
-    const newValue = !revealMarkdown
-    setRevealMarkdown(newValue)
-    await SaveRevealMarkdown(newValue)
+  // Toggle reveal markdown
+  const toggleRevealMarkdown = () => {
+    setRevealMarkdown(!revealMarkdown)
   }
 
-  // Toggle outgoing collapsed and save to settings
-  const toggleOutgoingCollapsed = async () => {
-    const newValue = !outgoingCollapsed
-    setOutgoingCollapsed(newValue)
-    await SaveOutgoingCollapsed(newValue)
+  // Toggle outgoing collapsed
+  const toggleOutgoingCollapsed = () => {
+    setOutgoingCollapsed(!outgoingCollapsed)
   }
 
-  // Toggle incoming collapsed and save to settings
-  const toggleIncomingCollapsed = async () => {
-    const newValue = !incomingCollapsed
-    setIncomingCollapsed(newValue)
-    await SaveIncomingCollapsed(newValue)
+  // Toggle incoming collapsed
+  const toggleIncomingCollapsed = () => {
+    setIncomingCollapsed(!incomingCollapsed)
   }
 
   // Note: SaveLastWord is now handled by ItemPage parent component
@@ -289,27 +282,15 @@ export default function ItemDetail({ onEnterEditMode }: { onEnterEditMode?: () =
         }
 
         // 2. If no own image, and it's a Title, try to get Writer's image
-        // Only if the definition contains "Written by: {writer: Name}"
-        if (item.type === 'Title' && linkedItemsQueries.data && item.definition) {
-           const writtenByRegex = /Written by:\s*\{writer:\s*([^}]+)\}/i
-           const match = item.definition.match(writtenByRegex)
-           
-           if (match) {
-             const writerName = stripPossessive(match[1].trim())
-             const linkedItems = Object.values(linkedItemsQueries.data as any)
-             
-             // Find the writer item that matches the name
-             const writer: any = linkedItems.find((i: any) => 
-               i.type === 'Writer' && i.word.toLowerCase() === writerName.toLowerCase()
-             )
-             
-             if (writer) {
-                const writerImage = await GetItemImage(writer.itemId)
-                if (isMounted && writerImage) {
-                   setItemImage(writerImage)
-                   return
-                }
-             }
+        if (item.type === 'Title' && linkedItemsQueries.data) {
+           const linkedItems = Object.values(linkedItemsQueries.data as any)
+           const writer: any = linkedItems.find((i: any) => i.type === 'Writer')
+           if (writer) {
+              const writerImage = await GetItemImage(writer.itemId)
+              if (isMounted && writerImage) {
+                 setItemImage(writerImage)
+                 return
+              }
            }
         }
         

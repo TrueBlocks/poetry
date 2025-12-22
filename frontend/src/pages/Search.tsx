@@ -2,12 +2,13 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useQuery, useQueries } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { Container, Title, Text, Loader, Stack, Paper, Badge, Group, Center, Divider, Combobox, TextInput, useCombobox, Accordion, Checkbox, Select, Switch, Button, Modal } from '@mantine/core'
-import { SearchItems, SearchItemsWithOptions, AddRecentSearch, RemoveRecentSearch, GetRecentSearches, GetSavedSearches, GetSettings, GetItemLinks, GetItem, SaveSearch, DeleteSavedSearch, GetAllItems, RunAdHocQuery, SaveCurrentSearch, GetItemImage } from '../../wailsjs/go/main/App.js'
+import { SearchItems, SearchItemsWithOptions, AddRecentSearch, RemoveRecentSearch, GetRecentSearches, GetSavedSearches, GetSettings, GetItemLinks, GetItem, SaveSearch, DeleteSavedSearch, GetAllItems, RunAdHocQuery, GetItemImage } from '../../wailsjs/go/main/App.js'
 import { database } from '../../wailsjs/go/models'
 import { LogInfo } from '../../wailsjs/runtime/runtime.js'
 import { Search as SearchIcon, Save, Trash2 } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { DefinitionRenderer } from '../components/ItemDetail/DefinitionRenderer'
+import { useUIStore } from '../stores/useUIStore'
 
 // Helper to get first sentence from definition
 const getFirstSentence = (text: string | null | undefined): string => {
@@ -42,8 +43,9 @@ const SearchResultImage = ({ itemId }: { itemId: number }) => {
 }
 
 export default function Search() {
-  const [query, setQuery] = useState('')
-  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const { currentSearch, setCurrentSearch } = useUIStore()
+  const [query, setQuery] = useState(currentSearch || '')
+  const [debouncedQuery, setDebouncedQuery] = useState(currentSearch || '')
   const [recentSearches, setRecentSearches] = useState<string[]>([])
   const [savedSearches, setSavedSearches] = useState<any[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -84,7 +86,7 @@ export default function Search() {
 
   // Save current search to settings whenever it changes
   useEffect(() => {
-    SaveCurrentSearch(debouncedQuery).catch(console.error)
+    setCurrentSearch(debouncedQuery)
   }, [debouncedQuery])
 
   // Load recent and saved searches on mount

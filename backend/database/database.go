@@ -927,7 +927,7 @@ func normalizeDefinition(text *string) {
 }
 
 // UpdateItem updates an existing item
-func (db *DB) UpdateItem(item Item) error { // Normalize {w: ...} references to lowercase
+func (db *DB) UpdateItem(item Item) error { // Normalize {word: ...} references to lowercase
 	normalizeDefinition(item.Definition)
 	normalizeDefinition(item.Derivation)
 	normalizeDefinition(item.Appendicies)

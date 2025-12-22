@@ -6,9 +6,10 @@ import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide } 
 import { Button, Group, Text, Stack, useMantineColorScheme, Checkbox, NumberInput, Collapse, Paper, ActionIcon } from '@mantine/core';
 import { Filter, ArrowLeft, RotateCcw, ChevronRight, ChevronDown, Network } from 'lucide-react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
-import { GetAllItems, GetAllLinks, GetItem, GetItemLinks, GetSettings, SaveOutgoingCollapsed, SaveIncomingCollapsed, SaveLastWord, GetItemImage } from '../../wailsjs/go/main/App.js';
+import { GetAllItems, GetAllLinks, GetItem, GetItemLinks, GetSettings, GetItemImage } from '../../wailsjs/go/main/App.js';
 import { LogInfo } from '../../wailsjs/runtime/runtime.js';
 import { getItemColor, getItemTextColor } from '../utils/colors';
+import { useUIStore } from '../stores/useUIStore';
 
 // Custom node component
 function CustomNode({ data }: any) {
@@ -72,6 +73,7 @@ export default function Graph() {
   const [forceRefresh, setForceRefresh] = useState(0);
   const [rfInstance, setRfInstance] = useState<any>(null);
   const [nodeImages, setNodeImages] = useState<Record<number, string | null>>({});
+  const { setLastWordId } = useUIStore();
 
   // Zoom shortcuts
   useEffect(() => {
@@ -99,8 +101,14 @@ export default function Graph() {
   const [minConnections, setMinConnections] = useState<number>(2);
   
   // Sidebar states
-  const [outgoingCollapsed, setOutgoingCollapsed] = useState(true);
-  const [incomingCollapsed, setIncomingCollapsed] = useState(false);
+  const { 
+    outgoingCollapsed, 
+    setOutgoingCollapsed, 
+    incomingCollapsed, 
+    setIncomingCollapsed,
+    setLastWordId
+  } = useUIStore();
+  
   const [navigationHistory, setNavigationHistory] = useState<number[]>([]);
 
   const { data: items } = useQuery({
@@ -140,26 +148,20 @@ export default function Graph() {
   // Load settings from backend
   useEffect(() => {
     GetSettings().then((settings) => {
-      setOutgoingCollapsed(settings.collapsed?.outgoing !== undefined ? settings.collapsed.outgoing : true);
-      setIncomingCollapsed(settings.collapsed?.incoming !== undefined ? settings.collapsed.incoming : false);
       if (settings.navigationHistory) {
         setNavigationHistory(settings.navigationHistory);
       }
     });
   }, [selectedNode]);
 
-  // Toggle outgoing collapsed and save to settings
-  const toggleOutgoingCollapsed = async () => {
-    const newValue = !outgoingCollapsed;
-    setOutgoingCollapsed(newValue);
-    await SaveOutgoingCollapsed(newValue);
+  // Toggle outgoing collapsed
+  const toggleOutgoingCollapsed = () => {
+    setOutgoingCollapsed(!outgoingCollapsed);
   };
 
-  // Toggle incoming collapsed and save to settings
-  const toggleIncomingCollapsed = async () => {
-    const newValue = !incomingCollapsed;
-    setIncomingCollapsed(newValue);
-    await SaveIncomingCollapsed(newValue);
+  // Toggle incoming collapsed
+  const toggleIncomingCollapsed = () => {
+    setIncomingCollapsed(!incomingCollapsed);
   };
 
   // Keyboard shortcut for Cmd+D to go to detail view
@@ -181,7 +183,7 @@ export default function Graph() {
     LogInfo(`[Graph] Node clicked: ${node.data.label} (${node.data.id})`);
     
     // Update current item tracking
-    SaveLastWord(node.data.id).catch(err => LogInfo(`[Graph] Error saving last word: ${err}`));
+    setLastWordId(node.data.id);
     
     // If clicking on the already-selected node, go to detail view
     if (Number(node.data.id) === selectedNode) {
