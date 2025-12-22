@@ -1,15 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log/slog"
-	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -18,6 +13,7 @@ import (
 	"github.com/TrueBlocks/trueblocks-poetry/backend/components"
 	"github.com/TrueBlocks/trueblocks-poetry/backend/database"
 	"github.com/TrueBlocks/trueblocks-poetry/backend/seeding"
+	"github.com/TrueBlocks/trueblocks-poetry/backend/services"
 	"github.com/TrueBlocks/trueblocks-poetry/backend/settings"
 	"github.com/TrueBlocks/trueblocks-poetry/pkg/constants"
 	"github.com/TrueBlocks/trueblocks-poetry/pkg/parser"
@@ -27,25 +23,22 @@ import (
 
 // App struct
 type App struct {
-	ctx      context.Context
-	db       *database.DB
-	settings *settings.Manager
-	adhoc    *components.AdHocQueryComponent
+	ctx          context.Context
+	db           *database.DB
+	settings     *settings.Manager
+	adhoc        *components.AdHocQueryComponent
+	ttsService   *services.TTSService
+	imageService *services.ImageService
+	itemService  *services.ItemService
 }
 
 // LinkOrTagResult is the return type for CreateLinkOrRemoveTags
-type LinkOrTagResult struct {
-	LinkCreated bool   `json:"linkCreated"`
-	Message     string `json:"message"`
-}
+// Deprecated: Use services.LinkOrTagResult instead
+type LinkOrTagResult = services.LinkOrTagResult
 
 // TTSResult is the return type for SpeakWord
-type TTSResult struct {
-	AudioData []byte `json:"audioData"`
-	Cached    bool   `json:"cached"`
-	Error     string `json:"error"`
-	ErrorType string `json:"errorType"` // "missing_key", "network", "api", "unknown"
-}
+// Deprecated: Use services.TTSResult instead
+type TTSResult = services.TTSResult
 
 // NewApp creates a new App application struct
 func NewApp() *App {
@@ -95,6 +88,9 @@ func (a *App) startup(ctx context.Context) {
 	}
 	a.db = db
 	a.adhoc = components.NewAdHocQueryComponent(db)
+	a.ttsService = services.NewTTSService(db)
+	a.imageService = services.NewImageService()
+	a.itemService = services.NewItemService(db, a.imageService)
 }
 
 // RunAdHocQuery executes a raw SQL query
@@ -221,135 +217,58 @@ func (a *App) GetDatabaseFileSize() (int64, error) {
 
 // SearchItems performs full-text search on items
 func (a *App) SearchItems(query string) ([]database.Item, error) {
-	return a.db.SearchItems(query)
+	return a.itemService.SearchItems(query)
 }
 
 // SearchItemsWithOptions performs advanced search with filters
 func (a *App) SearchItemsWithOptions(options database.SearchOptions) ([]database.Item, error) {
-	items, err := a.db.SearchItemsWithOptions(options)
-	if err != nil {
-		return nil, err
-	}
-
-	// Post-filter based on HasImage and HasTts if either is enabled
-	if !options.HasImage && !options.HasTts {
-		return items, nil
-	}
-
-	var filtered []database.Item
-	for _, item := range items {
-		includeItem := true
-
-		// Check HasImage filter
-		if options.HasImage {
-			imagesDir, _ := constants.GetImagesDir()
-			imagePath := filepath.Join(imagesDir, fmt.Sprintf("%d.png", item.ItemID))
-			if _, err := os.Stat(imagePath); os.IsNotExist(err) {
-				includeItem = false
-			}
-		}
-
-		// Check HasTts filter (only if still included after image check)
-		if includeItem && options.HasTts {
-			// TTS files are stored with hash of the word, not itemId
-			// We need to check if any TTS file exists for this item's word
-			cacheDir, _ := constants.GetTTSCacheDir()
-			hash := fmt.Sprintf("%x", sha256.Sum256([]byte(item.Word)))
-			ttsPath := filepath.Join(cacheDir, hash+".mp3")
-			if _, err := os.Stat(ttsPath); os.IsNotExist(err) {
-				includeItem = false
-			}
-		}
-
-		if includeItem {
-			filtered = append(filtered, item)
-		}
-	}
-
-	return filtered, nil
+	return a.itemService.SearchItemsWithOptions(options)
 }
 
 // GetItem retrieves a single item by ID
 func (a *App) GetItem(itemID int) (*database.Item, error) {
-	// slog.Debug("[GetItem] Fetching item", "id", itemID)
-	item, err := a.db.GetItem(itemID)
-	if err != nil {
-		slog.Error("[GetItem] ERROR fetching item", "id", itemID, "error", err)
-		return nil, err
-	}
-	// slog.Debug("[GetItem] Successfully fetched item", "word", item.Word, "type", item.Type)
-	return item, nil
+	return a.itemService.GetItem(itemID)
 }
 
 // GetItemByWord retrieves a single item by word
 func (a *App) GetItemByWord(word string) (*database.Item, error) {
-	return a.db.GetItemByWord(word)
+	return a.itemService.GetItemByWord(word)
 }
 
 // GetRandomItem returns a random item
 func (a *App) GetRandomItem() (*database.Item, error) {
-	return a.db.GetRandomItem()
+	return a.itemService.GetRandomItem()
 }
 
 // GetPoetIds returns a list of item IDs for writers that have an image and at least one poem
 func (a *App) GetPoetIds() ([]int, error) {
-	return a.db.GetPoetIds()
+	return a.itemService.GetPoetIds()
 }
 
 // CreateLinkOrRemoveTags attempts to create a link to the referenced word.
 // If the referenced word doesn't exist, it removes the reference tags from the source item's text fields.
 func (a *App) CreateLinkOrRemoveTags(sourceItemID int, refWord string) (*LinkOrTagResult, error) {
-	linkCreated, message, err := a.db.CreateLinkOrRemoveTags(sourceItemID, refWord)
-	if err != nil {
-		return nil, err
-	}
-	return &LinkOrTagResult{
-		LinkCreated: linkCreated,
-		Message:     message,
-	}, nil
+	return a.itemService.CreateLinkOrRemoveTags(sourceItemID, refWord)
 }
 
 // CreateItem creates a new item
 func (a *App) CreateItem(item database.Item) (int, error) {
-	return a.db.CreateItem(item)
+	return a.itemService.CreateItem(item)
 }
 
 // UpdateItem updates an existing item
 func (a *App) UpdateItem(item database.Item) error {
-	// Delete TTS cache for this item
-	cacheDir, err := constants.GetTTSCacheDir()
-	if err == nil {
-		cacheFile := fmt.Sprintf("%s/%d.mp3", cacheDir, item.ItemID)
-		if err := os.Remove(cacheFile); err != nil && !os.IsNotExist(err) {
-			slog.Warn("Failed to delete TTS cache", "id", item.ItemID, "error", err)
-		}
-	}
-
-	return a.db.UpdateItem(item)
+	return a.itemService.UpdateItem(item)
 }
 
 // ToggleItemMark toggles the mark field for an item
 func (a *App) ToggleItemMark(itemID int, marked bool) error {
-	return a.db.ToggleItemMark(itemID, marked)
+	return a.itemService.ToggleItemMark(itemID, marked)
 }
 
 // DeleteItem deletes an item
 func (a *App) DeleteItem(itemID int) error {
 	slog.Info("[App] DeleteItem called", "id", itemID)
-
-	// Delete TTS cache for this item
-	cacheDir, err := constants.GetTTSCacheDir()
-	if err == nil {
-		cacheFile := fmt.Sprintf("%s/%d.mp3", cacheDir, itemID)
-		if err := os.Remove(cacheFile); err != nil && !os.IsNotExist(err) {
-			slog.Warn("Failed to delete TTS cache", "id", itemID, "error", err)
-		}
-	}
-
-	// Delete Image cache for this item
-	if err := a.DeleteItemImage(itemID); err != nil {
-		slog.Warn("Failed to delete image cache", "id", itemID, "error", err)
-	}
 
 	// Update settings: remove from history and update lastWordId if needed
 	settings := a.settings.Get()
@@ -372,40 +291,27 @@ func (a *App) DeleteItem(itemID int) error {
 		slog.Warn("Failed to save settings after deleting item", "error", err)
 	}
 
-	err = a.db.DeleteItem(itemID)
-	if err != nil {
-		slog.Error("[App] DeleteItem failed", "error", err)
-		return err
-	}
-	slog.Info("[App] DeleteItem succeeded", "id", itemID)
-	return nil
+	return a.itemService.DeleteItem(itemID)
 }
 
 // CreateLink creates a new link between items
 func (a *App) CreateLink(sourceID, destID int, linkType string) error {
-	return a.db.CreateLink(sourceID, destID, linkType)
+	return a.itemService.CreateLink(sourceID, destID, linkType)
 }
 
 // DeleteLink deletes a link
 func (a *App) DeleteLink(linkID int) error {
-	slog.Info("[App] DeleteLink called", "id", linkID)
-	err := a.db.DeleteLink(linkID)
-	if err != nil {
-		slog.Error("[App] DeleteLink failed", "error", err)
-		return err
-	}
-	slog.Info("[App] DeleteLink succeeded", "id", linkID)
-	return nil
+	return a.itemService.DeleteLink(linkID)
 }
 
 // DeleteLinkByItems deletes a link between two items
 func (a *App) DeleteLinkByItems(sourceItemID, destinationItemID int) error {
-	return a.db.DeleteLinkByItems(sourceItemID, destinationItemID)
+	return a.itemService.DeleteLinkByItems(sourceItemID, destinationItemID)
 }
 
 // GetItemLinks gets all links for an item
 func (a *App) GetItemLinks(itemID int) ([]database.Link, error) {
-	return a.db.GetItemLinks(itemID)
+	return a.itemService.GetItemLinks(itemID)
 }
 
 // GetRecentItems gets recently modified items
@@ -1404,148 +1310,7 @@ func (a *App) GetEnvLocation() string {
 
 // SpeakWord uses OpenAI's text-to-speech API to pronounce text with gender-matched voices and caching
 func (a *App) SpeakWord(text string, itemType string, itemWord string, itemID int) TTSResult {
-	// Set up cache directory
-	cacheDir, err := constants.GetTTSCacheDir()
-	if err != nil {
-		return TTSResult{
-			Error:     fmt.Sprintf("Failed to get TTS cache directory: %v", err),
-			ErrorType: "unknown",
-		}
-	}
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
-		return TTSResult{
-			Error:     fmt.Sprintf("Failed to create cache directory: %v", err),
-			ErrorType: "unknown",
-		}
-	}
-
-	// Determine voice based on item type and gender
-	voice := "alloy" // Default voice
-	if itemType == "Writer" && itemWord != "" {
-		// Extract first name (first word before space)
-		parts := strings.Fields(itemWord)
-		if len(parts) > 0 {
-			firstName := parts[0]
-			gender, err := a.db.GetGenderByFirstName(firstName)
-			if err != nil {
-				slog.Warn("Failed to get gender", "name", firstName, "error", err)
-			} else if gender == "male" {
-				voice = "onyx" // Male voice
-			} else if gender == "female" {
-				voice = "nova" // Female voice
-			}
-		}
-	}
-
-	// Use ItemID for cache filename
-	cacheFile := fmt.Sprintf("%s/%d.mp3", cacheDir, itemID)
-
-	// Check if cached file exists
-	if cachedData, err := os.ReadFile(cacheFile); err == nil {
-		slog.Info("Using cached TTS audio", "itemID", itemID)
-		return TTSResult{
-			AudioData: cachedData,
-			Cached:    true,
-		}
-	}
-
-	slog.Info("Cache miss, calling OpenAI API", "itemID", itemID)
-
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		return TTSResult{
-			Error:     "OpenAI API key not configured. Please add OPENAI_API_KEY to your .env file.",
-			ErrorType: "missing_key",
-		}
-	}
-
-	// Create request to OpenAI TTS API
-	url := "https://api.openai.com/v1/audio/speech"
-
-	// Properly marshal JSON to handle special characters
-	type TTSRequest struct {
-		Model string `json:"model"`
-		Input string `json:"input"`
-		Voice string `json:"voice"`
-	}
-
-	requestData := TTSRequest{
-		Model: "tts-1",
-		Input: text,
-		Voice: voice,
-	}
-
-	jsonData, err := json.Marshal(requestData)
-	if err != nil {
-		return TTSResult{
-			Error:     fmt.Sprintf("Failed to prepare request: %v", err),
-			ErrorType: "unknown",
-		}
-	}
-
-	req, err := http.NewRequest("POST", url, bytes.NewReader(jsonData))
-	if err != nil {
-		return TTSResult{
-			Error:     fmt.Sprintf("Failed to create request: %v", err),
-			ErrorType: "unknown",
-		}
-	}
-
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return TTSResult{
-			Error:     fmt.Sprintf("Network error: %v. Please check your internet connection.", err),
-			ErrorType: "network",
-		}
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != 200 {
-		body, _ := io.ReadAll(resp.Body)
-		errorMsg := fmt.Sprintf("OpenAI API error (%d): %s", resp.StatusCode, string(body))
-
-		// Detect specific API error types
-		errorType := "api"
-		if resp.StatusCode == 401 {
-			errorMsg = "Invalid API key. Please check your OPENAI_API_KEY in .env file."
-			errorType = "missing_key"
-		} else if resp.StatusCode == 429 {
-			errorMsg = "Rate limit exceeded. Please try again in a moment."
-		} else if resp.StatusCode >= 500 {
-			errorMsg = fmt.Sprintf("OpenAI server error (%d). Please try again later.", resp.StatusCode)
-		}
-
-		return TTSResult{
-			Error:     errorMsg,
-			ErrorType: errorType,
-		}
-	}
-
-	// Read audio data
-	audioData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return TTSResult{
-			Error:     fmt.Sprintf("Failed to read audio data: %v", err),
-			ErrorType: "network",
-		}
-	}
-
-	// Cache the audio data for future use
-	if err := os.WriteFile(cacheFile, audioData, 0644); err != nil {
-		slog.Warn("Failed to cache audio data", "error", err)
-		// Don't fail the request if caching fails
-	} else {
-		slog.Info("Cached TTS audio", "path", cacheFile)
-	}
-
-	return TTSResult{
-		AudioData: audioData,
-		Cached:    false,
-	}
+	return a.ttsService.SpeakWord(text, itemType, itemWord, itemID)
 }
 
 // GetUnlinkedReferences returns a report of all items with unlinked references
@@ -1968,265 +1733,37 @@ func (a *App) GetLinkedItemsNotInDefinition() ([]map[string]interface{}, error) 
 
 // GetItemsWithoutDefinitions returns items that have no definition or "MISSING DATA"
 func (a *App) GetItemsWithoutDefinitions() ([]map[string]interface{}, error) {
-	// Get all items
-	allItems, err := a.db.SearchItems("")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get items: %w", err)
-	}
-
-	// Find items without definitions or with "MISSING DATA"
-	var results []map[string]interface{}
-	for _, item := range allItems {
-		var hasMissingData bool
-		var includeItem bool
-
-		if item.Definition == nil || strings.TrimSpace(*item.Definition) == "" {
-			includeItem = true
-			hasMissingData = false
-		} else if strings.TrimSpace(*item.Definition) == "MISSING DATA" {
-			includeItem = true
-			hasMissingData = true
-		}
-
-		if includeItem {
-			result := map[string]interface{}{
-				"itemId":         item.ItemID,
-				"word":           item.Word,
-				"type":           item.Type,
-				"hasMissingData": hasMissingData,
-			}
-
-			// Get all links for this item
-			links, err := a.db.GetItemLinks(item.ItemID)
-			if err == nil {
-				// Filter for incoming links (where this item is destination)
-				var incomingLinks []database.Link
-				for _, link := range links {
-					if link.DestinationItemID == item.ItemID {
-						incomingLinks = append(incomingLinks, link)
-					}
-				}
-
-				// If exactly one incoming link, get source item info
-				if len(incomingLinks) == 1 {
-					sourceItem, err := a.db.GetItem(incomingLinks[0].SourceItemID)
-					if err == nil {
-						result["singleIncomingLinkItemId"] = sourceItem.ItemID
-						result["singleIncomingLinkWord"] = sourceItem.Word
-					}
-				}
-			}
-
-			results = append(results, result)
-		}
-	}
-
-	return results, nil
+	return a.itemService.GetItemsWithoutDefinitions()
 }
 
 // GetItemsWithUnknownTypes returns items whose type is not Writer, Title, or Reference
 func (a *App) GetItemsWithUnknownTypes() ([]map[string]interface{}, error) {
-	// Get all items
-	allItems, err := a.db.SearchItems("")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get items: %w", err)
-	}
-
-	// Find items with unknown types
-	var results []map[string]interface{}
-	for _, item := range allItems {
-		if item.Type != "Reference" && item.Type != "Title" && item.Type != "Writer" {
-			result := map[string]interface{}{
-				"itemId": item.ItemID,
-				"word":   item.Word,
-				"type":   item.Type,
-			}
-
-			// Get all links for this item
-			links, err := a.db.GetItemLinks(item.ItemID)
-			if err == nil {
-				// Filter for incoming links (where this item is destination)
-				var incomingLinks []database.Link
-				for _, link := range links {
-					if link.DestinationItemID == item.ItemID {
-						incomingLinks = append(incomingLinks, link)
-					}
-				}
-
-				// Set the incoming link count
-				result["incomingLinkCount"] = len(incomingLinks)
-
-				// If exactly one incoming link, get source item info
-				if len(incomingLinks) == 1 {
-					sourceItem, err := a.db.GetItem(incomingLinks[0].SourceItemID)
-					if err == nil {
-						result["singleIncomingLinkItemId"] = sourceItem.ItemID
-						result["singleIncomingLinkWord"] = sourceItem.Word
-					}
-				}
-			}
-
-			results = append(results, result)
-		}
-	}
-
-	return results, nil
+	return a.itemService.GetItemsWithUnknownTypes()
 }
 
 // GetUnknownTags returns items with tags other than {word:, {writer:, or {title:
 func (a *App) GetUnknownTags() ([]map[string]interface{}, error) {
-	// Get all items
-	allItems, err := a.db.SearchItems("")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get items: %w", err)
-	}
-
-	var results []map[string]interface{}
-
-	for _, item := range allItems {
-		// Only check Reference, Title, or Writer types
-		if item.Type != "Reference" && item.Type != "Title" && item.Type != "Writer" {
-			continue
-		}
-
-		// Check all text fields for tags
-		fieldsToCheck := []string{}
-		if item.Definition != nil {
-			fieldsToCheck = append(fieldsToCheck, *item.Definition)
-		}
-		if item.Derivation != nil {
-			fieldsToCheck = append(fieldsToCheck, *item.Derivation)
-		}
-		if item.Appendicies != nil {
-			fieldsToCheck = append(fieldsToCheck, *item.Appendicies)
-		}
-
-		unknownTags := []string{}
-		seenTags := make(map[string]bool)
-
-		for _, text := range fieldsToCheck {
-			refs := parser.ParseAllTags(text)
-			for _, ref := range refs {
-				// Check if it's an unknown tag (not word, writer, or title)
-				if ref.Type != "word" && ref.Type != "writer" && ref.Type != "title" {
-					if !seenTags[ref.Original] {
-						unknownTags = append(unknownTags, ref.Original)
-						seenTags[ref.Original] = true
-					}
-				}
-			}
-		}
-
-		if len(unknownTags) > 0 {
-			results = append(results, map[string]interface{}{
-				"itemId":      item.ItemID,
-				"word":        item.Word,
-				"type":        item.Type,
-				"unknownTags": unknownTags,
-				"tagCount":    len(unknownTags),
-			})
-		}
-	}
-
-	return results, nil
+	return a.itemService.GetUnknownTags()
 }
 
 // MergeDuplicateItems merges duplicate items into the original by redirecting links and deleting duplicates
 func (a *App) MergeDuplicateItems(originalID int, duplicateIDs []int) error {
-	for _, duplicateID := range duplicateIDs {
-		// Update all links that point TO this duplicate to point to the original instead (incoming links)
-		if err := a.db.UpdateLinksDestination(duplicateID, originalID); err != nil {
-			return fmt.Errorf("failed to redirect incoming links for item %d: %w", duplicateID, err)
-		}
-
-		// Update all links that originate FROM this duplicate to originate from the original instead (outgoing links)
-		if err := a.db.UpdateLinksSource(duplicateID, originalID); err != nil {
-			return fmt.Errorf("failed to redirect outgoing links for item %d: %w", duplicateID, err)
-		}
-
-		// Now safe to delete the duplicate
-		if err := a.db.DeleteItem(duplicateID); err != nil {
-			return fmt.Errorf("failed to delete duplicate item %d: %w", duplicateID, err)
-		}
-	}
-	return nil
+	return a.itemService.MergeDuplicateItems(originalID, duplicateIDs)
 }
 
 // SaveItemImage saves an image for an item to the cache directory
 func (a *App) SaveItemImage(itemId int, imageData string) error {
-	// Get user config directory
-	cacheDir, err := constants.GetImagesDir()
-	if err != nil {
-		return fmt.Errorf("failed to get images directory: %w", err)
-	}
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
-		return fmt.Errorf("failed to create cache directory: %w", err)
-	}
-
-	// Parse base64 image data (data:image/png;base64,...)
-	parts := strings.Split(imageData, ",")
-	if len(parts) != 2 {
-		return fmt.Errorf("invalid image data format")
-	}
-
-	// Decode from base64
-	decoded, err := base64.StdEncoding.DecodeString(parts[1])
-	if err != nil {
-		return fmt.Errorf("failed to decode base64: %w", err)
-	}
-
-	// Save to file
-	imagePath := filepath.Join(cacheDir, fmt.Sprintf("%d.png", itemId))
-	if err := os.WriteFile(imagePath, decoded, 0644); err != nil {
-		return fmt.Errorf("failed to write image file: %w", err)
-	}
-
-	return nil
+	return a.imageService.SaveItemImage(itemId, imageData)
 }
 
 // GetItemImage retrieves an image for an item from the cache
 func (a *App) GetItemImage(itemId int) (string, error) {
-	imagesDir, err := constants.GetImagesDir()
-	if err != nil {
-		return "", fmt.Errorf("failed to get images directory: %w", err)
-	}
-	imagePath := filepath.Join(imagesDir, fmt.Sprintf("%d.png", itemId))
-
-	// Check if file exists
-	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
-		return "", nil // No image exists
-	}
-
-	// Read the image file
-	imageBytes, err := os.ReadFile(imagePath)
-	if err != nil {
-		return "", fmt.Errorf("failed to read image file: %w", err)
-	}
-
-	// Encode to base64
-	encoded := base64.StdEncoding.EncodeToString(imageBytes)
-	return fmt.Sprintf("data:image/png;base64,%s", encoded), nil
+	return a.imageService.GetItemImage(itemId)
 }
 
 // DeleteItemImage removes an image for an item from the cache
 func (a *App) DeleteItemImage(itemId int) error {
-	imagesDir, err := constants.GetImagesDir()
-	if err != nil {
-		return fmt.Errorf("failed to get images directory: %w", err)
-	}
-	imagePath := filepath.Join(imagesDir, fmt.Sprintf("%d.png", itemId))
-
-	// Check if file exists
-	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
-		return nil // Already doesn't exist
-	}
-
-	// Delete the file
-	if err := os.Remove(imagePath); err != nil {
-		return fmt.Errorf("failed to delete image file: %w", err)
-	}
-
-	return nil
+	return a.imageService.DeleteItemImage(itemId)
 }
 
 // Greet returns a greeting for the given name

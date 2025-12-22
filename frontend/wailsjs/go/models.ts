@@ -378,20 +378,6 @@ export namespace main {
 	        this.totalSize = source["totalSize"];
 	    }
 	}
-	export class LinkOrTagResult {
-	    linkCreated: boolean;
-	    message: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new LinkOrTagResult(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.linkCreated = source["linkCreated"];
-	        this.message = source["message"];
-	    }
-	}
 	export class TTSCacheInfo {
 	    fileCount: number;
 	    totalSize: number;
@@ -404,6 +390,25 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.fileCount = source["fileCount"];
 	        this.totalSize = source["totalSize"];
+	    }
+	}
+
+}
+
+export namespace services {
+	
+	export class LinkOrTagResult {
+	    linkCreated: boolean;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LinkOrTagResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.linkCreated = source["linkCreated"];
+	        this.message = source["message"];
 	    }
 	}
 	export class TTSResult {
