@@ -1,6 +1,11 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Anchor, ActionIcon, useMantineColorScheme } from "@mantine/core";
+import {
+  Anchor,
+  ActionIcon,
+  useMantineColorScheme,
+  useMantineTheme,
+} from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
   SpeakWord,
@@ -12,8 +17,6 @@ import { Network, Volume2, Copy } from "lucide-react";
 import { stripPossessive, REFERENCE_COLOR_MAP } from "../../utils/references";
 import { PoemRenderer } from "./PoemRenderer";
 import { Patterns } from "../../utils/constants";
-
-const COLOR_MAP = REFERENCE_COLOR_MAP;
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -368,6 +371,7 @@ export function DefinitionRenderer({
   item,
 }: DefinitionRendererProps) {
   const { colorScheme } = useMantineColorScheme();
+  const theme = useMantineTheme();
 
   // Check if this is a Poem (Title type + exactly one pair of brackets)
   // We replicate the strict IsPoem logic from backend
@@ -403,7 +407,14 @@ export function DefinitionRenderer({
       const displayWord = refWord; // Keep original for display
       const matchWord =
         refType === "writer" ? stripPossessive(refWord) : refWord;
-      const color = COLOR_MAP[refType] || "#000";
+
+      const isDark = colorScheme === "dark";
+      const colorName = REFERENCE_COLOR_MAP[refType];
+      const color = colorName
+        ? theme.colors[colorName][isDark ? 3 : 6]
+        : isDark
+          ? "var(--mantine-color-text)"
+          : "#000000";
 
       const matchedItem = allItems?.find(
         (item: any) => item.word.toLowerCase() === matchWord.toLowerCase(),
@@ -538,7 +549,14 @@ export function DefinitionRenderer({
       // Strip possessive 's from writer references for matching
       const matchWord =
         refType === "writer" ? stripPossessive(refWord) : refWord;
-      const color = COLOR_MAP[refType] || "#000";
+
+      const isDark = colorScheme === "dark";
+      const colorName = REFERENCE_COLOR_MAP[refType];
+      const color = colorName
+        ? theme.colors[colorName][isDark ? 3 : 6]
+        : isDark
+          ? "var(--mantine-color-text)"
+          : "#000000";
 
       // Find matching item - case insensitive match on word
       const matchedItem = allItems?.find(
@@ -861,16 +879,21 @@ export function DefinitionRenderer({
       } else {
         const { parts } = processTextForLinks(segment.content, globalKey);
         globalKey += parts.length;
+        const isDark = colorScheme === "dark";
         finalParts.push(
           <div
             key={`quote-${idx}`}
             style={{
               margin: "1rem 0",
               padding: "0.75rem 1rem",
-              borderLeft: `4px solid ${colorScheme === "dark" ? "#666" : "#ccc"}`,
-              backgroundColor: colorScheme === "dark" ? "#2a2a2a" : "#f5f5f5",
+              borderLeft: `4px solid ${isDark ? "var(--mantine-color-dark-4)" : "var(--mantine-color-gray-3)"}`,
+              backgroundColor: isDark
+                ? "var(--mantine-color-dark-6)"
+                : "var(--mantine-color-gray-0)",
               fontStyle: "italic",
-              color: colorScheme === "dark" ? "#d4d4d4" : "#555",
+              color: isDark
+                ? "var(--mantine-color-dark-1)"
+                : "var(--mantine-color-gray-7)",
             }}
           >
             {parts}

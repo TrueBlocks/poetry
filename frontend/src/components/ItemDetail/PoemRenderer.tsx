@@ -1,4 +1,4 @@
-import { Box, Text } from "@mantine/core";
+import { Box, Text, useMantineColorScheme } from "@mantine/core";
 import React from "react";
 
 interface PoemRendererProps {
@@ -7,6 +7,9 @@ interface PoemRendererProps {
 }
 
 export function PoemRenderer({ content, renderLine }: PoemRendererProps) {
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === "dark";
+
   // Split by newline
   const lines = content.split("\n");
   const isShortPoem = lines.length <= 9;
@@ -15,12 +18,17 @@ export function PoemRenderer({ content, renderLine }: PoemRendererProps) {
   // We use Mantine theme variables where possible, but hardcode some for the specific look
   const containerStyle: React.CSSProperties = {
     // fontStyle: 'italic', // Removed to keep normal text style for poems
-    borderLeft: "4px solid var(--mantine-color-gray-3)",
+    borderLeft: `4px solid ${isDark ? "var(--mantine-color-dark-4)" : "var(--mantine-color-gray-3)"}`,
     paddingLeft: "var(--mantine-spacing-md)",
     margin: "var(--mantine-spacing-md) 0",
-    backgroundColor: "var(--mantine-color-gray-0)", // Very subtle background
+    backgroundColor: isDark
+      ? "var(--mantine-color-dark-6)"
+      : "var(--mantine-color-gray-0)", // Very subtle background
     padding: "var(--mantine-spacing-sm) var(--mantine-spacing-md)",
     borderRadius: "0 4px 4px 0",
+    color: isDark
+      ? "var(--mantine-color-dark-0)"
+      : "var(--mantine-color-gray-9)",
   };
 
   const textStyle: React.CSSProperties = {

@@ -20,6 +20,7 @@ import {
   Switch,
   Button,
   Modal,
+  useMantineColorScheme,
 } from "@mantine/core";
 import {
   SearchItems,
@@ -80,6 +81,8 @@ const SearchResultImage = ({ itemId }: { itemId: number }) => {
 };
 
 export default function Search() {
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === "dark";
   const { currentSearch, setCurrentSearch } = useUIStore();
   const [query, setQuery] = useState(currentSearch || "");
   const [debouncedQuery, setDebouncedQuery] = useState(currentSearch || "");
@@ -786,11 +789,16 @@ export default function Search() {
                         withBorder
                         style={{
                           textDecoration: "none",
+                          color: "var(--mantine-color-text)",
                           backgroundColor: isSelected
-                            ? "var(--mantine-color-blue-0)"
+                            ? isDark
+                              ? "var(--mantine-color-dark-6)"
+                              : "var(--mantine-color-blue-0)"
                             : undefined,
                           borderColor: isSelected
-                            ? "var(--mantine-color-blue-5)"
+                            ? isDark
+                              ? "var(--mantine-color-dark-4)"
+                              : "var(--mantine-color-blue-5)"
                             : undefined,
                           borderWidth: isSelected ? "2px" : undefined,
                         }}
@@ -800,7 +808,16 @@ export default function Search() {
                             {item.type === "Writer" && (
                               <SearchResultImage itemId={item.itemId} />
                             )}
-                            <Title order={3}>{item.word}</Title>
+                            <Title
+                              order={3}
+                              c={
+                                isDark
+                                  ? "var(--mantine-color-blue-2)"
+                                  : "var(--mantine-color-blue-7)"
+                              }
+                            >
+                              {item.word}
+                            </Title>
                           </Group>
                           <div>
                             {item.definition ? (
@@ -861,11 +878,16 @@ export default function Search() {
                     withBorder
                     style={{
                       textDecoration: "none",
+                      color: "var(--mantine-color-text)",
                       backgroundColor: isSelected
-                        ? "var(--mantine-color-blue-0)"
+                        ? isDark
+                          ? "var(--mantine-color-dark-6)"
+                          : "var(--mantine-color-blue-0)"
                         : undefined,
                       borderColor: isSelected
-                        ? "var(--mantine-color-blue-5)"
+                        ? isDark
+                          ? "var(--mantine-color-dark-4)"
+                          : "var(--mantine-color-blue-5)"
                         : undefined,
                       borderWidth: isSelected ? "2px" : undefined,
                     }}
@@ -875,7 +897,16 @@ export default function Search() {
                         {item.type === "Writer" && (
                           <SearchResultImage itemId={item.itemId} />
                         )}
-                        <Title order={3}>{item.word}</Title>
+                        <Title
+                          order={3}
+                          c={
+                            isDark
+                              ? "var(--mantine-color-blue-2)"
+                              : "var(--mantine-color-blue-7)"
+                          }
+                        >
+                          {item.word}
+                        </Title>
                       </Group>
                       <div>
                         {item.definition ? (
@@ -931,11 +962,16 @@ export default function Search() {
                     withBorder
                     style={{
                       textDecoration: "none",
+                      color: "var(--mantine-color-text)",
                       backgroundColor: isSelected
-                        ? "var(--mantine-color-blue-0)"
+                        ? isDark
+                          ? "var(--mantine-color-dark-6)"
+                          : "var(--mantine-color-blue-0)"
                         : undefined,
                       borderColor: isSelected
-                        ? "var(--mantine-color-blue-5)"
+                        ? isDark
+                          ? "var(--mantine-color-dark-4)"
+                          : "var(--mantine-color-blue-5)"
                         : undefined,
                       borderWidth: isSelected ? "2px" : undefined,
                     }}
@@ -945,7 +981,16 @@ export default function Search() {
                         {item.type === "Writer" && (
                           <SearchResultImage itemId={item.itemId} />
                         )}
-                        <Title order={3}>{item.word}</Title>
+                        <Title
+                          order={3}
+                          c={
+                            isDark
+                              ? "var(--mantine-color-blue-2)"
+                              : "var(--mantine-color-blue-7)"
+                          }
+                        >
+                          {item.word}
+                        </Title>
                       </Group>
                       <div>
                         {item.definition ? (

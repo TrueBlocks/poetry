@@ -17,6 +17,7 @@ import {
   Badge,
   Text,
   Box,
+  useMantineColorScheme,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
@@ -42,6 +43,8 @@ export default function ItemEdit({
   onSave,
   onCancel,
 }: { onSave?: () => void; onCancel?: () => void } = {}) {
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === "dark";
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -586,7 +589,9 @@ export default function ItemEdit({
                     backgroundColor:
                       pastedImage || cachedImage
                         ? "transparent"
-                        : "var(--mantine-color-gray-0)",
+                        : isDark
+                          ? "var(--mantine-color-dark-6)"
+                          : "var(--mantine-color-gray-0)",
                     outline: "none",
                     borderColor: isFocused
                       ? "var(--mantine-color-blue-filled)"
