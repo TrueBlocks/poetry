@@ -457,6 +457,11 @@ func (a *App) GetAllLinks() ([]database.Link, error) {
 	return a.db.GetAllLinks()
 }
 
+// GetEgoGraph gets the ego graph for a given node
+func (a *App) GetEgoGraph(centerNodeID int, depth int) (*database.GraphData, error) {
+	return a.db.GetEgoGraph(centerNodeID, depth)
+}
+
 // resolveTagsForMarkdown converts {x:value} tags to bold small caps in markdown
 // Example: {word:shakespeare} becomes **<small>SHAKESPEARE</small>**
 func resolveTagsForMarkdown(text string) string {

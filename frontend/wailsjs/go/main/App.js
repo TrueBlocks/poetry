@@ -106,6 +106,10 @@ export function GetDuplicateItems() {
   return window['go']['main']['App']['GetDuplicateItems']();
 }
 
+export function GetEgoGraph(arg1, arg2) {
+  return window['go']['main']['App']['GetEgoGraph'](arg1, arg2);
+}
+
 export function GetEnvLocation() {
   return window['go']['main']['App']['GetEnvLocation']();
 }

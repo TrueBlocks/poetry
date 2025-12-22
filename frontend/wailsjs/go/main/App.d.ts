@@ -56,6 +56,8 @@ export function GetDatabasePath():Promise<string>;
 
 export function GetDuplicateItems():Promise<Array<Record<string, any>>>;
 
+export function GetEgoGraph(arg1:number,arg2:number):Promise<database.GraphData>;
+
 export function GetEnvLocation():Promise<string>;
 
 export function GetEnvVars():Promise<Record<string, string>>;

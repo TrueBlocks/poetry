@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   ReactFlow,
   Background,
@@ -42,12 +42,11 @@ import {
 } from "lucide-react";
 import { useNavigate, Link, useParams } from "react-router-dom";
 import {
-  GetAllItems,
-  GetAllLinks,
   GetItem,
   GetItemLinks,
   GetSettings,
   GetItemImage,
+  GetEgoGraph,
 } from "../../wailsjs/go/main/App.js";
 import { LogInfo } from "../../wailsjs/runtime/runtime.js";
 import { getItemColor, getItemTextColor } from "../utils/colors";
@@ -172,15 +171,18 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
 
   const [navigationHistory, setNavigationHistory] = useState<number[]>([]);
 
-  const { data: items } = useQuery({
-    queryKey: ["allItems"],
-    queryFn: GetAllItems,
+  const { data: graphData } = useQuery({
+    queryKey: ["graphData", selectedNode],
+    queryFn: async () => {
+      if (selectedNode) {
+        return GetEgoGraph(selectedNode, 1);
+      }
+      return null;
+    },
   });
 
-  const { data: links } = useQuery({
-    queryKey: ["allLinks"],
-    queryFn: GetAllLinks,
-  });
+  const items = useMemo(() => graphData?.items || [], [graphData]);
+  const links = useMemo(() => graphData?.links || [], [graphData]);
 
   // Query for selected item's links (for the connections sidebar)
   const { data: selectedItemLinks } = useQuery({
@@ -291,8 +293,8 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
     let visibleLinks = links;
     if (selectedNode !== null) {
       const selectedNodeId = Number(selectedNode);
-      // const selectedItem = items.find((i: any) => i.itemId === selectedNodeId);
-      // const itemType = selectedItem ? selectedItem.type : "Reference";
+      const selectedItem = items.find((i: any) => i.itemId === selectedNodeId);
+      const itemType = selectedItem ? selectedItem.type : "Reference";
 
       const incomingMap = new Set<number>();
       const outgoingMap = new Set<number>();
@@ -322,20 +324,24 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
         // Remove self-loops in Radial Layout as they look messy
         if (sourceId === destId) return false;
 
-        /*
-        // For Title/Writer types: Prefer Outgoing (Hide Incoming if bidirectional)
-        if (itemType === 'Title' || itemType === 'Writer') {
-          if (destId === selectedNodeId && outgoingMap.has(sourceId)) {
-            return false;
+        // Special Rule for Writers:
+        // If the selected node is a Writer, and we have an incoming link from a Title,
+        // AND that Title is ALSO in the outgoing map (bidirectional),
+        // then HIDE the incoming link.
+        // Writers "write" Titles (outgoing), so the incoming "written by" link is redundant in the graph.
+        if (itemType === "Writer") {
+          if (destId === selectedNodeId) {
+            // This is an incoming link (Source -> Writer)
+            const sourceItem = items.find((i: any) => i.itemId === sourceId);
+            if (sourceItem?.type === "Title") {
+              // It's a Title -> Writer link.
+              // Check if we also have Writer -> Title (outgoing)
+              if (outgoingMap.has(sourceId)) {
+                return false; // Hide this incoming link
+              }
+            }
           }
         }
-        // For Reference (and others): Prefer Incoming (Hide Outgoing if bidirectional)
-        else {
-          if (sourceId === selectedNodeId && incomingMap.has(destId)) {
-            return false;
-          }
-        }
-        */
 
         return true;
       });
@@ -627,7 +633,13 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
     const newNodes: Node[] = simulationNodes.map((node: any) => ({
       id: node.id,
       type: "custom",
-      position: { x: node.x, y: node.y },
+      // Center the node by offsetting half its estimated size
+      // Approx width: char count * 8px + 20px padding
+      // Approx height: 36px
+      position: {
+        x: node.x - (node.word.length * 4 + 10),
+        y: node.y - 30,
+      },
       data: {
         id: node.itemId,
         label: node.word,
@@ -759,78 +771,10 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
 
     // Fit view after layout update
     if (rfInstance && newNodes.length > 0) {
-      // Strategy: Manually calculate bounds and extend them downwards
-      // This forces the camera to center on a lower point, shifting content UP
-
-      const fitWithOffset = (nodesToFit: any[]) => {
-        if (nodesToFit.length === 0) return;
-
-        let minX = Infinity,
-          minY = Infinity,
-          maxX = -Infinity,
-          maxY = -Infinity;
-
-        nodesToFit.forEach((n) => {
-          // Use measured dimensions if available, otherwise fallback estimates
-          const w = n.measured?.width || n.width || 50;
-          const h = n.measured?.height || n.height || 20;
-          const x = n.position.x;
-          const y = n.position.y;
-
-          if (x < minX) minX = x;
-          if (y < minY) minY = y;
-          if (x + w > maxX) maxX = x + w;
-          if (y + h > maxY) maxY = y + h;
-        });
-
-        const width = maxX - minX;
-        const height = maxY - minY;
-
-        // Extend the bottom of the bounding box by 30% of the height
-        // This moves the center point down by 15% of the height
-        // Moving the camera down makes the content appear to move UP
-        const extension = height * 0.3;
-
-        if (rfInstance.fitBounds) {
-          rfInstance.fitBounds(
-            { x: minX, y: minY, width: width, height: height + extension },
-            { padding: 0.15, duration: 800 },
-          );
-        } else {
-          // Fallback for older versions or if fitBounds is missing
-          rfInstance.fitView({ padding: 0.3, duration: 800 });
-        }
-      };
-
-      // 1. Call immediately with estimated positions
+      // Simple fit view after a short delay to allow state updates to propagate
       setTimeout(() => {
-        fitWithOffset(
-          newNodes.map((n: any) => ({ ...n, width: 50, height: 20 })),
-        );
-      }, 10);
-
-      // 2. Robust check: Wait for actual measurements
-      let attempts = 0;
-      const maxAttempts = 20;
-
-      const fitAfterMeasurement = () => {
-        const currentNodes = rfInstance.getNodes();
-        const allMeasured =
-          currentNodes.length > 0 &&
-          currentNodes.every((n: any) => n.width && n.height);
-
-        if (allMeasured) {
-          requestAnimationFrame(() => {
-            fitWithOffset(currentNodes);
-          });
-        } else if (attempts < maxAttempts) {
-          attempts++;
-          setTimeout(fitAfterMeasurement, 100);
-        }
-      };
-
-      // Start checking
-      setTimeout(fitAfterMeasurement, 100);
+        rfInstance.fitView({ padding: 0.2, duration: 800 });
+      }, 100);
     }
   }, [
     items,
@@ -846,8 +790,44 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
     nodeImages,
   ]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!rfInstance) return;
+
+      const isCmdOrCtrl = event.metaKey || event.ctrlKey;
+
+      if (isCmdOrCtrl) {
+        if (event.key === "-" || event.key === "_") {
+          // Cmd + - -> Zoom Out
+          event.preventDefault();
+          rfInstance.zoomOut();
+        } else if (event.key === "+" || (event.shiftKey && event.key === "=")) {
+          // Cmd + + (or Cmd + Shift + =) -> Zoom In
+          event.preventDefault();
+          rfInstance.zoomIn();
+        } else if (event.key === "r") {
+          // Cmd + r -> Fit View (Reload)
+          event.preventDefault();
+          rfInstance.fitView({ padding: 0.2, duration: 800 });
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [rfInstance]);
+
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+    <div
+      style={{
+        height: "calc(100vh - 120px)", // Adjust for AppShell padding and footer
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {/* Fixed Header */}
       <div
         style={{
@@ -938,6 +918,20 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
             borderRight: `1px solid ${colorScheme === "dark" ? "#373A40" : "#e9ecef"}`,
           }}
         >
+          {!selectedNode && (
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                zIndex: 10,
+                textAlign: "center",
+              }}
+            >
+              <Text c="dimmed">Select an item to view its graph</Text>
+            </div>
+          )}
           <div
             style={{
               position: "absolute",
@@ -964,7 +958,7 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
               maxZoom={20}
             >
               <Background />
-              <Controls />
+              <Controls style={{ zIndex: 1000 }} />
             </ReactFlow>
           </div>
         </div>

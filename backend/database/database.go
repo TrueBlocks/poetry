@@ -62,6 +62,12 @@ type Link struct {
 	CreatedAt         time.Time `json:"createdAt"`
 }
 
+// GraphData represents a subset of the graph
+type GraphData struct {
+	Items []Item `json:"items"`
+	Links []Link `json:"links"`
+}
+
 // ItemWithStats includes connection statistics
 type ItemWithStats struct {
 	Item
@@ -1228,6 +1234,135 @@ func (db *DB) GetAllLinks() ([]Link, error) {
 	}
 	defer func() { _ = rows.Close() }()
 	return db.scanLinks(rows)
+}
+
+// GetEgoGraph returns the ego graph for a given node
+func (db *DB) GetEgoGraph(centerNodeID int, depth int) (*GraphData, error) {
+	if depth < 1 {
+		depth = 1
+	}
+
+	// Use a map to store unique node IDs
+	nodeIDs := make(map[int]bool)
+	nodeIDs[centerNodeID] = true
+
+	// Current frontier
+	frontier := []int{centerNodeID}
+
+	for i := 0; i < depth; i++ {
+		if len(frontier) == 0 {
+			break
+		}
+
+		// Build query for neighbors
+		placeholders := make([]string, len(frontier))
+		args := make([]interface{}, len(frontier)*2)
+		for j, id := range frontier {
+			placeholders[j] = "?"
+			args[j] = id
+			args[len(frontier)+j] = id
+		}
+
+		query := fmt.Sprintf(`
+			SELECT source_item_id, destination_item_id 
+			FROM links 
+			WHERE source_item_id IN (%s) OR destination_item_id IN (%s)
+		`, strings.Join(placeholders, ","), strings.Join(placeholders, ","))
+
+		rows, err := db.conn.Query(query, args...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to query neighbors: %w", err)
+		}
+
+		var newFrontier []int
+		for rows.Next() {
+			var src, dst int
+			if err := rows.Scan(&src, &dst); err != nil {
+				_ = rows.Close()
+				return nil, fmt.Errorf("failed to scan neighbors: %w", err)
+			}
+
+			if !nodeIDs[src] {
+				nodeIDs[src] = true
+				newFrontier = append(newFrontier, src)
+			}
+			if !nodeIDs[dst] {
+				nodeIDs[dst] = true
+				newFrontier = append(newFrontier, dst)
+			}
+		}
+		_ = rows.Close()
+		frontier = newFrontier
+
+		// Hard limit check (500 nodes)
+		if len(nodeIDs) > 500 {
+			break
+		}
+	}
+
+	// Convert map to slice
+	ids := make([]int, 0, len(nodeIDs))
+	for id := range nodeIDs {
+		ids = append(ids, id)
+	}
+
+	// Fetch Items
+	placeholders := make([]string, len(ids))
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+
+	queryItems := fmt.Sprintf(`
+		SELECT item_id, word, type, definition, derivation, appendicies, source, source_pg, mark, created_at, modified_at 
+		FROM items 
+		WHERE item_id IN (%s)
+		ORDER BY word
+	`, strings.Join(placeholders, ","))
+
+	rowsItems, err := db.conn.Query(queryItems, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get items: %w", err)
+	}
+	defer func() { _ = rowsItems.Close() }()
+
+	items, err := db.scanItems(rowsItems)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch Links (induced subgraph)
+	// We want links where BOTH source and destination are in our set of IDs
+	// Re-use placeholders and args as they are the same (list of IDs)
+
+	// We need to pass the list of IDs twice for the two IN clauses
+	argsLinks := make([]interface{}, len(ids)*2)
+	copy(argsLinks, args)
+	copy(argsLinks[len(ids):], args)
+
+	queryLinks := fmt.Sprintf(`
+		SELECT link_id, source_item_id, destination_item_id, link_type, created_at 
+		FROM links 
+		WHERE source_item_id IN (%s) AND destination_item_id IN (%s)
+		ORDER BY link_id
+	`, strings.Join(placeholders, ","), strings.Join(placeholders, ","))
+
+	rowsLinks, err := db.conn.Query(queryLinks, argsLinks...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get links: %w", err)
+	}
+	defer func() { _ = rowsLinks.Close() }()
+
+	links, err := db.scanLinks(rowsLinks)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GraphData{
+		Items: items,
+		Links: links,
+	}, nil
 }
 
 // GetAllCliches returns all cliches
