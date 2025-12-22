@@ -1,9 +1,9 @@
-import { vi } from 'vitest'
+import { vi } from "vitest";
 
 // Mock window.matchMedia for jsdom
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -13,18 +13,18 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })),
-})
+});
 
 // Mock Wails runtime functions
-vi.mock('../../wailsjs/runtime/runtime.js', () => ({
+vi.mock("../../wailsjs/runtime/runtime.js", () => ({
   LogInfo: vi.fn(),
   LogError: vi.fn(),
   LogDebug: vi.fn(),
   LogWarning: vi.fn(),
-}))
+}));
 
 // Mock Wails Go bindings
-vi.mock('../../wailsjs/go/main/App.js', () => ({
+vi.mock("../../wailsjs/go/main/App.js", () => ({
   GetAllItems: vi.fn(() => Promise.resolve([])),
   GetItem: vi.fn(() => Promise.resolve(null)),
   GetAllLinks: vi.fn(() => Promise.resolve([])),
@@ -38,25 +38,30 @@ vi.mock('../../wailsjs/go/main/App.js', () => ({
   GetItemImage: vi.fn(() => Promise.resolve("")),
   GetEnvVars: vi.fn(() => Promise.resolve({})),
   HasEnvFile: vi.fn(() => Promise.resolve(true)),
-}))
+}));
 
 // Mock React Router
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom')
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
   return {
     ...actual,
     useNavigate: vi.fn(() => vi.fn()),
-    useLocation: vi.fn(() => ({ pathname: '/', search: '', hash: '', state: null })),
+    useLocation: vi.fn(() => ({
+      pathname: "/",
+      search: "",
+      hash: "",
+      state: null,
+    })),
     useParams: vi.fn(() => ({})),
     Link: vi.fn(({ children }: any) => children),
-  }
-})
+  };
+});
 
 // Mock Mantine notifications
-vi.mock('@mantine/notifications', () => ({
+vi.mock("@mantine/notifications", () => ({
   notifications: {
     show: vi.fn(),
     hide: vi.fn(),
     clean: vi.fn(),
   },
-}))
+}));

@@ -1,9 +1,19 @@
-import { Paper, Text, Group, Table, Button, ScrollArea, Checkbox, Switch, useMantineTheme } from '@mantine/core';
-import { Link as RouterLink } from 'react-router-dom';
-import { Network, ArrowRight, CheckSquare } from 'lucide-react';
-import { database } from '../../../wailsjs/go/models';
-import { ToggleItemMark } from '../../../wailsjs/go/main/App';
-import { useQueryClient } from '@tanstack/react-query';
+import {
+  Paper,
+  Text,
+  Group,
+  Table,
+  Button,
+  ScrollArea,
+  Checkbox,
+  Switch,
+  useMantineTheme,
+} from "@mantine/core";
+import { Link as RouterLink } from "react-router-dom";
+import { Network, ArrowRight, CheckSquare } from "lucide-react";
+import { database } from "../../../wailsjs/go/models";
+import { ToggleItemMark } from "../../../wailsjs/go/main/App";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface HubsListProps {
   hubs: database.HubItem[] | null;
@@ -16,16 +26,19 @@ export function HubsList({ hubs, onToggle }: HubsListProps) {
 
   if (!hubs || hubs.length === 0) return null;
 
-  const handleMarkToggle = async (itemId: number, currentMark: string | null) => {
-    const newMark = !currentMark
+  const handleMarkToggle = async (
+    itemId: number,
+    currentMark: string | null,
+  ) => {
+    const newMark = !currentMark;
     try {
-      await ToggleItemMark(itemId, newMark)
-      queryClient.invalidateQueries({ queryKey: ['topHubs'] })
-      queryClient.invalidateQueries({ queryKey: ['markedItems'] })
+      await ToggleItemMark(itemId, newMark);
+      queryClient.invalidateQueries({ queryKey: ["topHubs"] });
+      queryClient.invalidateQueries({ queryKey: ["markedItems"] });
     } catch (error) {
-      console.error('Failed to toggle mark:', error)
+      console.error("Failed to toggle mark:", error);
     }
-  }
+  };
 
   return (
     <Paper withBorder p="md" radius="md" h="100%">
@@ -35,9 +48,9 @@ export function HubsList({ hubs, onToggle }: HubsListProps) {
           <Text fw={500}>Top Connected Hubs</Text>
         </Group>
         {onToggle && (
-          <Switch 
-            checked={false} 
-            onChange={onToggle} 
+          <Switch
+            checked={false}
+            onChange={onToggle}
             size="xs"
             onLabel={<CheckSquare size={12} color={theme.colors.blue[6]} />}
             offLabel={<Network size={12} color={theme.colors.gray[6]} />}
@@ -58,19 +71,21 @@ export function HubsList({ hubs, onToggle }: HubsListProps) {
             {hubs.map((hub) => (
               <Table.Tr key={hub.itemId}>
                 <Table.Td>
-                  <Checkbox 
-                    checked={!!hub.mark} 
-                    onChange={() => handleMarkToggle(hub.itemId, hub.mark || null)}
+                  <Checkbox
+                    checked={!!hub.mark}
+                    onChange={() =>
+                      handleMarkToggle(hub.itemId, hub.mark || null)
+                    }
                     size="xs"
                   />
                 </Table.Td>
                 <Table.Td fw={500}>{hub.word}</Table.Td>
                 <Table.Td>{hub.linkCount}</Table.Td>
                 <Table.Td>
-                  <Button 
-                    component={RouterLink} 
+                  <Button
+                    component={RouterLink}
                     to={`/item/${hub.itemId}`}
-                    variant="subtle" 
+                    variant="subtle"
                     size="xs"
                     rightSection={<ArrowRight size={14} />}
                   >

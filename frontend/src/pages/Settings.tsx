@@ -1,40 +1,44 @@
-import { useQuery } from '@tanstack/react-query'
-import { Container, Title, Tabs, Loader, Center } from '@mantine/core'
-import { Settings as SettingsIcon, Wrench } from 'lucide-react'
-import { GeneralSettings } from '../components/Settings/GeneralSettings'
-import { MaintenanceSettings } from '../components/Settings/MaintenanceSettings'
-import { GetAllSettings } from '../../wailsjs/go/main/App'
-import { useUIStore } from '../stores/useUIStore'
+import { useQuery } from "@tanstack/react-query";
+import { Container, Title, Tabs, Loader, Center } from "@mantine/core";
+import { Settings as SettingsIcon, Wrench } from "lucide-react";
+import { GeneralSettings } from "../components/Settings/GeneralSettings";
+import { MaintenanceSettings } from "../components/Settings/MaintenanceSettings";
+import { GetAllSettings } from "../../wailsjs/go/main/App";
+import { useUIStore } from "../stores/useUIStore";
 
 export default function Settings() {
-  const { tabSelections, setTabSelection } = useUIStore()
-  const activeTab = tabSelections['settings'] || 'general'
+  const { tabSelections, setTabSelection } = useUIStore();
+  const activeTab = tabSelections["settings"] || "general";
 
   const { isLoading } = useQuery({
-    queryKey: ['allSettings'],
+    queryKey: ["allSettings"],
     queryFn: GetAllSettings,
-  })
+  });
 
   const handleTabChange = (value: string | null) => {
     if (value) {
-      setTabSelection('settings', value)
+      setTabSelection("settings", value);
     }
-  }
+  };
 
-  if (isLoading && !tabSelections['settings']) {
+  if (isLoading && !tabSelections["settings"]) {
     return (
       <Container size="lg">
-        <Title order={1} mb="md">Settings</Title>
+        <Title order={1} mb="md">
+          Settings
+        </Title>
         <Center h={200}>
           <Loader />
         </Center>
       </Container>
-    )
+    );
   }
 
   return (
     <Container size="lg">
-      <Title order={1} mb="md">Settings</Title>
+      <Title order={1} mb="md">
+        Settings
+      </Title>
 
       <Tabs value={activeTab} onChange={handleTabChange}>
         <Tabs.List mb="md">
@@ -55,5 +59,5 @@ export default function Settings() {
         </Tabs.Panel>
       </Tabs>
     </Container>
-  )
+  );
 }

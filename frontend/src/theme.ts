@@ -1,7 +1,6 @@
-import { createTheme } from '@mantine/core';
+import { createTheme } from "@mantine/core";
 
 export const theme = createTheme({
-  defaultColorScheme: 'auto',
   components: {
     Paper: {
       defaultProps: {
@@ -10,17 +9,17 @@ export const theme = createTheme({
       styles: {
         root: {
           // Match the footer border color as requested
-          borderColor: 'var(--mantine-color-gray-4)',
+          borderColor: "var(--mantine-color-gray-4)",
         },
       },
     },
     AppShell: {
       styles: {
         navbar: {
-          borderColor: 'var(--mantine-color-gray-4)',
+          borderColor: "var(--mantine-color-gray-4)",
         },
         header: {
-          borderColor: 'var(--mantine-color-gray-4)',
+          borderColor: "var(--mantine-color-gray-4)",
         },
       },
     },

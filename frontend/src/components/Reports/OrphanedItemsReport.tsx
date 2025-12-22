@@ -1,18 +1,26 @@
-import { Stack, Text, Alert, Loader, Table, Badge, Anchor } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
-import { GetOrphanedItems } from '../../../wailsjs/go/main/App'
-import { AlertTriangle } from 'lucide-react'
-import { SimpleItem } from './types'
+import {
+  Stack,
+  Text,
+  Alert,
+  Loader,
+  Table,
+  Badge,
+  Anchor,
+} from "@mantine/core";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { GetOrphanedItems } from "../../../wailsjs/go/main/App";
+import { AlertTriangle } from "lucide-react";
+import { SimpleItem } from "./types";
 
 export function OrphanedItemsReport() {
   const { data: orphanedItems, isLoading } = useQuery({
-    queryKey: ['orphanedItems'],
+    queryKey: ["orphanedItems"],
     queryFn: async () => {
-      const results = await GetOrphanedItems()
-      return results as SimpleItem[]
+      const results = await GetOrphanedItems();
+      return results as SimpleItem[];
     },
-  })
+  });
 
   return (
     <Stack gap="md">
@@ -23,7 +31,7 @@ export function OrphanedItemsReport() {
       </div>
 
       {isLoading && (
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <div style={{ textAlign: "center", padding: "2rem" }}>
           <Loader />
         </div>
       )}
@@ -40,7 +48,8 @@ export function OrphanedItemsReport() {
           <Alert color="yellow" icon={<AlertTriangle size={20} />}>
             <Text fw={600}>Found {orphanedItems.length} orphaned items</Text>
             <Text size="sm">
-              These items have no connections to other items. Click an item to edit it and add connections.
+              These items have no connections to other items. Click an item to
+              edit it and add connections.
             </Text>
           </Alert>
 
@@ -55,7 +64,11 @@ export function OrphanedItemsReport() {
               {orphanedItems.map((item) => (
                 <Table.Tr key={item.itemId}>
                   <Table.Td>
-                    <Anchor component={Link} to={`/item/${item.itemId}?tab=detail`} fw={600}>
+                    <Anchor
+                      component={Link}
+                      to={`/item/${item.itemId}?tab=detail`}
+                      fw={600}
+                    >
                       {item.word}
                     </Anchor>
                   </Table.Td>
@@ -69,6 +82,5 @@ export function OrphanedItemsReport() {
         </>
       )}
     </Stack>
-  )
+  );
 }
-

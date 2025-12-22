@@ -71,14 +71,6 @@ func main() {
 	if height <= 0 {
 		height = 768
 	}
-	x := savedSettings.Window.X
-	if x <= 0 {
-		x = 100
-	}
-	y := savedSettings.Window.Y
-	if y <= 0 {
-		y = 100
-	}
 
 	// Create application with options
 	err := wails.Run(&options.App{

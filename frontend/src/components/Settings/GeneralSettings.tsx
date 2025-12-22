@@ -1,87 +1,111 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Title, Text, Paper, Table, Loader, Alert, Group, Badge, Button, TextInput, Stack, Switch, PasswordInput } from '@mantine/core'
-import { GetAllSettings, GetEnvVars, GetEnvLocation, GetTTSCacheInfo, GetImageCacheInfo, GetDatabaseFileSize, GetItem } from '../../../wailsjs/go/main/App.js'
-import { AlertCircle, FolderOpen, Search, Sparkles, Edit } from 'lucide-react'
-import { notifications } from '@mantine/notifications'
-import { useState, useRef, useEffect } from 'react'
-import { FirstRunModal } from '../FirstRunModal'
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Title,
+  Text,
+  Paper,
+  Table,
+  Loader,
+  Alert,
+  Group,
+  Badge,
+  Button,
+  TextInput,
+  Stack,
+} from "@mantine/core";
+import {
+  GetAllSettings,
+  GetEnvVars,
+  GetEnvLocation,
+  GetTTSCacheInfo,
+  GetImageCacheInfo,
+  GetDatabaseFileSize,
+  GetItem,
+} from "../../../wailsjs/go/main/App.js";
+import { AlertCircle, Search, Edit } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { FirstRunModal } from "../FirstRunModal";
 
 export function GeneralSettings() {
-  const queryClient = useQueryClient()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [editEnvModalOpen, setEditEnvModalOpen] = useState(false)
-  const searchInputRef = useRef<HTMLInputElement>(null)
+  const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [editEnvModalOpen, setEditEnvModalOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcut for search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && (e.key === '/' || e.key === '?')) {
-        e.preventDefault()
-        e.stopPropagation()
-        searchInputRef.current?.focus()
+      if ((e.metaKey || e.ctrlKey) && (e.key === "/" || e.key === "?")) {
+        e.preventDefault();
+        e.stopPropagation();
+        searchInputRef.current?.focus();
       }
-    }
+    };
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
-  const { data: settings, isLoading: settingsLoading, error: settingsError } = useQuery({
-    queryKey: ['allSettings'],
+  const {
+    data: settings,
+    isLoading: settingsLoading,
+    error: settingsError,
+  } = useQuery({
+    queryKey: ["allSettings"],
     queryFn: GetAllSettings,
     refetchInterval: 500, // Refetch every 500ms to show window changes in real-time
-  })
+  });
 
   const { data: dbPath } = useQuery({
-    queryKey: ['databasePath'],
+    queryKey: ["databasePath"],
     queryFn: async () => {
-        const { GetDatabasePath } = await import('../../../wailsjs/go/main/App.js')
-        return GetDatabasePath()
+      const { GetDatabasePath } =
+        await import("../../../wailsjs/go/main/App.js");
+      return GetDatabasePath();
     },
-  })
+  });
 
-  const { data: envVars, isLoading: envLoading, error: envError } = useQuery({
-    queryKey: ['envVars'],
+  const {
+    data: envVars,
+    isLoading: envLoading,
+    error: envError,
+  } = useQuery({
+    queryKey: ["envVars"],
     queryFn: GetEnvVars,
-  })
+  });
 
   const { data: envLocation } = useQuery({
-    queryKey: ['envLocation'],
+    queryKey: ["envLocation"],
     queryFn: GetEnvLocation,
-  })
+  });
 
   const { data: cacheInfo, isLoading: cacheLoading } = useQuery({
-    queryKey: ['ttsCacheInfo'],
+    queryKey: ["ttsCacheInfo"],
     queryFn: GetTTSCacheInfo,
-  })
+  });
 
   const { data: imageCacheInfo, isLoading: imageCacheLoading } = useQuery({
-    queryKey: ['imageCacheInfo'],
+    queryKey: ["imageCacheInfo"],
     queryFn: GetImageCacheInfo,
-  })
+  });
 
   const { data: dbFileSize, isLoading: dbSizeLoading } = useQuery({
-    queryKey: ['databaseFileSize'],
+    queryKey: ["databaseFileSize"],
     queryFn: GetDatabaseFileSize,
-  })
+  });
 
   const { data: lastWordItem } = useQuery({
-    queryKey: ['lastWordItem', settings?.lastWordId],
-    queryFn: () => settings?.lastWordId ? GetItem(settings.lastWordId) : null,
+    queryKey: ["lastWordItem", settings?.lastWordId],
+    queryFn: () => (settings?.lastWordId ? GetItem(settings.lastWordId) : null),
     enabled: !!settings?.lastWordId,
-  })
-
-
-
-
+  });
 
   if (settingsLoading || envLoading) {
     return (
-      <Stack align="center" justify="center" style={{ height: '50vh' }}>
+      <Stack align="center" justify="center" style={{ height: "50vh" }}>
         <Loader size="xl" />
         <Text>Loading settings...</Text>
       </Stack>
-    )
+    );
   }
 
   return (
@@ -94,8 +118,6 @@ export function GeneralSettings() {
         onChange={(e) => setSearchQuery(e.currentTarget.value)}
         mb="xs"
       />
-
-
 
       {/* Database Information Section */}
       <Paper shadow="sm" radius="md" withBorder p="sm" mb="xs">
@@ -121,30 +143,44 @@ export function GeneralSettings() {
               </Table.Thead>
               <Table.Tbody>
                 {[
-                  { 
-                    key: 'Database Path', 
-                    value: (dbPath || 'Loading...') + 
-                      (dbSizeLoading ? '' : dbFileSize ? ` (${(dbFileSize / 1024 / 1024).toFixed(2)} MB)` : '')
+                  {
+                    key: "Database Path",
+                    value:
+                      (dbPath || "Loading...") +
+                      (dbSizeLoading
+                        ? ""
+                        : dbFileSize
+                          ? ` (${(dbFileSize / 1024 / 1024).toFixed(2)} MB)`
+                          : ""),
                   },
-                  { 
-                    key: 'TTS Cache', 
-                    value: cacheLoading ? 'Loading...' : cacheInfo ? 
-                      `${cacheInfo.fileCount} file${cacheInfo.fileCount !== 1 ? 's' : ''}, ${(cacheInfo.totalSize / 1024 / 1024).toFixed(2)} MB` : 
-                      'No cache data'
+                  {
+                    key: "TTS Cache",
+                    value: cacheLoading
+                      ? "Loading..."
+                      : cacheInfo
+                        ? `${cacheInfo.fileCount} file${cacheInfo.fileCount !== 1 ? "s" : ""}, ${(cacheInfo.totalSize / 1024 / 1024).toFixed(2)} MB`
+                        : "No cache data",
                   },
-                  { 
-                    key: 'Image Cache', 
-                    value: imageCacheLoading ? 'Loading...' : imageCacheInfo ? 
-                      `${imageCacheInfo.fileCount} file${imageCacheInfo.fileCount !== 1 ? 's' : ''}, ${(imageCacheInfo.totalSize / 1024 / 1024).toFixed(2)} MB` : 
-                      'No cache data'
+                  {
+                    key: "Image Cache",
+                    value: imageCacheLoading
+                      ? "Loading..."
+                      : imageCacheInfo
+                        ? `${imageCacheInfo.fileCount} file${imageCacheInfo.fileCount !== 1 ? "s" : ""}, ${(imageCacheInfo.totalSize / 1024 / 1024).toFixed(2)} MB`
+                        : "No cache data",
                   },
                 ]
-                  .filter(row => 
-                    !searchQuery || 
-                    row.key.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                    row.value.toLowerCase().includes(searchQuery.toLowerCase())
+                  .filter(
+                    (row) =>
+                      !searchQuery ||
+                      row.key
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      row.value
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()),
                   )
-                  .map(row => (
+                  .map((row) => (
                     <Table.Tr key={row.key}>
                       <Table.Td>
                         <Text fw={500}>{row.key}</Text>
@@ -184,23 +220,28 @@ export function GeneralSettings() {
             </Table.Thead>
             <Table.Tbody>
               {Object.entries(settings)
-                .filter(([key]) => key !== 'window' && key !== 'database')
+                .filter(([key]) => key !== "window" && key !== "database")
                 .map(([key, value]) => {
-                  let displayValue = String(value)
-                  
-                  if (key === 'lastWordId' && lastWordItem) {
-                    displayValue = `${value} (${lastWordItem.word})`
-                  } else if (key === 'collapsed' && typeof value === 'object') {
-                    const bools = Object.values(value as Record<string, boolean>).map(b => b.toString())
-                    displayValue = `[ ${bools.join(' ')} ]`
+                  let displayValue = String(value);
+
+                  if (key === "lastWordId" && lastWordItem) {
+                    displayValue = `${value} (${lastWordItem.word})`;
+                  } else if (key === "collapsed" && typeof value === "object") {
+                    const bools = Object.values(
+                      value as Record<string, boolean>,
+                    ).map((b) => b.toString());
+                    displayValue = `[ ${bools.join(" ")} ]`;
                   }
-                  
-                  return { key, displayValue }
+
+                  return { key, displayValue };
                 })
-                .filter(({ key, displayValue }) => 
-                  !searchQuery || 
-                  key.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                  displayValue.toLowerCase().includes(searchQuery.toLowerCase())
+                .filter(
+                  ({ key, displayValue }) =>
+                    !searchQuery ||
+                    key.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    displayValue
+                      .toLowerCase()
+                      .includes(searchQuery.toLowerCase()),
                 )
                 .map(({ key, displayValue }) => (
                   <Table.Tr key={key}>
@@ -212,21 +253,23 @@ export function GeneralSettings() {
                     </Table.Td>
                   </Table.Tr>
                 ))}
-              {settings.window && (!searchQuery || 
-                'window'.includes(searchQuery.toLowerCase()) || 
-                `{x: ${settings.window.x}, y: ${settings.window.y}, w: ${settings.window.width}, h: ${settings.window.height}, lb: ${settings.window.leftbarWidth}}`.toLowerCase().includes(searchQuery.toLowerCase())
-              ) && (
-                <Table.Tr>
-                  <Table.Td>
-                    <Text fw={500}>window</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text>
-                      {`{x: ${settings.window.x}, y: ${settings.window.y}, w: ${settings.window.width}, h: ${settings.window.height}, lb: ${settings.window.leftbarWidth}}`}
-                    </Text>
-                  </Table.Td>
-                </Table.Tr>
-              )}
+              {settings.window &&
+                (!searchQuery ||
+                  "window".includes(searchQuery.toLowerCase()) ||
+                  `{x: ${settings.window.x}, y: ${settings.window.y}, w: ${settings.window.width}, h: ${settings.window.height}, lb: ${settings.window.leftbarWidth}}`
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase())) && (
+                  <Table.Tr>
+                    <Table.Td>
+                      <Text fw={500}>window</Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text>
+                        {`{x: ${settings.window.x}, y: ${settings.window.y}, w: ${settings.window.width}, h: ${settings.window.height}, lb: ${settings.window.leftbarWidth}}`}
+                      </Text>
+                    </Table.Td>
+                  </Table.Tr>
+                )}
             </Table.Tbody>
           </Table>
         ) : (
@@ -241,9 +284,9 @@ export function GeneralSettings() {
             <Title order={3}>Environment Variables</Title>
             <Badge color="green">.env</Badge>
           </Group>
-          <Button 
-            leftSection={<Edit size={16} />} 
-            variant="light" 
+          <Button
+            leftSection={<Edit size={16} />}
+            variant="light"
             size="xs"
             onClick={() => setEditEnvModalOpen(true)}
           >
@@ -251,7 +294,7 @@ export function GeneralSettings() {
           </Button>
         </Group>
         <Text size="sm" c="dimmed">
-          Location: {envLocation || 'Loading...'}
+          Location: {envLocation || "Loading..."}
         </Text>
 
         {envError ? (
@@ -268,10 +311,11 @@ export function GeneralSettings() {
             </Table.Thead>
             <Table.Tbody>
               {Object.entries(envVars)
-                .filter(([key, value]) => 
-                  !searchQuery || 
-                  key.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                  value.toLowerCase().includes(searchQuery.toLowerCase())
+                .filter(
+                  ([key, value]) =>
+                    !searchQuery ||
+                    key.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    value.toLowerCase().includes(searchQuery.toLowerCase()),
                 )
                 .map(([key, value]) => (
                   <Table.Tr key={key}>
@@ -286,21 +330,30 @@ export function GeneralSettings() {
             </Table.Tbody>
           </Table>
         ) : (
-          <Alert icon={<AlertCircle size={16} />} color="blue" title="No .env file found">
-            No .env file found in the current working directory. Create one to set environment variables.
+          <Alert
+            icon={<AlertCircle size={16} />}
+            color="blue"
+            title="No .env file found"
+          >
+            No .env file found in the current working directory. Create one to
+            set environment variables.
           </Alert>
         )}
       </Paper>
 
-      <FirstRunModal 
-        opened={editEnvModalOpen} 
+      <FirstRunModal
+        opened={editEnvModalOpen}
         onClose={() => {
-          setEditEnvModalOpen(false)
-          queryClient.invalidateQueries({ queryKey: ['envVars'] })
+          setEditEnvModalOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["envVars"] });
         }}
         mode="edit"
-        initialKey={envVars?.['OPENAI_API_KEY'] === '***REDACTED***' ? '' : envVars?.['OPENAI_API_KEY']}
+        initialKey={
+          envVars?.["OPENAI_API_KEY"] === "***REDACTED***"
+            ? ""
+            : envVars?.["OPENAI_API_KEY"]
+        }
       />
     </>
-  )
+  );
 }

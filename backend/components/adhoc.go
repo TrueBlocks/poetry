@@ -27,7 +27,7 @@ func (c *AdHocQueryComponent) RunAdHocQuery(query string) ([]map[string]interfac
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	columns, err := rows.Columns()
 	if err != nil {

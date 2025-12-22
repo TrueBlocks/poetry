@@ -178,7 +178,9 @@ func NewDB(dbPath string) (*DB, error) {
 	// This allows CRUD operations to work without FTS5
 	triggers := []string{"items_ai", "items_ad", "items_au", "cliches_ai", "cliches_ad", "cliches_au", "literary_terms_ai", "literary_terms_ad", "literary_terms_au"}
 	for _, trigger := range triggers {
-		conn.Exec(fmt.Sprintf("DROP TRIGGER IF EXISTS %s", trigger))
+		if _, err := conn.Exec(fmt.Sprintf("DROP TRIGGER IF EXISTS %s", trigger)); err != nil {
+			slog.Warn("Failed to drop trigger", "trigger", trigger, "error", err)
+		}
 	}
 
 	// Test connection
@@ -330,7 +332,7 @@ func (db *DB) GetExtendedStats() (*DashboardStats, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query self ref items: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
 		var itemID int
@@ -402,7 +404,7 @@ func (db *DB) GetTopHubs(limit int) ([]HubItem, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get top hubs: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var hubs []HubItem
 	for rows.Next() {
@@ -434,7 +436,7 @@ func (db *DB) GetMarkedItems() ([]Item, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get marked items: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	return db.scanItems(rows)
 }
@@ -490,7 +492,7 @@ func (db *DB) SearchItems(query string) ([]Item, error) {
 	if err != nil {
 		return nil, fmt.Errorf("search failed: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var items []Item
 	for rows.Next() {
@@ -625,7 +627,7 @@ func (db *DB) SearchItemsWithOptions(options SearchOptions) ([]Item, error) {
 
 // scanItems is a helper to scan rows into Item slice
 func scanItems(rows *sql.Rows) ([]Item, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var items []Item
 	for rows.Next() {
 		var item Item
@@ -853,7 +855,7 @@ func (db *DB) GetItemLinks(itemID int) ([]Link, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get links: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	return db.scanLinks(rows)
 }
@@ -872,7 +874,7 @@ func (db *DB) GetRecentItems(limit int) ([]Item, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent items: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	return db.scanItems(rows)
 }
@@ -1120,7 +1122,7 @@ func (db *DB) GetAllItems() ([]Item, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all items: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return db.scanItems(rows)
 }
 
@@ -1131,7 +1133,7 @@ func (db *DB) GetAllLinks() ([]Link, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all links: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return db.scanLinks(rows)
 }
 
@@ -1142,7 +1144,7 @@ func (db *DB) GetAllCliches() ([]Cliche, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all cliches: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var cliches []Cliche
 	for rows.Next() {
@@ -1162,7 +1164,7 @@ func (db *DB) GetAllNames() ([]Name, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all names: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var names []Name
 	for rows.Next() {
@@ -1194,7 +1196,7 @@ func (db *DB) GetAllLiteraryTerms() ([]LiteraryTerm, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all literary terms: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var terms []LiteraryTerm
 	for rows.Next() {
@@ -1214,7 +1216,7 @@ func (db *DB) GetAllSources() ([]Source, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all sources: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var sources []Source
 	for rows.Next() {

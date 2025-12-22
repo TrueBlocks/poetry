@@ -37,13 +37,13 @@ func ensureDataSeededWithFS(dataFolder string, sourceFS fs.FS) error {
 		slog.Warn("[Seeding] data.tar.gz not found in embedded assets. Skipping seeding.")
 		return nil
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	gzr, err := gzip.NewReader(f)
 	if err != nil {
 		return fmt.Errorf("failed to create gzip reader: %w", err)
 	}
-	defer gzr.Close()
+	defer func() { _ = gzr.Close() }()
 
 	tr := tar.NewReader(gzr)
 
@@ -69,8 +69,8 @@ func ensureDataSeededWithFS(dataFolder string, sourceFS fs.FS) error {
 			if _, err := os.Stat(target); err == nil {
 				// File exists.
 				// If it's the database, NEVER overwrite.
+				//nolint:staticcheck
 				if strings.HasSuffix(target, "poetry.db") {
-					// log.Printf("[Seeding] Database exists, skipping: %s", target)
 					continue
 				}
 				// For other files (images/tts), we also skip if they exist (per design)
@@ -92,10 +92,12 @@ func ensureDataSeededWithFS(dataFolder string, sourceFS fs.FS) error {
 			}
 
 			if _, err := io.Copy(outFile, tr); err != nil {
-				outFile.Close()
+				_ = outFile.Close()
 				return fmt.Errorf("failed to write file %s: %w", target, err)
 			}
-			outFile.Close()
+			if err := outFile.Close(); err != nil {
+				return fmt.Errorf("failed to close file %s: %w", target, err)
+			}
 		}
 	}
 

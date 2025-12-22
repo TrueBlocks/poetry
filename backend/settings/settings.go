@@ -131,9 +131,9 @@ func NewManager() (*Manager, error) {
 	}
 
 	// Load existing settings if available
-	m.Load()
-	m.LoadSearch()
-	m.LoadHistory()
+	_ = m.Load()
+	_ = m.LoadSearch()
+	_ = m.LoadHistory()
 
 	return m, nil
 }
@@ -226,7 +226,9 @@ func (m *Manager) UpdateLastWord(wordID int) error {
 		if len(m.history.NavigationHistory) > 50 {
 			m.history.NavigationHistory = m.history.NavigationHistory[:50]
 		}
-		m.SaveHistory()
+		if err := m.SaveHistory(); err != nil {
+			return err
+		}
 	}
 
 	return m.Save()

@@ -124,7 +124,7 @@ func (a *App) GetReferencePattern() string {
 func (a *App) shutdown(ctx context.Context) {
 	// Close database connection and checkpoint WAL
 	if a.db != nil {
-		a.db.Close()
+		_ = a.db.Close()
 	}
 }
 
@@ -165,7 +165,7 @@ func (a *App) GetDanglingLinks() ([]map[string]interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get dangling links: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var results []map[string]interface{}
 	for rows.Next() {
@@ -1492,7 +1492,7 @@ func (a *App) SpeakWord(text string, itemType string, itemWord string, itemID in
 			ErrorType: "network",
 		}
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
 		body, _ := io.ReadAll(resp.Body)
@@ -1748,7 +1748,7 @@ func (a *App) GetSelfReferentialItems() ([]map[string]interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query items: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var results []map[string]interface{}
 
@@ -1877,7 +1877,7 @@ func (a *App) GetLinkedItemsNotInDefinition() ([]map[string]interface{}, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to query items with links: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// Group results by item
 	itemMap := make(map[int]map[string]interface{})

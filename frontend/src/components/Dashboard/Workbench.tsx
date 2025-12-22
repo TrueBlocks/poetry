@@ -1,9 +1,19 @@
-import { Paper, Text, Group, Table, Button, ScrollArea, Switch, useMantineTheme, Checkbox } from '@mantine/core';
-import { Link as RouterLink } from 'react-router-dom';
-import { CheckSquare, ArrowRight, Network } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
-import { database } from '../../../wailsjs/go/models';
-import { ToggleItemMark } from '../../../wailsjs/go/main/App';
+import {
+  Paper,
+  Text,
+  Group,
+  Table,
+  Button,
+  ScrollArea,
+  Switch,
+  useMantineTheme,
+  Checkbox,
+} from "@mantine/core";
+import { Link as RouterLink } from "react-router-dom";
+import { CheckSquare, ArrowRight, Network } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { database } from "../../../wailsjs/go/models";
+import { ToggleItemMark } from "../../../wailsjs/go/main/App";
 
 interface WorkbenchProps {
   items: database.Item[] | null;
@@ -17,10 +27,10 @@ export function Workbench({ items, onToggle }: WorkbenchProps) {
   const handleUnmark = async (itemId: number) => {
     try {
       await ToggleItemMark(itemId, false);
-      queryClient.invalidateQueries({ queryKey: ['markedItems'] });
-      queryClient.invalidateQueries({ queryKey: ['allItems'] });
+      queryClient.invalidateQueries({ queryKey: ["markedItems"] });
+      queryClient.invalidateQueries({ queryKey: ["allItems"] });
     } catch (error) {
-      console.error('Failed to unmark item:', error);
+      console.error("Failed to unmark item:", error);
     }
   };
 
@@ -32,11 +42,13 @@ export function Workbench({ items, onToggle }: WorkbenchProps) {
           <Text fw={500}>Workbench (Marked Items)</Text>
         </Group>
         <Group>
-          <Text size="xs" c="dimmed">{items?.length || 0} marked items</Text>
+          <Text size="xs" c="dimmed">
+            {items?.length || 0} marked items
+          </Text>
           {onToggle && (
-            <Switch 
-              checked={true} 
-              onChange={onToggle} 
+            <Switch
+              checked={true}
+              onChange={onToggle}
               size="xs"
               onLabel={<CheckSquare size={12} color={theme.colors.blue[6]} />}
               offLabel={<Network size={12} color={theme.colors.gray[6]} />}
@@ -59,19 +71,19 @@ export function Workbench({ items, onToggle }: WorkbenchProps) {
               items.map((item) => (
                 <Table.Tr key={item.itemId}>
                   <Table.Td>
-                    <Checkbox 
-                      checked={true} 
-                      onChange={() => handleUnmark(item.itemId)} 
+                    <Checkbox
+                      checked={true}
+                      onChange={() => handleUnmark(item.itemId)}
                       size="xs"
                     />
                   </Table.Td>
                   <Table.Td fw={500}>{item.word}</Table.Td>
                   <Table.Td>{item.mark}</Table.Td>
                   <Table.Td>
-                    <Button 
-                      component={RouterLink} 
+                    <Button
+                      component={RouterLink}
                       to={`/item/${item.itemId}`}
-                      variant="subtle" 
+                      variant="subtle"
                       size="xs"
                       rightSection={<ArrowRight size={14} />}
                     >

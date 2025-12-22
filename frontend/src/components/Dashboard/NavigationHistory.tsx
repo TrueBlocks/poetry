@@ -1,8 +1,8 @@
-import { Paper, Text, Group, ScrollArea, Button } from '@mantine/core';
-import { Link as RouterLink } from 'react-router-dom';
-import { History } from 'lucide-react';
-import { database } from '../../../wailsjs/go/models';
-import { getItemColor } from '../../utils/colors';
+import { Paper, Text, Group, ScrollArea, Button } from "@mantine/core";
+import { Link as RouterLink } from "react-router-dom";
+import { History } from "lucide-react";
+import { database } from "../../../wailsjs/go/models";
+import { getItemColor } from "../../utils/colors";
 
 interface NavigationHistoryProps {
   history: database.Item[] | null;
@@ -27,10 +27,10 @@ export function NavigationHistory({ history }: NavigationHistoryProps) {
               variant="light"
               size="xs"
               color="gray"
-              style={{ 
+              style={{
                 backgroundColor: getItemColor(item.type),
-                color: '#000',
-                border: '1px solid #dee2e6'
+                color: "#000",
+                border: "1px solid #dee2e6",
               }}
             >
               {item.word}

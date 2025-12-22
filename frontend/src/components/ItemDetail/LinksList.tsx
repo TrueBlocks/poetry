@@ -1,16 +1,23 @@
-import { Link } from 'react-router-dom'
-import { Stack, Text, Paper, Group, ActionIcon, useMantineColorScheme } from '@mantine/core'
-import { Network, ChevronDown, ChevronRight } from 'lucide-react'
-import { getItemColor } from '../../utils/colors'
+import { Link } from "react-router-dom";
+import {
+  Stack,
+  Text,
+  Paper,
+  Group,
+  ActionIcon,
+  useMantineColorScheme,
+} from "@mantine/core";
+import { Network, ChevronDown, ChevronRight } from "lucide-react";
+import { getItemColor } from "../../utils/colors";
 
 interface LinksListProps {
-  itemId: number
-  links: any[] | null
-  linkedItemsData: Record<number, any>
-  outgoingCollapsed: boolean
-  incomingCollapsed: boolean
-  onToggleOutgoing: () => void
-  onToggleIncoming: () => void
+  itemId: number;
+  links: any[] | null;
+  linkedItemsData: Record<number, any>;
+  outgoingCollapsed: boolean;
+  incomingCollapsed: boolean;
+  onToggleOutgoing: () => void;
+  onToggleIncoming: () => void;
 }
 
 export function LinksList({
@@ -20,41 +27,59 @@ export function LinksList({
   outgoingCollapsed,
   incomingCollapsed,
   onToggleOutgoing,
-  onToggleIncoming
+  onToggleIncoming,
 }: LinksListProps) {
-  const { colorScheme } = useMantineColorScheme()
+  const { colorScheme } = useMantineColorScheme();
 
   return (
-    <div style={{ flex: '1', padding: '1rem', overflowY: 'auto', backgroundColor: colorScheme === 'dark' ? '#25262b' : '#f8f9fa' }}>
+    <div
+      style={{
+        flex: "1",
+        padding: "1rem",
+        overflowY: "auto",
+        backgroundColor: colorScheme === "dark" ? "#25262b" : "#f8f9fa",
+      }}
+    >
       <Stack gap="md">
         {/* Outgoing Section */}
         <div>
           <Group
             gap="xs"
             mb="xs"
-            style={{ cursor: 'pointer', userSelect: 'none' }}
+            style={{ cursor: "pointer", userSelect: "none" }}
             onClick={onToggleOutgoing}
           >
-            {outgoingCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+            {outgoingCollapsed ? (
+              <ChevronRight size={14} />
+            ) : (
+              <ChevronDown size={14} />
+            )}
             <Text size="sm" fw={500}>
-              Outgoing ({links?.filter((l: any) => l.sourceItemId === itemId).length || 0})
+              Outgoing (
+              {links?.filter((l: any) => l.sourceItemId === itemId).length || 0}
+              )
             </Text>
           </Group>
           {!outgoingCollapsed && (
             <Stack gap="xs">
-              {links && links.filter((l: any) => l.sourceItemId === itemId).length > 0 ? (
+              {links &&
+              links.filter((l: any) => l.sourceItemId === itemId).length > 0 ? (
                 links
                   .filter((link: any) => link.sourceItemId === itemId)
                   .map((link: any) => {
-                    const linkedItemId = link.destinationItemId
-                    const linkedItem = linkedItemsData?.[linkedItemId]
+                    const linkedItemId = link.destinationItemId;
+                    const linkedItem = linkedItemsData?.[linkedItemId];
 
                     return (
                       <Paper
                         key={link.linkId}
                         p="xs"
                         withBorder
-                        style={{ backgroundColor: linkedItem?.type ? getItemColor(linkedItem.type) : undefined }}
+                        style={{
+                          backgroundColor: linkedItem?.type
+                            ? getItemColor(linkedItem.type)
+                            : undefined,
+                        }}
                       >
                         {linkedItem ? (
                           <Group gap="xs" align="center">
@@ -64,10 +89,14 @@ export function LinksList({
                               size="xs"
                               fw={600}
                               c="dark"
-                              style={{ textDecoration: 'none', lineHeight: 1.2, flex: 1 }}
+                              style={{
+                                textDecoration: "none",
+                                lineHeight: 1.2,
+                                flex: 1,
+                              }}
                               onClick={(e: React.MouseEvent) => {
                                 if (e.metaKey || e.ctrlKey) {
-                                  e.preventDefault()
+                                  e.preventDefault();
                                 }
                               }}
                             >
@@ -85,10 +114,12 @@ export function LinksList({
                             </ActionIcon>
                           </Group>
                         ) : (
-                          <Text size="xs" c="dark">Loading...</Text>
+                          <Text size="xs" c="dark">
+                            Loading...
+                          </Text>
                         )}
                       </Paper>
-                    )
+                    );
                   })
               ) : (
                 <Text size="xs" c="dimmed" ta="center">
@@ -104,29 +135,42 @@ export function LinksList({
           <Group
             gap="xs"
             mb="xs"
-            style={{ cursor: 'pointer', userSelect: 'none' }}
+            style={{ cursor: "pointer", userSelect: "none" }}
             onClick={onToggleIncoming}
           >
-            {incomingCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+            {incomingCollapsed ? (
+              <ChevronRight size={14} />
+            ) : (
+              <ChevronDown size={14} />
+            )}
             <Text size="sm" fw={500}>
-              Incoming ({links?.filter((l: any) => l.destinationItemId === itemId).length || 0})
+              Incoming (
+              {links?.filter((l: any) => l.destinationItemId === itemId)
+                .length || 0}
+              )
             </Text>
           </Group>
           {!incomingCollapsed && (
             <Stack gap="xs">
-              {links && links.filter((l: any) => l.destinationItemId === itemId).length > 0 ? (
+              {links &&
+              links.filter((l: any) => l.destinationItemId === itemId).length >
+                0 ? (
                 links
                   .filter((link: any) => link.destinationItemId === itemId)
                   .map((link: any) => {
-                    const linkedItemId = link.sourceItemId
-                    const linkedItem = linkedItemsData?.[linkedItemId]
+                    const linkedItemId = link.sourceItemId;
+                    const linkedItem = linkedItemsData?.[linkedItemId];
 
                     return (
                       <Paper
                         key={link.linkId}
                         p="xs"
                         withBorder
-                        style={{ backgroundColor: linkedItem?.type ? getItemColor(linkedItem.type) : undefined }}
+                        style={{
+                          backgroundColor: linkedItem?.type
+                            ? getItemColor(linkedItem.type)
+                            : undefined,
+                        }}
                       >
                         {linkedItem ? (
                           <Group gap="xs" align="center">
@@ -136,10 +180,14 @@ export function LinksList({
                               size="xs"
                               fw={600}
                               c="dark"
-                              style={{ textDecoration: 'none', lineHeight: 1.2, flex: 1 }}
+                              style={{
+                                textDecoration: "none",
+                                lineHeight: 1.2,
+                                flex: 1,
+                              }}
                               onClick={(e: React.MouseEvent) => {
                                 if (e.metaKey || e.ctrlKey) {
-                                  e.preventDefault()
+                                  e.preventDefault();
                                 }
                               }}
                             >
@@ -157,10 +205,12 @@ export function LinksList({
                             </ActionIcon>
                           </Group>
                         ) : (
-                          <Text size="xs" c="dark">Loading...</Text>
+                          <Text size="xs" c="dark">
+                            Loading...
+                          </Text>
                         )}
                       </Paper>
-                    )
+                    );
                   })
               ) : (
                 <Text size="xs" c="dimmed" ta="center">
@@ -172,5 +222,5 @@ export function LinksList({
         </div>
       </Stack>
     </div>
-  )
+  );
 }

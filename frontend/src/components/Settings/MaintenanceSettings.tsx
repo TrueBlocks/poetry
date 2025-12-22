@@ -1,5 +1,5 @@
-import { Stack, Title, Text, Accordion } from '@mantine/core'
-import { ItemManagerTool } from './ItemManagerTool'
+import { Stack, Title, Text, Accordion } from "@mantine/core";
+import { ItemManagerTool } from "./ItemManagerTool";
 
 export function MaintenanceSettings() {
   return (
@@ -19,5 +19,5 @@ export function MaintenanceSettings() {
         </Accordion.Item>
       </Accordion>
     </Stack>
-  )
+  );
 }

@@ -22,6 +22,8 @@
 - **After backend changes**: Run `wails generate module` to update TypeScript bindings
 - **File deletion**: Use `rm -f` for files, `rm -R` for folders, ask confirmation, then explicitly remove from context memory
 - **Context updates**: When user renames/refactors methods or structures, immediately update understanding and mental model
+- **NEVER RUN HEREDOC** - Ours is a fish shell environment; do not use bash-style heredoc syntax
+- **DO NOT RUN COMMANDS IN THE FRONTEND FOLDER** - Never `cd frontend` to run commands; always run from repo root with `yarn <command>` such as `yarn test-tsx` or `yarn lint`.
 
 ### Step-by-Step Mode (Alternative Rules of Engagement)
 When I say "We want to go into step-by-step" mode, switch to these rules:
