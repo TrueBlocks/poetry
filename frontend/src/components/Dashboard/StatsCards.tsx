@@ -95,32 +95,37 @@ export function StatsCards({ stats }: StatsCardsProps) {
         .map((item) => (
           <Paper
             key={item.title}
-          component={Link}
-          to={item.to}
-          withBorder
-          p="md"
-          radius="md"
-          style={{
-            textDecoration: "none",
-            color: "inherit",
-            cursor: "pointer",
-          }}
-        >
-          <Group justify="space-between">
-            <div>
-              <Text c="dimmed" size="xs" tt="uppercase" fw={700}>
-                {item.title}
-              </Text>
-              <Text fw={700} size="xl">
-                {item.value.toLocaleString()}
-              </Text>
-            </div>
-            <ThemeIcon color={item.color} variant="light" size={38} radius="md">
-              <item.icon size={20} />
-            </ThemeIcon>
-          </Group>
-        </Paper>
-      ))}
+            component={Link}
+            to={item.to}
+            withBorder
+            p="md"
+            radius="md"
+            style={{
+              textDecoration: "none",
+              color: "inherit",
+              cursor: "pointer",
+            }}
+          >
+            <Group justify="space-between">
+              <div>
+                <Text c="dimmed" size="xs" tt="uppercase" fw={700}>
+                  {item.title}
+                </Text>
+                <Text fw={700} size="xl">
+                  {item.value.toLocaleString()}
+                </Text>
+              </div>
+              <ThemeIcon
+                color={item.color}
+                variant="light"
+                size={38}
+                radius="md"
+              >
+                <item.icon size={20} />
+              </ThemeIcon>
+            </Group>
+          </Paper>
+        ))}
     </SimpleGrid>
   );
 }

@@ -320,7 +320,7 @@ func (db *DB) GetExtendedStats() (*DashboardStats, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query writers for poet count: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	imagesDir, err := constants.GetImagesDir()
 	if err != nil {
@@ -441,7 +441,7 @@ func (db *DB) GetPoetIds() ([]int, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query writers: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	imagesDir, err := constants.GetImagesDir()
 	if err != nil {

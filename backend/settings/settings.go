@@ -38,6 +38,7 @@ type CollapsedState struct {
 	Incoming      bool `json:"incoming"`      // default false (expanded)
 	LinkIntegrity bool `json:"linkIntegrity"` // default false
 	ItemHealth    bool `json:"itemHealth"`    // default false
+	RecentPath    bool `json:"recentPath"`    // default true (collapsed)
 }
 
 // TableSort stores sorting state for a table (field1: primary sort, field2: secondary sort)

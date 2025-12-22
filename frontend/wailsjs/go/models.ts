@@ -400,6 +400,7 @@ export namespace settings {
 	    incoming: boolean;
 	    linkIntegrity: boolean;
 	    itemHealth: boolean;
+	    recentPath: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new CollapsedState(source);
@@ -411,6 +412,7 @@ export namespace settings {
 	        this.incoming = source["incoming"];
 	        this.linkIntegrity = source["linkIntegrity"];
 	        this.itemHealth = source["itemHealth"];
+	        this.recentPath = source["recentPath"];
 	    }
 	}
 	export class SavedSearch {

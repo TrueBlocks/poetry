@@ -22,6 +22,7 @@ interface UIState {
   revealMarkdown: boolean;
   outgoingCollapsed: boolean;
   incomingCollapsed: boolean;
+  recentPathCollapsed: boolean;
   currentSearch: string;
   tabSelections: Record<string, string>;
   tableSorts: Record<string, TableSort>;
@@ -34,6 +35,7 @@ interface UIState {
   setRevealMarkdown: (reveal: boolean) => void;
   setOutgoingCollapsed: (collapsed: boolean) => void;
   setIncomingCollapsed: (collapsed: boolean) => void;
+  setRecentPathCollapsed: (collapsed: boolean) => void;
   setCurrentSearch: (search: string) => void;
   setTabSelection: (viewId: string, tabId: string) => void;
   setTableSort: (tableName: string, sort: TableSort) => void;
@@ -58,6 +60,10 @@ const storage: StateStorage = {
             s.collapsed?.outgoing !== undefined ? s.collapsed.outgoing : true,
           incomingCollapsed:
             s.collapsed?.incoming !== undefined ? s.collapsed.incoming : false,
+          recentPathCollapsed:
+            s.collapsed?.recentPath !== undefined
+              ? s.collapsed.recentPath
+              : true,
           currentSearch: s.currentSearch || "",
           tableSorts: s.tableSorts || {},
         },
@@ -99,10 +105,12 @@ const storage: StateStorage = {
           incoming: false,
           linkIntegrity: false,
           itemHealth: false,
+          recentPath: true,
         };
       }
       current.collapsed.outgoing = state.outgoingCollapsed;
       current.collapsed.incoming = state.incomingCollapsed;
+      current.collapsed.recentPath = state.recentPathCollapsed;
 
       await UpdateSettings(current);
     } catch (e) {
@@ -125,6 +133,7 @@ export const useUIStore = create<UIState>()(
       revealMarkdown: false,
       outgoingCollapsed: true,
       incomingCollapsed: false,
+      recentPathCollapsed: true,
       currentSearch: "",
       tabSelections: {},
       tableSorts: {},
@@ -139,6 +148,8 @@ export const useUIStore = create<UIState>()(
         set({ outgoingCollapsed: collapsed }),
       setIncomingCollapsed: (collapsed) =>
         set({ incomingCollapsed: collapsed }),
+      setRecentPathCollapsed: (collapsed) =>
+        set({ recentPathCollapsed: collapsed }),
       setCurrentSearch: (search) => set({ currentSearch: search }),
       setTabSelection: (viewId, tabId) =>
         set((state) => ({
