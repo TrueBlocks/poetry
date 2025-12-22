@@ -2,11 +2,12 @@ package main
 
 import (
 	"embed"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/TrueBlocks/trueblocks-poetry/backend/settings"
 	"github.com/TrueBlocks/trueblocks-poetry/pkg/constants"
+	applogger "github.com/TrueBlocks/trueblocks-poetry/pkg/logger"
 
 	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v2"
@@ -19,34 +20,39 @@ import (
 var assets embed.FS
 
 func main() {
+	// Initialize logger
+	if err := applogger.InitLogger(); err != nil {
+		println("Failed to initialize logger:", err.Error())
+	}
+
 	// Load .env file from current working directory, or fallback to ~/.poetry-app
 	cwd, _ := os.Getwd()
 	envPath := cwd + "/.env"
 
 	// Try loading from current directory first
 	if err := godotenv.Load(envPath); err != nil {
-		log.Printf("No .env at %s, trying fallback location...", envPath)
+		slog.Info("No .env at path, trying fallback location...", "path", envPath)
 		// If not found in current directory, try config folder
 		fallbackPath, err := constants.GetEnvPath()
 		if err != nil {
-			log.Printf("Could not determine config directory: %v", err)
+			slog.Error("Could not determine config directory", "error", err)
 		} else {
-			log.Printf("Checking for .env at: %s", fallbackPath)
+			slog.Info("Checking for .env at", "path", fallbackPath)
 
 			// Check if file exists
 			if _, err := os.Stat(fallbackPath); err == nil {
-				log.Printf("File exists at %s, attempting to load...", fallbackPath)
+				slog.Info("File exists, attempting to load...", "path", fallbackPath)
 				if err := godotenv.Load(fallbackPath); err != nil {
-					log.Printf("ERROR loading .env from %s: %v", fallbackPath, err)
+					slog.Error("ERROR loading .env", "path", fallbackPath, "error", err)
 				} else {
-					log.Printf("Successfully loaded .env file from %s", fallbackPath)
+					slog.Info("Successfully loaded .env file", "path", fallbackPath)
 				}
 			} else {
-				log.Printf("No .env file found at %s or %s (this is okay if not needed)", envPath, fallbackPath)
+				slog.Info("No .env file found (this is okay if not needed)", "path1", envPath, "path2", fallbackPath)
 			}
 		}
 	} else {
-		log.Printf("Loaded .env file from %s", envPath)
+		slog.Info("Loaded .env file", "path", envPath)
 	}
 
 	// Create an instance of the app structure

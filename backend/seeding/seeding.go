@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,7 +23,7 @@ func EnsureDataSeeded(dataFolder string) error {
 
 // ensureDataSeededWithFS performs the seeding using the provided file system
 func ensureDataSeededWithFS(dataFolder string, sourceFS fs.FS) error {
-	log.Printf("[Seeding] Checking data folder: %s", dataFolder)
+	slog.Info("[Seeding] Checking data folder", "path", dataFolder)
 
 	// Ensure data folder exists
 	if err := os.MkdirAll(dataFolder, 0755); err != nil {
@@ -34,7 +34,7 @@ func ensureDataSeededWithFS(dataFolder string, sourceFS fs.FS) error {
 	f, err := sourceFS.Open("data.tar.gz")
 	if err != nil {
 		// If the file is missing (e.g. dev environment without publish run), just warn and return
-		log.Printf("[Seeding] Warning: data.tar.gz not found in embedded assets. Skipping seeding.")
+		slog.Warn("[Seeding] data.tar.gz not found in embedded assets. Skipping seeding.")
 		return nil
 	}
 	defer f.Close()
@@ -79,7 +79,7 @@ func ensureDataSeededWithFS(dataFolder string, sourceFS fs.FS) error {
 			}
 
 			// File doesn't exist, extract it
-			log.Printf("[Seeding] Extracting missing file: %s", header.Name)
+			slog.Info("[Seeding] Extracting missing file", "file", header.Name)
 
 			// Ensure parent directory exists
 			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
@@ -99,6 +99,6 @@ func ensureDataSeededWithFS(dataFolder string, sourceFS fs.FS) error {
 		}
 	}
 
-	log.Printf("[Seeding] Seeding check complete.")
+	slog.Info("[Seeding] Seeding check complete.")
 	return nil
 }

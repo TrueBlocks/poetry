@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"regexp"
 	"strings"
 	"time"
@@ -191,19 +191,19 @@ func NewDB(dbPath string) (*DB, error) {
 
 // Checkpoint flushes the WAL to the main database file
 func (db *DB) Checkpoint() error {
-	log.Printf("[DB] Checkpointing WAL")
+	slog.Info("[DB] Checkpointing WAL")
 	_, err := db.conn.Exec("PRAGMA wal_checkpoint(TRUNCATE)")
 	if err != nil {
-		log.Printf("[DB] WAL checkpoint failed: %v", err)
+		slog.Error("[DB] WAL checkpoint failed", "error", err)
 		return fmt.Errorf("failed to checkpoint WAL: %w", err)
 	}
-	log.Printf("[DB] WAL checkpoint succeeded")
+	slog.Info("[DB] WAL checkpoint succeeded")
 	return nil
 }
 
 // CleanOrphanedLinks removes links that point to non-existent items
 func (db *DB) CleanOrphanedLinks() (int, error) {
-	log.Printf("[DB] Cleaning orphaned links")
+	slog.Info("[DB] Cleaning orphaned links")
 
 	result, err := db.conn.Exec(`
 		DELETE FROM links 
@@ -211,17 +211,17 @@ func (db *DB) CleanOrphanedLinks() (int, error) {
 		   OR NOT EXISTS (SELECT 1 FROM items WHERE item_id = links.source_item_id)
 	`)
 	if err != nil {
-		log.Printf("[DB] Failed to clean orphaned links: %v", err)
+		slog.Error("[DB] Failed to clean orphaned links", "error", err)
 		return 0, fmt.Errorf("failed to clean orphaned links: %w", err)
 	}
 
 	rows, err := result.RowsAffected()
 	if err != nil {
-		log.Printf("[DB] Failed to get rows affected: %v", err)
+		slog.Error("[DB] Failed to get rows affected", "error", err)
 		return 0, fmt.Errorf("failed to get rows affected: %w", err)
 	}
 
-	log.Printf("[DB] Cleaned %d orphaned links", rows)
+	slog.Info("[DB] Cleaned orphaned links", "count", rows)
 	return int(rows), nil
 }
 
@@ -230,7 +230,7 @@ func (db *DB) Close() error {
 	// Checkpoint and truncate WAL file before closing
 	_, err := db.conn.Exec("PRAGMA wal_checkpoint(TRUNCATE)")
 	if err != nil {
-		log.Printf("[DB] Warning: WAL checkpoint failed: %v", err)
+		slog.Warn("[DB] Warning: WAL checkpoint failed", "error", err)
 	}
 	return db.conn.Close()
 }
@@ -472,7 +472,7 @@ func (db *DB) SearchItems(query string) ([]Item, error) {
 
 		// If FTS5 fails (module not available or query syntax error), fall back to LIKE
 		if err != nil {
-			log.Printf("[SearchItems] FTS5 search failed, falling back to LIKE: %v", err)
+			slog.Warn("[SearchItems] FTS5 search failed, falling back to LIKE", "error", err)
 			searchTerm := "%" + query + "%"
 			sqlQuery = `
 				SELECT item_id, word, type, definition, derivation,
@@ -599,7 +599,7 @@ func (db *DB) SearchItemsWithOptions(options SearchOptions) ([]Item, error) {
 	rows, err := db.conn.Query(sqlQuery, ftsArgs...)
 	if err != nil {
 		// Fallback to LIKE search
-		log.Printf("[SearchItemsWithOptions] FTS5 search failed, falling back to LIKE: %v", err)
+		slog.Warn("[SearchItemsWithOptions] FTS5 search failed, falling back to LIKE", "error", err)
 		searchTerm := "%" + options.Query + "%"
 		sqlQuery = `
 			SELECT item_id, word, type, definition, derivation,
@@ -744,52 +744,52 @@ func stripPossessive(text string) string {
 // If the referenced word doesn't exist, it removes the reference tags from the source item's text fields.
 // Returns: linkCreated (bool), message (string), error
 func (db *DB) CreateLinkOrRemoveTags(sourceItemID int, refWord string) (bool, string, error) {
-	log.Printf("[CreateLinkOrRemoveTags] START - sourceItemID=%d, refWord='%s'", sourceItemID, refWord)
+	slog.Debug("[CreateLinkOrRemoveTags] START", "sourceItemID", sourceItemID, "refWord", refWord)
 
 	matchWord := stripPossessive(refWord)
 	if matchWord != refWord {
-		log.Printf("[CreateLinkOrRemoveTags] Stripped possessive: '%s' -> '%s'", refWord, matchWord)
+		slog.Debug("[CreateLinkOrRemoveTags] Stripped possessive", "original", refWord, "stripped", matchWord)
 	}
 
 	// Try to find the destination item
-	log.Printf("[CreateLinkOrRemoveTags] Calling GetItemByWord('%s')", matchWord)
+	slog.Debug("[CreateLinkOrRemoveTags] Calling GetItemByWord", "word", matchWord)
 	destItem, err := db.GetItemByWord(matchWord)
 	if err != nil {
-		log.Printf("[CreateLinkOrRemoveTags] GetItemByWord ERROR: %v", err)
+		slog.Error("[CreateLinkOrRemoveTags] GetItemByWord ERROR", "error", err)
 	} else if destItem == nil {
-		log.Printf("[CreateLinkOrRemoveTags] GetItemByWord returned nil item (no error)")
+		slog.Debug("[CreateLinkOrRemoveTags] GetItemByWord returned nil item (no error)")
 	} else {
-		log.Printf("[CreateLinkOrRemoveTags] GetItemByWord SUCCESS: found item ID=%d, word='%s'", destItem.ItemID, destItem.Word)
+		slog.Debug("[CreateLinkOrRemoveTags] GetItemByWord SUCCESS", "itemID", destItem.ItemID, "word", destItem.Word)
 	}
 
 	if err == nil && destItem != nil {
 		// Item exists - try to create the link
-		log.Printf("[CreateLinkOrRemoveTags] Attempting to create link: source=%d -> dest=%d", sourceItemID, destItem.ItemID)
+		slog.Debug("[CreateLinkOrRemoveTags] Attempting to create link", "source", sourceItemID, "dest", destItem.ItemID)
 		linkErr := db.CreateLink(sourceItemID, destItem.ItemID, "reference")
 		if linkErr == nil {
-			log.Printf("[CreateLinkOrRemoveTags] Link created successfully!")
+			slog.Debug("[CreateLinkOrRemoveTags] Link created successfully")
 			return true, fmt.Sprintf("Added link to %s", destItem.Word), nil
 		}
-		log.Printf("[CreateLinkOrRemoveTags] CreateLink FAILED: %v - will remove tag instead", linkErr)
+		slog.Warn("[CreateLinkOrRemoveTags] CreateLink FAILED - will remove tag instead", "error", linkErr)
 		// Link creation failed, fall through to remove tag
 	}
 
 	// Item doesn't exist or link creation failed - remove the reference tags
-	log.Printf("[CreateLinkOrRemoveTags] Removing tags - getting source item %d", sourceItemID)
+	slog.Debug("[CreateLinkOrRemoveTags] Removing tags - getting source item", "sourceItemID", sourceItemID)
 	sourceItem, err := db.GetItem(sourceItemID)
 	if err != nil {
-		log.Printf("[CreateLinkOrRemoveTags] GetItem FAILED: %v", err)
+		slog.Error("[CreateLinkOrRemoveTags] GetItem FAILED", "error", err)
 		return false, "", fmt.Errorf("failed to get source item: %w", err)
 	}
-	log.Printf("[CreateLinkOrRemoveTags] Got source item: word='%s'", sourceItem.Word)
+	slog.Debug("[CreateLinkOrRemoveTags] Got source item", "word", sourceItem.Word)
 
 	// Build regex to match reference tags with optional possessive forms
 	regex, err := parser.GetPossessiveReferenceRegex(matchWord)
 	if err != nil {
-		log.Printf("[CreateLinkOrRemoveTags] Failed to compile regex: %v", err)
+		slog.Error("[CreateLinkOrRemoveTags] Failed to compile regex", "error", err)
 		return false, "", fmt.Errorf("failed to compile regex: %w", err)
 	}
-	log.Printf("[CreateLinkOrRemoveTags] Regex pattern: %s", regex.String())
+	slog.Debug("[CreateLinkOrRemoveTags] Regex pattern", "pattern", regex.String())
 
 	// Remove tags from all text fields, keeping the actual word
 	updatedDefinition := ""
@@ -818,25 +818,25 @@ func (db *DB) CreateLinkOrRemoveTags(sourceItemID int, refWord string) (bool, st
 
 	// Check if anything actually changed
 	if !defChanged && !derChanged && !appChanged {
-		log.Printf("[CreateLinkOrRemoveTags] Nothing changed - returning success")
+		slog.Debug("[CreateLinkOrRemoveTags] Nothing changed - returning success")
 		return false, "No changes needed", nil
 	}
 
-	log.Printf("[CreateLinkOrRemoveTags] Changes detected - defChanged=%v, derChanged=%v, appChanged=%v", defChanged, derChanged, appChanged)
+	slog.Debug("[CreateLinkOrRemoveTags] Changes detected", "defChanged", defChanged, "derChanged", derChanged, "appChanged", appChanged)
 
 	// Update the item
 	sourceItem.Definition = &updatedDefinition
 	sourceItem.Derivation = &updatedDerivation
 	sourceItem.Appendicies = &updatedAppendicies
 
-	log.Printf("[CreateLinkOrRemoveTags] Calling UpdateItem")
+	slog.Debug("[CreateLinkOrRemoveTags] Calling UpdateItem")
 	err = db.UpdateItem(*sourceItem)
 	if err != nil {
-		log.Printf("[CreateLinkOrRemoveTags] UpdateItem FAILED: %v", err)
+		slog.Error("[CreateLinkOrRemoveTags] UpdateItem FAILED", "error", err)
 		return false, "", fmt.Errorf("failed to update item: %w", err)
 	}
 
-	log.Printf("[CreateLinkOrRemoveTags] SUCCESS - tags removed")
+	slog.Info("[CreateLinkOrRemoveTags] SUCCESS - tags removed")
 	return false, fmt.Sprintf("Removed non-existent reference to %s", matchWord), nil
 }
 
@@ -979,25 +979,25 @@ func (db *DB) ToggleItemMark(itemID int, marked bool) error {
 
 // DeleteItem deletes an item
 func (db *DB) DeleteItem(itemID int) error {
-	log.Printf("[DB] DeleteItem called for itemID: %d", itemID)
+	slog.Info("[DB] DeleteItem called", "itemID", itemID)
 	result, err := db.conn.Exec("DELETE FROM items WHERE item_id = ?", itemID)
 	if err != nil {
-		log.Printf("[DB] DeleteItem SQL exec failed: %v", err)
+		slog.Error("[DB] DeleteItem SQL exec failed", "error", err)
 		return fmt.Errorf("failed to delete item: %w", err)
 	}
 
 	rows, err := result.RowsAffected()
 	if err != nil {
-		log.Printf("[DB] DeleteItem failed to get rows affected: %v", err)
+		slog.Error("[DB] DeleteItem failed to get rows affected", "error", err)
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
-	log.Printf("[DB] DeleteItem affected %d rows", rows)
+	slog.Info("[DB] DeleteItem affected rows", "rows", rows)
 	if rows == 0 {
-		log.Printf("[DB] DeleteItem found no item with ID: %d", itemID)
+		slog.Warn("[DB] DeleteItem found no item", "itemID", itemID)
 		return fmt.Errorf("item not found")
 	}
 
-	log.Printf("[DB] DeleteItem succeeded for itemID: %d", itemID)
+	slog.Info("[DB] DeleteItem succeeded", "itemID", itemID)
 	return nil
 }
 
@@ -1018,25 +1018,25 @@ func (db *DB) CreateLink(sourceID, destID int, linkType string) error {
 
 // DeleteLink deletes a link
 func (db *DB) DeleteLink(linkID int) error {
-	log.Printf("[DB] DeleteLink called for linkID: %d", linkID)
+	slog.Info("[DB] DeleteLink called", "linkID", linkID)
 	result, err := db.conn.Exec("DELETE FROM links WHERE link_id = ?", linkID)
 	if err != nil {
-		log.Printf("[DB] DeleteLink SQL exec failed: %v", err)
+		slog.Error("[DB] DeleteLink SQL exec failed", "error", err)
 		return fmt.Errorf("failed to delete link: %w", err)
 	}
 
 	rows, err := result.RowsAffected()
 	if err != nil {
-		log.Printf("[DB] DeleteLink failed to get rows affected: %v", err)
+		slog.Error("[DB] DeleteLink failed to get rows affected", "error", err)
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
-	log.Printf("[DB] DeleteLink affected %d rows", rows)
+	slog.Info("[DB] DeleteLink affected rows", "rows", rows)
 	if rows == 0 {
-		log.Printf("[DB] DeleteLink found no link with ID: %d", linkID)
+		slog.Warn("[DB] DeleteLink found no link", "linkID", linkID)
 		return fmt.Errorf("link not found")
 	}
 
-	log.Printf("[DB] DeleteLink succeeded for linkID: %d", linkID)
+	slog.Info("[DB] DeleteLink succeeded", "linkID", linkID)
 	return nil
 }
 

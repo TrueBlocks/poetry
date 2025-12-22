@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -60,14 +60,15 @@ func (a *App) startup(ctx context.Context) {
 	// Initialize settings first so we can get the dataFolder
 	settingsMgr, err := settings.NewManager()
 	if err != nil {
-		log.Fatal("Failed to initialize settings:", err)
+		slog.Error("Failed to initialize settings", "error", err)
+		os.Exit(1)
 	}
 	a.settings = settingsMgr
 
 	// Set window position from saved settings
 	savedSettings := a.settings.Get()
 	runtime.WindowSetPosition(ctx, savedSettings.Window.X, savedSettings.Window.Y)
-	log.Printf("Set window position to (%d, %d)", savedSettings.Window.X, savedSettings.Window.Y)
+	slog.Info("Set window position", "x", savedSettings.Window.X, "y", savedSettings.Window.Y)
 
 	// Show window after positioning
 	runtime.WindowShow(ctx)
@@ -75,20 +76,22 @@ func (a *App) startup(ctx context.Context) {
 	// Determine database path from constants
 	dbPath, err := constants.GetDatabasePath()
 	if err != nil {
-		log.Fatal("Failed to get database path:", err)
+		slog.Error("Failed to get database path", "error", err)
+		os.Exit(1)
 	}
 
-	log.Printf("Database path: %s", dbPath)
+	slog.Info("Database path", "path", dbPath)
 
 	// Ensure data is seeded before opening database
 	if err := seeding.EnsureDataSeeded(filepath.Dir(dbPath)); err != nil {
-		log.Printf("Warning: Failed to seed data: %v", err)
+		slog.Warn("Failed to seed data", "error", err)
 	}
 
 	// Initialize database
 	db, err := database.NewDB(dbPath)
 	if err != nil {
-		log.Fatal("Failed to initialize database:", err)
+		slog.Error("Failed to initialize database", "error", err)
+		os.Exit(1)
 	}
 	a.db = db
 	a.adhoc = components.NewAdHocQueryComponent(db)
@@ -127,13 +130,13 @@ func (a *App) shutdown(ctx context.Context) {
 
 // CheckpointDatabase flushes WAL to main database file
 func (a *App) CheckpointDatabase() error {
-	log.Printf("[App] Checkpointing database WAL")
+	slog.Info("[App] Checkpointing database WAL")
 	return a.db.Checkpoint()
 }
 
 // CleanOrphanedLinks removes links pointing to non-existent items
 func (a *App) CleanOrphanedLinks() (int, error) {
-	log.Printf("[App] Cleaning orphaned links")
+	slog.Info("[App] Cleaning orphaned links")
 	return a.db.CleanOrphanedLinks()
 }
 
@@ -268,13 +271,13 @@ func (a *App) SearchItemsWithOptions(options database.SearchOptions) ([]database
 
 // GetItem retrieves a single item by ID
 func (a *App) GetItem(itemID int) (*database.Item, error) {
-	// log.Printf("[GetItem] Fetching item with ID: %d", itemID)
+	// slog.Debug("[GetItem] Fetching item", "id", itemID)
 	item, err := a.db.GetItem(itemID)
 	if err != nil {
-		log.Printf("[GetItem] ERROR fetching item %d: %v", itemID, err)
+		slog.Error("[GetItem] ERROR fetching item", "id", itemID, "error", err)
 		return nil, err
 	}
-	// log.Printf("[GetItem] Successfully fetched item: %s (type: %s)", item.Word, item.Type)
+	// slog.Debug("[GetItem] Successfully fetched item", "word", item.Word, "type", item.Type)
 	return item, nil
 }
 
@@ -313,7 +316,7 @@ func (a *App) UpdateItem(item database.Item) error {
 	if err == nil {
 		cacheFile := fmt.Sprintf("%s/%d.mp3", cacheDir, item.ItemID)
 		if err := os.Remove(cacheFile); err != nil && !os.IsNotExist(err) {
-			log.Printf("Warning: failed to delete TTS cache for item %d: %v", item.ItemID, err)
+			slog.Warn("Failed to delete TTS cache", "id", item.ItemID, "error", err)
 		}
 	}
 
@@ -327,20 +330,20 @@ func (a *App) ToggleItemMark(itemID int, marked bool) error {
 
 // DeleteItem deletes an item
 func (a *App) DeleteItem(itemID int) error {
-	log.Printf("[App] DeleteItem called for itemID: %d", itemID)
+	slog.Info("[App] DeleteItem called", "id", itemID)
 
 	// Delete TTS cache for this item
 	cacheDir, err := constants.GetTTSCacheDir()
 	if err == nil {
 		cacheFile := fmt.Sprintf("%s/%d.mp3", cacheDir, itemID)
 		if err := os.Remove(cacheFile); err != nil && !os.IsNotExist(err) {
-			log.Printf("Warning: failed to delete TTS cache for item %d: %v", itemID, err)
+			slog.Warn("Failed to delete TTS cache", "id", itemID, "error", err)
 		}
 	}
 
 	// Delete Image cache for this item
 	if err := a.DeleteItemImage(itemID); err != nil {
-		log.Printf("Warning: failed to delete image cache for item %d: %v", itemID, err)
+		slog.Warn("Failed to delete image cache", "id", itemID, "error", err)
 	}
 
 	// Update settings: remove from history and update lastWordId if needed
@@ -348,7 +351,7 @@ func (a *App) DeleteItem(itemID int) error {
 
 	// Remove from NavigationHistory
 	if err := a.settings.RemoveFromHistory(itemID); err != nil {
-		log.Printf("Warning: failed to remove item from history: %v", err)
+		slog.Warn("Failed to remove item from history", "error", err)
 	}
 
 	// Check LastWordID
@@ -361,15 +364,15 @@ func (a *App) DeleteItem(itemID int) error {
 	}
 
 	if err := a.settings.Save(); err != nil {
-		log.Printf("Warning: failed to save settings after deleting item: %v", err)
+		slog.Warn("Failed to save settings after deleting item", "error", err)
 	}
 
 	err = a.db.DeleteItem(itemID)
 	if err != nil {
-		log.Printf("[App] DeleteItem failed: %v", err)
+		slog.Error("[App] DeleteItem failed", "error", err)
 		return err
 	}
-	log.Printf("[App] DeleteItem succeeded for itemID: %d", itemID)
+	slog.Info("[App] DeleteItem succeeded", "id", itemID)
 	return nil
 }
 
@@ -380,13 +383,13 @@ func (a *App) CreateLink(sourceID, destID int, linkType string) error {
 
 // DeleteLink deletes a link
 func (a *App) DeleteLink(linkID int) error {
-	log.Printf("[App] DeleteLink called for linkID: %d", linkID)
+	slog.Info("[App] DeleteLink called", "id", linkID)
 	err := a.db.DeleteLink(linkID)
 	if err != nil {
-		log.Printf("[App] DeleteLink failed: %v", err)
+		slog.Error("[App] DeleteLink failed", "error", err)
 		return err
 	}
-	log.Printf("[App] DeleteLink succeeded for linkID: %d", linkID)
+	slog.Info("[App] DeleteLink succeeded", "id", linkID)
 	return nil
 }
 
@@ -428,7 +431,7 @@ func (a *App) GetNavigationHistory() ([]database.Item, error) {
 	for _, id := range historyIDs {
 		item, err := a.db.GetItem(id)
 		if err != nil {
-			log.Printf("[GetNavigationHistory] Failed to get item %d: %v", id, err)
+			slog.Warn("[GetNavigationHistory] Failed to get item", "id", id, "error", err)
 			continue
 		}
 		if item != nil {
@@ -978,50 +981,50 @@ func (a *App) SaveCurrentSearch(query string) error {
 
 // SaveLastWord saves last viewed word immediately
 func (a *App) SaveLastWord(wordID int) error {
-	log.Printf("[SaveLastWord] Saving last word ID: %d", wordID)
+	slog.Info("[SaveLastWord] Saving last word ID", "id", wordID)
 	err := a.settings.UpdateLastWord(wordID)
 	if err != nil {
-		log.Printf("[SaveLastWord] ERROR: %v", err)
+		slog.Error("[SaveLastWord] ERROR", "error", err)
 	}
 	return err
 }
 
 // SaveLastView saves last viewed page immediately
 func (a *App) SaveLastView(view string) error {
-	log.Printf("[SaveLastView] Saving last view: %s", view)
+	slog.Info("[SaveLastView] Saving last view", "view", view)
 	err := a.settings.UpdateLastView(view)
 	if err != nil {
-		log.Printf("[SaveLastView] ERROR: %v", err)
+		slog.Error("[SaveLastView] ERROR", "error", err)
 	}
 	return err
 }
 
 // SaveRevealMarkdown saves reveal markdown mode immediately
 func (a *App) SaveRevealMarkdown(reveal bool) error {
-	log.Printf("[SaveRevealMarkdown] Saving reveal markdown: %v", reveal)
+	slog.Info("[SaveRevealMarkdown] Saving reveal markdown", "reveal", reveal)
 	err := a.settings.UpdateRevealMarkdown(reveal)
 	if err != nil {
-		log.Printf("[SaveRevealMarkdown] ERROR: %v", err)
+		slog.Error("[SaveRevealMarkdown] ERROR", "error", err)
 	}
 	return err
 }
 
 // SaveOutgoingCollapsed saves outgoing collapsed state immediately
 func (a *App) SaveOutgoingCollapsed(collapsed bool) error {
-	log.Printf("[SaveOutgoingCollapsed] Saving outgoing collapsed: %v", collapsed)
+	slog.Info("[SaveOutgoingCollapsed] Saving outgoing collapsed", "collapsed", collapsed)
 	err := a.settings.UpdateOutgoingCollapsed(collapsed)
 	if err != nil {
-		log.Printf("[SaveOutgoingCollapsed] ERROR: %v", err)
+		slog.Error("[SaveOutgoingCollapsed] ERROR", "error", err)
 	}
 	return err
 }
 
 // SaveIncomingCollapsed saves incoming collapsed state immediately
 func (a *App) SaveIncomingCollapsed(collapsed bool) error {
-	log.Printf("[SaveIncomingCollapsed] Saving incoming collapsed: %v", collapsed)
+	slog.Info("[SaveIncomingCollapsed] Saving incoming collapsed", "collapsed", collapsed)
 	err := a.settings.UpdateIncomingCollapsed(collapsed)
 	if err != nil {
-		log.Printf("[SaveIncomingCollapsed] ERROR: %v", err)
+		slog.Error("[SaveIncomingCollapsed] ERROR", "error", err)
 	}
 	return err
 }
@@ -1203,7 +1206,7 @@ func (a *App) GetEnvVars() map[string]string {
 	// Try to read from current directory first, then fallback to ~/.poetry-app
 	cwd, err := os.Getwd()
 	if err != nil {
-		log.Printf("Failed to get working directory: %v", err)
+		slog.Error("Failed to get working directory", "error", err)
 		return envVars
 	}
 
@@ -1215,12 +1218,12 @@ func (a *App) GetEnvVars() map[string]string {
 		if err == nil {
 			data, err = os.ReadFile(fallbackPath)
 			if err != nil {
-				log.Printf("No .env file found at %s or %s", envPath, fallbackPath)
+				slog.Info("No .env file found", "path1", envPath, "path2", fallbackPath)
 				return envVars
 			}
 			// envPath = fallbackPath
 		} else {
-			log.Printf("No .env file found at %s", envPath)
+			slog.Info("No .env file found", "path", envPath)
 			return envVars
 		}
 	}
@@ -1323,7 +1326,7 @@ func (a *App) SaveEnvVar(key, value string) error {
 
 	// Update in-memory environment variable so changes take effect immediately
 	if err := os.Setenv(key, value); err != nil {
-		log.Printf("Warning: failed to update in-memory environment variable: %v", err)
+		slog.Warn("Failed to update in-memory environment variable", "error", err)
 	}
 
 	return nil
@@ -1415,7 +1418,7 @@ func (a *App) SpeakWord(text string, itemType string, itemWord string, itemID in
 			firstName := parts[0]
 			gender, err := a.db.GetGenderByFirstName(firstName)
 			if err != nil {
-				log.Printf("Warning: failed to get gender for %s: %v", firstName, err)
+				slog.Warn("Failed to get gender", "name", firstName, "error", err)
 			} else if gender == "male" {
 				voice = "onyx" // Male voice
 			} else if gender == "female" {
@@ -1429,14 +1432,14 @@ func (a *App) SpeakWord(text string, itemType string, itemWord string, itemID in
 
 	// Check if cached file exists
 	if cachedData, err := os.ReadFile(cacheFile); err == nil {
-		log.Printf("Using cached TTS audio for item %d", itemID)
+		slog.Info("Using cached TTS audio", "itemID", itemID)
 		return TTSResult{
 			AudioData: cachedData,
 			Cached:    true,
 		}
 	}
 
-	log.Printf("Cache miss, calling OpenAI API for item %d", itemID)
+	slog.Info("Cache miss, calling OpenAI API", "itemID", itemID)
 
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
@@ -1523,10 +1526,10 @@ func (a *App) SpeakWord(text string, itemType string, itemWord string, itemID in
 
 	// Cache the audio data for future use
 	if err := os.WriteFile(cacheFile, audioData, 0644); err != nil {
-		log.Printf("Warning: failed to cache audio data: %v", err)
+		slog.Warn("Failed to cache audio data", "error", err)
 		// Don't fail the request if caching fails
 	} else {
-		log.Printf("Cached TTS audio to: %s", cacheFile)
+		slog.Info("Cached TTS audio", "path", cacheFile)
 	}
 
 	return TTSResult{
