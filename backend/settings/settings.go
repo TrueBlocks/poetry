@@ -236,9 +236,9 @@ func (m *Manager) UpdateLastWord(wordID int) error {
 
 // GetNavigationHistory returns the navigation history
 func (m *Manager) GetNavigationHistory() []int {
-	// Return only the first 10 items for display
-	if len(m.history.NavigationHistory) > 10 {
-		return m.history.NavigationHistory[:10]
+	// Return up to 50 items (frontend handles display limit)
+	if len(m.history.NavigationHistory) > 50 {
+		return m.history.NavigationHistory[:50]
 	}
 	return m.history.NavigationHistory
 }
