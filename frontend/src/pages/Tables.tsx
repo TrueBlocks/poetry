@@ -103,8 +103,6 @@ function SortableTable({ columns, data, keyField, onSort, getSortIcon, getSortIn
   )
 }
 
-import { useUIStore } from '../stores/useUIStore'
-
 export default function Tables() {
   const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
@@ -179,20 +177,7 @@ export default function Tables() {
     refetchInterval: 500,
   })
 
-  // Load sort state from settings when table changes
-  useEffect(() => {
-    if (settings?.tableSorts?.[selectedTable]) {
-      const saved = settings.tableSorts[selectedTable]
-      setSortState({
-        field1: saved.field1 || '',
-        dir1: (saved.dir1 || '') as SortDirection,
-        field2: saved.field2 || '',
-        dir2: (saved.dir2 || '') as SortDirection,
-      })
-    } else {
-      setSortState({ field1: '', dir1: '', field2: '', dir2: '' })
-    }
-  }, [selectedTable, settings])
+
 
   // Load search query from settings only once on mount/initial load
   useEffect(() => {

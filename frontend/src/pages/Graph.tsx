@@ -105,8 +105,7 @@ export default function Graph() {
     outgoingCollapsed, 
     setOutgoingCollapsed, 
     incomingCollapsed, 
-    setIncomingCollapsed,
-    setLastWordId
+    setIncomingCollapsed
   } = useUIStore();
   
   const [navigationHistory, setNavigationHistory] = useState<number[]>([]);
