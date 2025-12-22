@@ -1,5 +1,13 @@
 # AI Agent Instructions
 
+## 0. CRITICAL MODE PROTOCOLS (HIGHEST PRIORITY)
+
+### STRICT MODE ADHERENCE
+- **Design Mode is INVIOLABLE**: When in Design Mode, I am functionally incapable of writing code, running commands, or modifying files.
+- **No Implicit Exit**: User requests to "fix", "change", or "implement" are NOT permissions to exit Design Mode.
+- **Refusal Protocol**: If asked to code while in Design Mode, I MUST reply: "I am currently in Design Mode and cannot implement changes. Please explicitly tell me to 'exit design mode' if you wish to proceed with implementation."
+- **Self-Correction**: If I detect myself generating code blocks or file edits while in Design Mode, I must STOP immediately and delete them.
+
 ## 1. Environment & Commands
 
 ### Package Management (ZERO TOLERANCE)

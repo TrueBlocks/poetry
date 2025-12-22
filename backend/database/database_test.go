@@ -84,17 +84,17 @@ func TestNormalizeDefinitionReferences(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.input
-			normalizeDefinitionReferences(&result)
+			normalizeDefinition(&result)
 			if result != tt.expected {
-				t.Errorf("normalizeDefinitionReferences(%q) = %q; want %q", tt.input, result, tt.expected)
+				t.Errorf("normalizeDefinition(%q) = %q; want %q", tt.input, result, tt.expected)
 			}
 		})
 	}
 }
 
-func TestNormalizeDefinitionReferencesNilPointer(t *testing.T) {
+func TestNormalizeDefinitionNilPointer(t *testing.T) {
 	var nilPtr *string
-	normalizeDefinitionReferences(nilPtr) // Should not panic
+	normalizeDefinition(nilPtr) // Should not panic
 }
 
 // Note: GetItemByWord, GetDuplicateItems, and CreateLinkOrRemoveTags require database integration tests

@@ -96,3 +96,63 @@ func GetPossessiveReferenceRegex(word string) (*regexp.Regexp, error) {
 func GetReferencePattern() string {
 	return ReferenceTagPattern
 }
+
+// HasLineNumbers checks if the text contains line numbers at the end of lines
+// It looks for lines ending with at least 2 spaces followed by a number
+// Returns true if at least 2 such lines are found
+func HasLineNumbers(text string) bool {
+	lines := strings.Split(text, "\n")
+	count := 0
+	// Require at least 2 spaces before the number to avoid false positives like "born in 1990"
+	re := regexp.MustCompile(`\s{2,}\d+$`)
+
+	for _, line := range lines {
+		if re.MatchString(line) {
+			count++
+			if count >= 2 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// StripLineNumbers removes trailing line numbers from the text
+// It removes the number and the preceding whitespace (if >= 2 spaces)
+func StripLineNumbers(text string) string {
+	lines := strings.Split(text, "\n")
+	re := regexp.MustCompile(`\s{2,}\d+$`)
+	var result []string
+
+	for _, line := range lines {
+		result = append(result, re.ReplaceAllString(line, ""))
+	}
+	return strings.Join(result, "\n")
+}
+
+// IsPoem determines if an item is considered a poem.
+// A poem is an item of type 'Title' that contains exactly one pair of brackets enclosing the poem content.
+func IsPoem(itemType, definition string) bool {
+	if itemType != "Title" {
+		return false
+	}
+	// Strict rule: Exactly one opening and one closing bracket
+	openCount := strings.Count(definition, "[")
+	closeCount := strings.Count(definition, "]")
+
+	return openCount == 1 && closeCount == 1
+}
+
+// ExtractPoemContent extracts the text inside the first pair of square brackets.
+// Returns empty string if no brackets are found or if indices are invalid.
+func ExtractPoemContent(definition string) string {
+	start := strings.Index(definition, "[")
+	end := strings.LastIndex(definition, "]")
+
+	if start == -1 || end == -1 || start >= end {
+		return ""
+	}
+
+	// Return content inside brackets, trimmed of whitespace
+	return strings.TrimSpace(definition[start+1 : end])
+}

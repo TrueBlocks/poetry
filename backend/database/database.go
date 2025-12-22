@@ -283,6 +283,8 @@ func (db *DB) GetExtendedStats() (*DashboardStats, error) {
 	}
 
 	// Quotes (Titles with brackets in definition)
+	// Note: This SQL query approximates the logic in parser.IsPoem()
+	// We use LIKE for performance instead of fetching all rows to check balanced brackets
 	queryQuotes := `SELECT COUNT(*) FROM items WHERE type = 'Title' AND definition LIKE '%[%' AND definition LIKE '%]%'`
 	if err := db.conn.QueryRow(queryQuotes).Scan(&stats.QuoteCount); err != nil {
 		return nil, fmt.Errorf("failed to count quotes: %w", err)
@@ -905,8 +907,8 @@ func (db *DB) CreateItem(item Item) (int, error) {
 	return int(id), nil
 }
 
-// normalizeDefinitionReferences converts {word: ...} references to lowercase
-func normalizeDefinitionReferences(text *string) {
+// normalizeDefinition converts {word: ...} references to lowercase
+func normalizeDefinition(text *string) {
 	if text == nil || *text == "" {
 		return
 	}
@@ -917,13 +919,18 @@ func normalizeDefinitionReferences(text *string) {
 		}
 		return ref.Original
 	})
+
+	// Strip line numbers if detected (e.g. "Line of text   5")
+	if parser.HasLineNumbers(*text) {
+		*text = parser.StripLineNumbers(*text)
+	}
 }
 
 // UpdateItem updates an existing item
 func (db *DB) UpdateItem(item Item) error { // Normalize {w: ...} references to lowercase
-	normalizeDefinitionReferences(item.Definition)
-	normalizeDefinitionReferences(item.Derivation)
-	normalizeDefinitionReferences(item.Appendicies)
+	normalizeDefinition(item.Definition)
+	normalizeDefinition(item.Derivation)
+	normalizeDefinition(item.Appendicies)
 	sql := `
 		UPDATE items SET
 			word = ?, type = ?, definition = ?, derivation = ?,

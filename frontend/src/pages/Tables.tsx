@@ -429,6 +429,7 @@ export default function Tables() {
       sourceData = sourceData.filter((row: any) => {
         switch (filterType) {
           case 'quotes':
+            // Matches logic in pkg/parser/parser.go IsPoem()
             if (row.type !== 'Title' || !row.definition) return false
             const openBrackets = (row.definition.match(/\[/g) || []).length
             const closeBrackets = (row.definition.match(/\]/g) || []).length

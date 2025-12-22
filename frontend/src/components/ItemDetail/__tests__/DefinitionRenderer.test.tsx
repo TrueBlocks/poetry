@@ -122,4 +122,27 @@ describe('DefinitionRenderer', () => {
     expect(container.textContent).toContain('Hamlet')
     expect(container.textContent).toContain('poetry')
   })
+
+  test('renders poem with line numbers for long poems', () => {
+    const longPoemContent = Array(15).fill('Line of poem').join('\n')
+    const text = `[\n${longPoemContent}\n]`
+    const item = { type: 'Title', word: 'My Poem' }
+    
+    const { container } = renderWithRouter(
+      <DefinitionRenderer
+        text={text}
+        allItems={mockItems}
+        stopAudio={mockStopAudio}
+        currentAudioRef={mockAudioRef}
+        item={item}
+      />
+    )
+    
+    // Check for content
+    expect(container.textContent).toContain('Line of poem')
+    
+    // Check for line numbers (PoemRenderer adds them every 5th line)
+    expect(container.textContent).toContain('5')
+    expect(container.textContent).toContain('10')
+  })
 })

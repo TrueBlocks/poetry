@@ -6,6 +6,7 @@ import { SpeakWord, GetItemImage, GetEnvVars } from '../../../wailsjs/go/main/Ap
 import { LogInfo, LogError } from '../../../wailsjs/runtime/runtime.js'
 import { Network, Volume2, Copy } from 'lucide-react'
 import { stripPossessive, REFERENCE_COLOR_MAP } from '../../utils/references'
+import { PoemRenderer } from './PoemRenderer'
 
 const COLOR_MAP = REFERENCE_COLOR_MAP
 
@@ -42,6 +43,11 @@ function ReferenceLink({ matchedItem, displayWord, color, hasQuotedText, stopAud
     }
   }, [matchedItem.itemId, matchedItem.type])
 
+  // Check if this link is part of a "Written by:" line in a Title item
+  // We want to hide the thumbnail in this specific context because the main image already shows the writer
+  const isWrittenByLine = parentItem?.type === 'Title' && 
+                          parentItem?.definition?.includes(`Written by: {writer: ${matchedItem.word}}`)
+
   return (
     <span style={{ whiteSpace: 'nowrap' }}>
       <Anchor
@@ -62,7 +68,7 @@ function ReferenceLink({ matchedItem, displayWord, color, hasQuotedText, stopAud
         {displayWord}
       </Anchor>
 
-      {imageUrl && (
+      {imageUrl && !isWrittenByLine && (
         <Anchor
           component={Link}
           to={`/item/${matchedItem.itemId}?tab=detail`}
@@ -317,8 +323,104 @@ interface DefinitionRendererProps {
   item?: any
 }
 
+
 export function DefinitionRenderer({ text, allItems, stopAudio, currentAudioRef, item }: DefinitionRendererProps) {
   const { colorScheme } = useMantineColorScheme()
+
+  // Check if this is a Poem (Title type + exactly one pair of brackets)
+  // We replicate the strict IsPoem logic from backend
+  const isPoem = item?.type === 'Title' && 
+                 (text.match(/\[/g) || []).length === 1 && 
+                 (text.match(/\]/g) || []).length === 1;
+
+  // Helper to process text for links (moved up to be accessible)
+  const renderTextWithLinks = (segmentText: string, startKey: number | string) => {
+    const parts: React.ReactElement[] = []
+    const regex = /\{(word|writer|title):\s*([^}]+)\}/gi
+    let lastIndex = 0
+    let match
+    let keyCounter = 0
+
+    while ((match = regex.exec(segmentText)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        parts.push(<span key={`text-${startKey}-${keyCounter++}`}>{segmentText.substring(lastIndex, match.index)}</span>)
+      }
+
+      const refType = match[1].toLowerCase()
+      const refWord = match[2].trim()
+      const displayWord = refWord // Keep original for display
+      const matchWord = refType === 'writer' ? stripPossessive(refWord) : refWord
+      const color = COLOR_MAP[refType] || '#000'
+
+      const matchedItem = allItems?.find(
+        (item: any) => item.word.toLowerCase() === matchWord.toLowerCase()
+      )
+
+      if (matchedItem) {
+        const hasQuotedText = matchedItem.type === 'Title' && matchedItem.definition && /\[\s*\n/.test(matchedItem.definition)
+        
+        parts.push(
+          <ReferenceLink
+            key={`link-${startKey}-${keyCounter++}`}
+            matchedItem={matchedItem}
+            displayWord={displayWord}
+            color={color}
+            hasQuotedText={hasQuotedText}
+            stopAudio={stopAudio}
+            currentAudioRef={currentAudioRef}
+            parentItem={item}
+          />
+        )
+      } else {
+        parts.push(
+          <span key={`missing-${startKey}-${keyCounter++}`} style={{ color: '#999', fontStyle: 'italic', fontWeight: 600, fontVariant: 'small-caps' }}>
+            {displayWord}
+          </span>
+        )
+      }
+
+      lastIndex = regex.lastIndex
+    }
+
+    // Add remaining text
+    if (lastIndex < segmentText.length) {
+      parts.push(<span key={`text-${startKey}-${keyCounter++}`}>{segmentText.substring(lastIndex)}</span>)
+    }
+
+    return parts
+  }
+
+  if (isPoem) {
+    // Extract content between brackets, capturing text before and after
+    const match = text.match(/^([\s\S]*?)\[([\s\S]*)\]([\s\S]*)$/);
+    if (match) {
+      const preText = match[1];
+      const content = match[2].trim();
+      const postText = match[3];
+      
+      return (
+        <>
+          {preText && preText.trim().length > 0 && (
+            <div style={{ marginBottom: '1rem' }}>
+              {renderTextWithLinks(preText, 'pre-poem')}
+            </div>
+          )}
+          <PoemRenderer 
+            content={content} 
+            renderLine={(line, i) => (
+              <>{renderTextWithLinks(line, `line-${i}`)}</>
+            )}
+          />
+          {postText && postText.trim().length > 0 && (
+            <div style={{ marginTop: '1rem' }}>
+              {renderTextWithLinks(postText, 'post-poem')}
+            </div>
+          )}
+        </>
+      );
+    }
+  }
   
   // First, split by block quotes (text between [ and ])
   const blockQuoteRegex = /\[\s*\n([\s\S]*?)\n\s*\]/g
@@ -651,23 +753,40 @@ export function DefinitionRenderer({ text, allItems, stopAudio, currentAudioRef,
   
   segments.forEach((segment, idx) => {
     if (segment.type === 'quote') {
-      const { parts } = processTextForLinks(segment.content, globalKey)
-      globalKey += parts.length
-      finalParts.push(
-        <div
-          key={`quote-${idx}`}
-          style={{
-            margin: '1rem 0',
-            padding: '0.75rem 1rem',
-            borderLeft: `4px solid ${colorScheme === 'dark' ? '#666' : '#ccc'}`,
-            backgroundColor: colorScheme === 'dark' ? '#2a2a2a' : '#f5f5f5',
-            fontStyle: 'italic',
-            color: colorScheme === 'dark' ? '#d4d4d4' : '#555',
-          }}
-        >
-          {parts}
-        </div>
-      )
+      // Check if this is a poem: Type is Title AND exactly one quote segment in the whole definition
+      const isPoem = item?.type === 'Title' && segments.filter(s => s.type === 'quote').length === 1
+
+      if (isPoem) {
+        finalParts.push(
+          <PoemRenderer
+            key={`poem-${idx}`}
+            content={segment.content}
+            renderLine={(line, _lineIdx) => {
+              const { parts } = processTextForLinks(line, globalKey)
+              globalKey += parts.length
+              return <>{parts}</>
+            }}
+          />
+        )
+      } else {
+        const { parts } = processTextForLinks(segment.content, globalKey)
+        globalKey += parts.length
+        finalParts.push(
+          <div
+            key={`quote-${idx}`}
+            style={{
+              margin: '1rem 0',
+              padding: '0.75rem 1rem',
+              borderLeft: `4px solid ${colorScheme === 'dark' ? '#666' : '#ccc'}`,
+              backgroundColor: colorScheme === 'dark' ? '#2a2a2a' : '#f5f5f5',
+              fontStyle: 'italic',
+              color: colorScheme === 'dark' ? '#d4d4d4' : '#555',
+            }}
+          >
+            {parts}
+          </div>
+        )
+      }
     } else {
       const { parts, nextKey } = processTextForLinks(segment.content, globalKey)
       globalKey = nextKey
