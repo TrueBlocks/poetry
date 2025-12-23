@@ -11,6 +11,8 @@ import {
   NodeTypes,
   Handle,
   Position,
+  type ReactFlowInstance,
+  type NodeMouseHandler,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useQuery, useQueries } from "@tanstack/react-query";
@@ -44,7 +46,6 @@ import { useNavigate, Link, useParams } from "react-router-dom";
 import {
   GetItem,
   GetItemLinks,
-  GetSettings,
   GetItemImage,
   GetEgoGraph,
 } from "@wailsjs/go/main/App.js";
@@ -72,8 +73,18 @@ interface GraphLink {
   type?: string;
 }
 
+interface CustomNodeData extends Record<string, unknown> {
+  label: string;
+  id: number;
+  type: string;
+  isSelected?: boolean;
+  connections: number;
+  definition?: string;
+  image?: string;
+}
+
 // Custom node component
-function CustomNode({ data }: any) {
+function CustomNode({ data }: { data: CustomNodeData }) {
   const getBackgroundColor = () => {
     // Selected node is always light yellow
     if (data.isSelected) {
@@ -148,7 +159,7 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
   const selectedNode = id ? Number(id) : null;
   const setSelectedNode = (id: number) => navigate(`/item/${id}?tab=graph`);
   const [forceRefresh, setForceRefresh] = useState(0);
-  const [rfInstance, setRfInstance] = useState<any>(null);
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   const [nodeImages, setNodeImages] = useState<Record<number, string | null>>(
     {},
   );
@@ -189,8 +200,6 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
     setIncomingCollapsed,
   } = useUIStore();
 
-  const [navigationHistory, setNavigationHistory] = useState<number[]>([]);
-
   const { data: graphData } = useQuery({
     queryKey: ["graphData", selectedNode],
     queryFn: async () => {
@@ -216,8 +225,8 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
   const linkedItemIds = selectedItemLinks
     ? [
         ...new Set([
-          ...selectedItemLinks.map((l: any) => l.sourceItemId),
-          ...selectedItemLinks.map((l: any) => l.destinationItemId),
+          ...selectedItemLinks.map((l) => l.sourceItemId),
+          ...selectedItemLinks.map((l) => l.destinationItemId),
         ]),
       ].filter((id) => id !== selectedNode)
     : [];
@@ -230,15 +239,6 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
       staleTime: 60000,
     })),
   });
-
-  // Load settings from backend
-  useEffect(() => {
-    GetSettings().then((settings: any) => {
-      if (settings.navigationHistory) {
-        setNavigationHistory(settings.navigationHistory);
-      }
-    });
-  }, [selectedNode]);
 
   // Toggle outgoing collapsed
   const toggleOutgoingCollapsed = () => {
@@ -265,24 +265,25 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedNode, navigate]);
 
-  const handleNodeClick = useCallback(
-    (event: any, node: any) => {
+  const handleNodeClick = useCallback<NodeMouseHandler>(
+    (event, node) => {
       LogInfo(`[Graph] Node clicked: ${node.data.label} (${node.data.id})`);
 
       // Update current item tracking
-      setLastWordId(node.data.id);
+      const nodeId = Number(node.data.id);
+      setLastWordId(nodeId);
 
       // If clicking on the already-selected node, go to detail view
-      if (Number(node.data.id) === selectedNode) {
-        navigate(`/item/${node.data.id}?tab=detail`);
+      if (nodeId === selectedNode) {
+        navigate(`/item/${nodeId}?tab=detail`);
         return;
       }
 
       // For other nodes: Cmd+Click (Mac) or Ctrl+Click (Windows/Linux) or double-click to view detail
       if (event.metaKey || event.ctrlKey || event.detail === 2) {
-        navigate(`/item/${node.data.id}?tab=detail`);
+        navigate(`/item/${nodeId}?tab=detail`);
       } else {
-        navigate(`/item/${node.data.id}?tab=graph`);
+        navigate(`/item/${nodeId}?tab=graph`);
       }
     },
     [navigate, selectedNode, setLastWordId],
@@ -313,14 +314,14 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
     let visibleLinks = links;
     if (selectedNode !== null) {
       const selectedNodeId = Number(selectedNode);
-      const selectedItem = items.find((i: any) => i.itemId === selectedNodeId);
+      const selectedItem = items.find((i) => i.itemId === selectedNodeId);
       const itemType = selectedItem ? selectedItem.type : "Reference";
 
       const incomingMap = new Set<number>();
       const outgoingMap = new Set<number>();
 
       // Map connections
-      links.forEach((l: any) => {
+      links.forEach((l) => {
         const sourceId = Number(l.sourceItemId);
         const destId = Number(l.destinationItemId);
         if (destId === selectedNodeId) incomingMap.add(sourceId);
@@ -337,7 +338,7 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
         );
       }
 
-      visibleLinks = links.filter((l: any) => {
+      visibleLinks = links.filter((l) => {
         const sourceId = Number(l.sourceItemId);
         const destId = Number(l.destinationItemId);
 
@@ -352,7 +353,7 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
         if (itemType === "Writer") {
           if (destId === selectedNodeId) {
             // This is an incoming link (Source -> Writer)
-            const sourceItem = items.find((i: any) => i.itemId === sourceId);
+            const sourceItem = items.find((i) => i.itemId === sourceId);
             if (sourceItem?.type === "Title") {
               // It's a Title -> Writer link.
               // Check if we also have Writer -> Title (outgoing)
@@ -369,7 +370,7 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
 
     // Build connection counts (using original links for accurate sizing)
     const connectionCounts = new Map<number, number>();
-    links.forEach((link: any) => {
+    links.forEach((link) => {
       connectionCounts.set(
         link.sourceItemId,
         (connectionCounts.get(link.sourceItemId) || 0) + 1,
@@ -386,18 +387,16 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
     if (selectedNode !== null) {
       // Show only selected node and its direct connections
       const connectedIds = new Set<number>([selectedNode]);
-      visibleLinks.forEach((link: any) => {
+      visibleLinks.forEach((link) => {
         if (link.sourceItemId === selectedNode)
           connectedIds.add(link.destinationItemId);
         if (link.destinationItemId === selectedNode)
           connectedIds.add(link.sourceItemId);
       });
-      filteredItems = items.filter((item: any) =>
-        connectedIds.has(item.itemId),
-      );
+      filteredItems = items.filter((item) => connectedIds.has(item.itemId));
     } else {
       // Normal filtering when no node is selected
-      filteredItems = items.filter((item: any) => {
+      filteredItems = items.filter((item) => {
         const connections = connectionCounts.get(item.itemId) || 0;
         if (connections < minConnections) return false;
         if (visibleTypes.size > 0 && !visibleTypes.has(item.type)) return false;
@@ -408,7 +407,7 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
       if (filteredItems.length > 500) {
         filteredItems = filteredItems
           .sort(
-            (a: any, b: any) =>
+            (a, b) =>
               (connectionCounts.get(b.itemId) || 0) -
               (connectionCounts.get(a.itemId) || 0),
           )
@@ -608,25 +607,25 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
       }
     } else {
       // FORCE LAYOUT (Default)
-      const simulation = forceSimulation(simulationNodes)
+      const simulation = forceSimulation<GraphNode>(simulationNodes)
         .force(
           "link",
-          forceLink(simulationLinks)
-            .id((d: any) => d.id)
+          forceLink<GraphNode, GraphLink>(simulationLinks)
+            .id((d) => d.id)
             .distance(80)
             .strength(0.7),
         )
         .force(
           "charge",
-          forceManyBody()
-            .strength((d: any) => -300 - Math.min(d.connections, 10) * 20)
+          forceManyBody<GraphNode>()
+            .strength((d) => -300 - Math.min(d.connections, 10) * 20)
             .distanceMax(300),
         )
         .force("center", forceCenter(0, 0))
         .force(
           "collide",
-          forceCollide().radius(
-            (d: any) => 35 + Math.min(d.connections, 10) * 2,
+          forceCollide<GraphNode>().radius(
+            (d) => 35 + Math.min(d.connections, 10) * 2,
           ),
         )
         .alphaDecay(0.015)
@@ -642,9 +641,9 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
     // Map titles to writers for image inheritance
     const titleToWriter = new Map<number, number>();
     if (visibleLinks) {
-      visibleLinks.forEach((l: any) => {
-        const source = items.find((i: any) => i.itemId === l.sourceItemId);
-        const dest = items.find((i: any) => i.itemId === l.destinationItemId);
+      visibleLinks.forEach((l) => {
+        const source = items.find((i) => i.itemId === l.sourceItemId);
+        const dest = items.find((i) => i.itemId === l.destinationItemId);
 
         if (source?.type === "Title" && dest?.type === "Writer") {
           titleToWriter.set(source.itemId, dest.itemId);
@@ -655,15 +654,15 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
       });
     }
 
-    const newNodes: Node[] = simulationNodes.map((node: any) => ({
+    const newNodes: Node[] = simulationNodes.map((node) => ({
       id: node.id,
       type: "custom",
       // Center the node by offsetting half its estimated size
       // Approx width: char count * 8px + 20px padding
       // Approx height: 36px
       position: {
-        x: node.x - (node.word.length * 4 + 10),
-        y: node.y - 30,
+        x: (node.x ?? 0) - (node.word.length * 4 + 10),
+        y: (node.y ?? 0) - 30,
       },
       data: {
         id: node.itemId,
@@ -682,34 +681,12 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
 
     const newEdges: Edge[] = [];
 
-    // Build a set of highlighted transitions "fromId-toId"
-    const highlightedTransitions = new Set<string>();
-    if (navigationHistory.length > 1) {
-      for (let i = 0; i < navigationHistory.length - 1; i++) {
-        const current = navigationHistory[i];
-        const prev = navigationHistory[i + 1];
-        // Navigation was from prev -> current
-        highlightedTransitions.add(`${prev}-${current}`);
-      }
-    }
-
-    visibleLinks.forEach((link: any) => {
+    visibleLinks.forEach((link) => {
       const sourceId = String(link.sourceItemId);
       const targetId = String(link.destinationItemId);
-      const sourceNum = Number(link.sourceItemId);
-      const targetNum = Number(link.destinationItemId);
 
-      // Check if this link corresponds to a navigation step
-      // We check strictly: source -> target must match a transition prev -> current
-      const isHighlighted = highlightedTransitions.has(
-        `${sourceNum}-${targetNum}`,
-      );
-
-      const edgeStyle = isHighlighted
-        ? { stroke: "orange", strokeWidth: 3 }
-        : { stroke: "rgba(150, 150, 150, 0.3)", strokeWidth: 2 };
-
-      const markerColor = isHighlighted ? "orange" : "rgba(150, 150, 150, 0.4)";
+      const edgeStyle = { stroke: "rgba(150, 150, 150, 0.3)", strokeWidth: 2 };
+      const markerColor = "rgba(150, 150, 150, 0.4)";
 
       if (selectedNode !== null) {
         // Radial Logic: Use suffixed IDs
@@ -765,7 +742,7 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
 
     // Identify needed images
     const neededImageIds = new Set<number>();
-    simulationNodes.forEach((node: any) => {
+    simulationNodes.forEach((node) => {
       if (node.type === "Writer") {
         neededImageIds.add(node.itemId);
       } else if (node.type === "Title") {
@@ -808,7 +785,6 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
     forceRefresh,
     visibleTypes,
     minConnections,
-    navigationHistory,
     setNodes,
     setEdges,
     rfInstance,
@@ -1015,7 +991,7 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
                   <Text size="sm" fw={500}>
                     Outgoing (
                     {selectedItemLinks?.filter(
-                      (l: any) => l.sourceItemId === selectedNode,
+                      (l) => l.sourceItemId === selectedNode,
                     ).length || 0}
                     )
                   </Text>
@@ -1024,16 +1000,14 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
                   <Stack gap="xs">
                     {selectedItemLinks &&
                     selectedItemLinks.filter(
-                      (l: any) => l.sourceItemId === selectedNode,
+                      (l) => l.sourceItemId === selectedNode,
                     ).length > 0 ? (
                       selectedItemLinks
-                        .filter(
-                          (link: any) => link.sourceItemId === selectedNode,
-                        )
-                        .map((link: any) => {
+                        .filter((link) => link.sourceItemId === selectedNode)
+                        .map((link) => {
                           const linkedItemId = link.destinationItemId;
                           const linkedItemQuery = linkedItemsQueries.find(
-                            (q: any) => q.data?.itemId === linkedItemId,
+                            (q) => q.data?.itemId === linkedItemId,
                           );
                           const linkedItem = linkedItemQuery?.data;
 
@@ -1114,7 +1088,7 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
                   <Text size="sm" fw={500}>
                     Incoming (
                     {selectedItemLinks?.filter(
-                      (l: any) => l.destinationItemId === selectedNode,
+                      (l) => l.destinationItemId === selectedNode,
                     ).length || 0}
                     )
                   </Text>
@@ -1123,17 +1097,16 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
                   <Stack gap="xs">
                     {selectedItemLinks &&
                     selectedItemLinks.filter(
-                      (l: any) => l.destinationItemId === selectedNode,
+                      (l) => l.destinationItemId === selectedNode,
                     ).length > 0 ? (
                       selectedItemLinks
                         .filter(
-                          (link: any) =>
-                            link.destinationItemId === selectedNode,
+                          (link) => link.destinationItemId === selectedNode,
                         )
-                        .map((link: any) => {
+                        .map((link) => {
                           const linkedItemId = link.sourceItemId;
                           const linkedItemQuery = linkedItemsQueries.find(
-                            (q: any) => q.data?.itemId === linkedItemId,
+                            (q) => q.data?.itemId === linkedItemId,
                           );
                           const linkedItem = linkedItemQuery?.data;
 

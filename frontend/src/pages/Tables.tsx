@@ -46,17 +46,16 @@ import {
 } from "lucide-react";
 import { notifications } from "@mantine/notifications";
 import { useUIStore } from "@stores/useUIStore";
-import { database } from "@models";
 
-// Union type for all possible table data
-type TableData =
-  | database.Item
-  | database.Link
-  | database.Cliche
-  | database.Name
-  | database.LiteraryTerm
-  | database.Source
-  | Record<string, unknown>;
+// Table data can be any object type
+type TableData = Record<string, unknown>;
+
+// Extra data passed to render functions
+interface ExtraData {
+  linkCounts: Record<number, { incoming: number; outgoing: number }>;
+  itemImages: Record<number, string | null>;
+  titleToWriter: Map<number, number>;
+}
 
 const ITEMS_PER_PAGE = 15;
 
@@ -75,7 +74,7 @@ interface ColumnDef {
   sortable?: boolean;
   align?: "left" | "right" | "center";
   width?: string | number;
-  render?: (row: any, allData?: any) => React.ReactNode;
+  render?: (row: TableData, allData?: ExtraData) => React.ReactNode;
 }
 
 interface SortableTableProps {
@@ -87,7 +86,7 @@ interface SortableTableProps {
   onSort: (field: string) => void;
   getSortIcon: (field: string) => React.ReactNode;
   getSortIndicator: (field: string) => string;
-  extraData?: any;
+  extraData?: ExtraData;
   useIndexAsKey?: boolean;
 }
 
@@ -168,8 +167,10 @@ function SortableTable({
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
-        {data.map((row: any, index: number) => (
-          <Table.Tr key={useIndexAsKey ? `row-${index}` : row[keyField]}>
+        {data.map((row, index: number) => (
+          <Table.Tr
+            key={useIndexAsKey ? `row-${index}` : String(row[keyField])}
+          >
             {columns.map((col) => (
               <Table.Td
                 key={col.field}
@@ -180,7 +181,9 @@ function SortableTable({
                   whiteSpace: "nowrap",
                 }}
               >
-                {col.render ? col.render(row, extraData) : row[col.field]}
+                {col.render
+                  ? col.render(row, extraData)
+                  : (row[col.field] as React.ReactNode)}
               </Table.Td>
             ))}
           </Table.Tr>
@@ -358,7 +361,7 @@ export default function Tables() {
     if (!allLinks || selectedTable !== "items") return {};
 
     const counts: Record<number, { incoming: number; outgoing: number }> = {};
-    allLinks.forEach((link: any) => {
+    allLinks.forEach((link) => {
       if (!counts[link.sourceItemId]) {
         counts[link.sourceItemId] = { incoming: 0, outgoing: 0 };
       }
@@ -380,11 +383,11 @@ export default function Tables() {
     if (!allItems || !allLinks) return new Map<number, number>();
 
     const itemTypes = new Map<number, string>();
-    allItems.forEach((i: any) => itemTypes.set(i.itemId, i.type));
+    allItems.forEach((i) => itemTypes.set(i.itemId, i.type));
 
     const map = new Map<number, number>();
 
-    allLinks.forEach((l: any) => {
+    allLinks.forEach((l) => {
       const sType = itemTypes.get(l.sourceItemId);
       const dType = itemTypes.get(l.destinationItemId);
 
@@ -488,17 +491,26 @@ export default function Tables() {
     });
   };
 
-  const compareValues = (a: any, b: any, field: string, dir: SortDirection) => {
+  const compareValues = (
+    a: TableData,
+    b: TableData,
+    field: string,
+    dir: SortDirection,
+  ) => {
     let aVal = a[field];
     let bVal = b[field];
 
     // Handle link counts for items table
     if (field === "nIncoming") {
-      aVal = linkCounts[a.itemId]?.incoming || 0;
-      bVal = linkCounts[b.itemId]?.incoming || 0;
+      const aId = a.itemId as number;
+      const bId = b.itemId as number;
+      aVal = linkCounts[aId]?.incoming || 0;
+      bVal = linkCounts[bId]?.incoming || 0;
     } else if (field === "nOutgoing") {
-      aVal = linkCounts[a.itemId]?.outgoing || 0;
-      bVal = linkCounts[b.itemId]?.outgoing || 0;
+      const aId = a.itemId as number;
+      const bId = b.itemId as number;
+      aVal = linkCounts[aId]?.outgoing || 0;
+      bVal = linkCounts[bId]?.outgoing || 0;
     }
 
     // Handle undefined/null
@@ -523,30 +535,34 @@ export default function Tables() {
     let sourceData: TableData[] = [];
 
     if (selectedTable === "items" && allItems) {
-      sourceData = allItems;
+      sourceData = allItems as unknown as TableData[];
     } else if (selectedTable === "links" && allLinks) {
-      sourceData = allLinks;
+      sourceData = allLinks as unknown as TableData[];
     } else if (selectedTable === "cliches" && allCliches) {
-      sourceData = allCliches;
+      sourceData = allCliches as unknown as TableData[];
     } else if (selectedTable === "names" && allNames) {
-      sourceData = allNames;
+      sourceData = allNames as unknown as TableData[];
     } else if (selectedTable === "literaryTerms" && allLiteraryTerms) {
-      sourceData = allLiteraryTerms;
+      sourceData = allLiteraryTerms as unknown as TableData[];
     } else if (selectedTable === "sources" && allSources) {
-      sourceData = allSources;
+      sourceData = allSources as unknown as TableData[];
     } else if (selectedTable === "adhoc" && adHocResults) {
       sourceData = adHocResults;
     }
 
     // Apply URL filters
     if (filterType && selectedTable === "items") {
-      sourceData = sourceData.filter((row: any) => {
+      sourceData = sourceData.filter((row: TableData) => {
         switch (filterType) {
           case "quotes":
             // Matches logic in pkg/parser/parser.go IsPoem()
             if (row.type !== "Title" || !row.definition) return false;
-            const openBrackets = (row.definition.match(/\[/g) || []).length;
-            const closeBrackets = (row.definition.match(/\]/g) || []).length;
+            const openBrackets = (
+              (row.definition as string)?.match(/\[/g) || []
+            ).length;
+            const closeBrackets = (
+              (row.definition as string)?.match(/\]/g) || []
+            ).length;
             return openBrackets > 0 && openBrackets === closeBrackets;
           case "writer":
             return row.type === "Writer";
@@ -557,7 +573,7 @@ export default function Tables() {
           case "cited":
             return row.source && row.source !== "";
           case "poets":
-            return poetIds ? poetIds.includes(row.itemId) : false;
+            return poetIds ? poetIds.includes(row.itemId as number) : false;
           default:
             return true;
         }
@@ -567,7 +583,7 @@ export default function Tables() {
     // Apply search filter (skip for adhoc queries as the query IS the search)
     if (searchQuery && selectedTable !== "adhoc") {
       const lowerQuery = searchQuery.toLowerCase();
-      sourceData = sourceData.filter((row: any) => {
+      sourceData = sourceData.filter((row: TableData) => {
         return Object.values(row).some(
           (value) =>
             value != null && String(value).toLowerCase().includes(lowerQuery),
@@ -600,11 +616,11 @@ export default function Tables() {
     const fetchImages = async () => {
       const idsToFetch = new Set<number>();
 
-      data.forEach((row: any) => {
+      data.forEach((row: TableData) => {
         if (row.type === "Writer") {
-          idsToFetch.add(row.itemId);
+          idsToFetch.add(row.itemId as number);
         } else if (row.type === "Title") {
-          const writerId = titleToWriter.get(row.itemId);
+          const writerId = titleToWriter.get(row.itemId as number);
           if (writerId) idsToFetch.add(writerId);
         }
       });
@@ -730,7 +746,9 @@ export default function Tables() {
         render: (row) => (
           <Checkbox
             checked={!!row.mark}
-            onChange={() => handleMarkToggle(row.itemId, row.mark)}
+            onChange={() =>
+              handleMarkToggle(row.itemId as number, row.mark as string | null)
+            }
             size="xs"
           />
         ),
@@ -739,23 +757,25 @@ export default function Tables() {
         field: "type",
         header: "Type",
         width: "10%",
-        render: (row) => <Badge size="sm">{row.type}</Badge>,
+        render: (row) => <Badge size="sm">{row.type as React.ReactNode}</Badge>,
       },
       {
         field: "word",
         header: "Word",
         width: "20%",
         render: (row, extraData) => {
-          let imageSrc = null;
+          let imageSrc: string | null = null;
           let linkedItemId: number | null = null;
 
           if (row.type === "Writer") {
-            imageSrc = extraData?.itemImages?.[row.itemId];
-            linkedItemId = row.itemId;
+            const itemId = row.itemId as number;
+            imageSrc = extraData?.itemImages?.[itemId] ?? null;
+            linkedItemId = itemId;
           } else if (row.type === "Title") {
-            const writerId = extraData?.titleToWriter?.get(row.itemId);
+            const itemId = row.itemId as number;
+            const writerId = extraData?.titleToWriter?.get(itemId);
             if (writerId) {
-              imageSrc = extraData?.itemImages?.[writerId];
+              imageSrc = extraData?.itemImages?.[writerId] ?? null;
               linkedItemId = writerId;
             }
           }
@@ -764,10 +784,10 @@ export default function Tables() {
             <Group gap="xs" wrap="nowrap">
               <Anchor
                 component={Link}
-                to={`/item/${row.itemId}?tab=detail`}
+                to={`/item/${row.itemId as number}?tab=detail`}
                 fw={600}
               >
-                {row.word}
+                {row.word as React.ReactNode}
               </Anchor>
               {imageSrc &&
                 (linkedItemId ? (
@@ -808,7 +828,7 @@ export default function Tables() {
         align: "right",
         width: "8%",
         render: (row, extraData) => {
-          const counts = extraData?.linkCounts?.[row.itemId] || {
+          const counts = extraData?.linkCounts?.[row.itemId as number] || {
             incoming: 0,
             outgoing: 0,
           };
@@ -821,7 +841,7 @@ export default function Tables() {
         align: "right",
         width: "8%",
         render: (row, extraData) => {
-          const counts = extraData?.linkCounts?.[row.itemId] || {
+          const counts = extraData?.linkCounts?.[row.itemId as number] || {
             incoming: 0,
             outgoing: 0,
           };
@@ -836,11 +856,11 @@ export default function Tables() {
           <div>
             {row.definition ? (
               <Text size="sm" lineClamp={2}>
-                {row.definition}
+                {row.definition as string}
               </Text>
             ) : (
               // <DefinitionRenderer
-              //   definition={row.definition}
+              //   definition={row.definition as string}
               //   compact={true}
               //   lineClamp={2}
               // />
@@ -866,7 +886,7 @@ export default function Tables() {
           to={`/item/${row.sourceItemId}?tab=detail`}
           size="sm"
         >
-          Item #{row.sourceItemId}
+          Item #{row.sourceItemId as React.ReactNode}
         </Anchor>
       ),
     },
@@ -880,7 +900,7 @@ export default function Tables() {
           to={`/item/${row.destinationItemId}?tab=detail`}
           size="sm"
         >
-          Item #{row.destinationItemId}
+          Item #{row.destinationItemId as React.ReactNode}
         </Anchor>
       ),
     },
@@ -890,7 +910,7 @@ export default function Tables() {
       width: "20%",
       render: (row) => (
         <Badge size="sm" variant="light">
-          {row.linkType}
+          {row.linkType as React.ReactNode}
         </Badge>
       ),
     },
@@ -900,7 +920,7 @@ export default function Tables() {
       width: "20%",
       render: (row) => (
         <Text size="sm" c="dimmed">
-          {new Date(row.createdAt).toLocaleDateString()}
+          {new Date(row.createdAt as string).toLocaleDateString()}
         </Text>
       ),
     },
@@ -911,7 +931,7 @@ export default function Tables() {
       field: "phrase",
       header: "Phrase",
       width: "70%",
-      render: (row) => <Text fw={600}>{row.phrase}</Text>,
+      render: (row) => <Text fw={600}>{row.phrase as React.ReactNode}</Text>,
     },
     {
       field: "createdAt",
@@ -919,7 +939,7 @@ export default function Tables() {
       width: "30%",
       render: (row) => (
         <Text size="sm" c="dimmed">
-          {new Date(row.createdAt).toLocaleDateString()}
+          {new Date(row.createdAt as string).toLocaleDateString()}
         </Text>
       ),
     },
@@ -930,7 +950,7 @@ export default function Tables() {
       field: "name",
       header: "Name",
       width: "20%",
-      render: (row) => <Text fw={600}>{row.name}</Text>,
+      render: (row) => <Text fw={600}>{row.name as React.ReactNode}</Text>,
     },
     {
       field: "type",
@@ -938,7 +958,7 @@ export default function Tables() {
       width: "10%",
       render: (row) =>
         row.type ? (
-          <Badge size="sm">{row.type}</Badge>
+          <Badge size="sm">{row.type as React.ReactNode}</Badge>
         ) : (
           <em style={{ color: "#999" }}>—</em>
         ),
@@ -959,7 +979,7 @@ export default function Tables() {
                   : "gray"
             }
           >
-            {row.gender}
+            {row.gender as React.ReactNode}
           </Badge>
         ) : (
           <em style={{ color: "#999" }}>—</em>
@@ -971,7 +991,9 @@ export default function Tables() {
       width: "65%",
       render: (row) => (
         <Text size="sm" lineClamp={2}>
-          {row.description || <em style={{ color: "#999" }}>No description</em>}
+          {(row.description as React.ReactNode) || (
+            <em style={{ color: "#999" }}>No description</em>
+          )}
         </Text>
       ),
     },
@@ -1025,8 +1047,8 @@ export default function Tables() {
       width: "20%",
       render: (row) => (
         <Group gap="xs">
-          <Text fw={600}>{row.term}</Text>
-          {row.existsInItems && (
+          <Text fw={600}>{String(row.term)}</Text>
+          {!!row.existsInItems && (
             <Text size="xs" c="dimmed">
               (present)
             </Text>
@@ -1047,11 +1069,11 @@ export default function Tables() {
             onClick={(e) => {
               e.stopPropagation();
               if (row.type === "Removed") {
-                handleDeleteTerm(row.termId, row.term);
+                handleDeleteTerm(row.termId as number, row.term as string);
               }
             }}
           >
-            {row.type}
+            {row.type as React.ReactNode}
           </Badge>
         ) : (
           <em style={{ color: "#999" }}>—</em>
@@ -1063,7 +1085,9 @@ export default function Tables() {
       width: "55%",
       render: (row) => (
         <Text size="sm" lineClamp={2}>
-          {row.definition || <em style={{ color: "#999" }}>No definition</em>}
+          {(row.definition as React.ReactNode) || (
+            <em style={{ color: "#999" }}>No definition</em>
+          )}
         </Text>
       ),
     },
@@ -1081,7 +1105,7 @@ export default function Tables() {
             leftSection={<Merge size={12} />}
             onClick={(e) => {
               e.stopPropagation();
-              handleMergeTerm(row.termId, row.term);
+              handleMergeTerm(row.termId as number, row.term as string);
             }}
           >
             Merge
@@ -1095,7 +1119,7 @@ export default function Tables() {
       field: "title",
       header: "Title",
       width: "30%",
-      render: (row) => <Text fw={600}>{row.title}</Text>,
+      render: (row) => <Text fw={600}>{row.title as React.ReactNode}</Text>,
     },
     {
       field: "author",
@@ -1103,7 +1127,9 @@ export default function Tables() {
       width: "20%",
       render: (row) => (
         <Text size="sm">
-          {row.author || <em style={{ color: "#999" }}>—</em>}
+          {(row.author as React.ReactNode) || (
+            <em style={{ color: "#999" }}>—</em>
+          )}
         </Text>
       ),
     },
@@ -1113,7 +1139,9 @@ export default function Tables() {
       width: "50%",
       render: (row) => (
         <Text size="sm" lineClamp={2}>
-          {row.notes || <em style={{ color: "#999" }}>—</em>}
+          {(row.notes as React.ReactNode) || (
+            <em style={{ color: "#999" }}>—</em>
+          )}
         </Text>
       ),
     },
@@ -1128,7 +1156,7 @@ export default function Tables() {
     if ("itemId" in firstRow || "item_id" in firstRow) {
       // Map snake_case to camelCase if needed for the itemsColumns renderer
       if ("item_id" in firstRow && !("itemId" in firstRow)) {
-        adHocResults.forEach((row: any) => {
+        adHocResults.forEach((row: TableData) => {
           row.itemId = row.item_id;
           row.word = row.word;
           row.type = row.type;
@@ -1152,7 +1180,7 @@ export default function Tables() {
       field: key,
       header: key,
       width: "auto",
-      render: (row: any) => {
+      render: (row: TableData) => {
         const val = row[key];
         if (val === null) return <em style={{ color: "#999" }}>NULL</em>;
         return String(val);

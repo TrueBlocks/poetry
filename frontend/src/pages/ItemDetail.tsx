@@ -33,6 +33,7 @@ import {
   GetEnvVars,
 } from "@wailsjs/go/main/App.js";
 import { LogInfo, LogError, BrowserOpenURL } from "@wailsjs/runtime/runtime.js";
+import { database } from "@models";
 import {
   ArrowLeft,
   Edit,
@@ -169,8 +170,8 @@ export default function ItemDetail({
               createdAt: undefined,
               modifiedAt: undefined,
               convertValues: function (
-                _a: any,
-                _classs: any,
+                _a: unknown,
+                _classs: unknown,
                 _asMap?: boolean,
               ) {
                 throw new Error("Function not implemented.");
@@ -210,7 +211,7 @@ export default function ItemDetail({
   useEffect(() => {
     if (links && item) {
       const incomingLinks = links.filter(
-        (l: any) => l.destinationItemId === Number(id),
+        (l) => l.destinationItemId === Number(id),
       );
       LogInfo(
         `[ItemDetail] Delete button state - Item: ${item.word}, Incoming links: ${incomingLinks.length}, Disabled: ${incomingLinks.length > 0}`,
@@ -251,23 +252,26 @@ export default function ItemDetail({
   // Fetch details for linked items
   const linkedItemIds =
     links
-      ?.map((link: any) =>
+      ?.map((link) =>
         link.sourceItemId === Number(id)
           ? link.destinationItemId
           : link.sourceItemId,
       )
       .filter((itemId: number) => itemId !== Number(id)) || [];
 
-  const linkedItemsQueries = useQuery({
+  const linkedItemsQueries = useQuery<Record<number, database.Item>>({
     queryKey: ["linkedItems", linkedItemIds],
     queryFn: async () => {
       const items = await Promise.all(
         linkedItemIds.map((itemId: number) => GetItem(itemId)),
       );
-      return items.reduce((acc: any, item: any) => {
-        if (item) acc[item.itemId] = item;
-        return acc;
-      }, {});
+      return items.reduce(
+        (acc, item) => {
+          if (item) acc[item.itemId] = item;
+          return acc;
+        },
+        {} as Record<number, database.Item>,
+      );
     },
     enabled: linkedItemIds.length > 0,
   });
@@ -292,8 +296,10 @@ export default function ItemDetail({
 
         // 2. If no own image, and it's a Title, try to get Writer's image
         if (item.type === "Title" && linkedItemsQueries.data) {
-          const linkedItems = Object.values(linkedItemsQueries.data as any);
-          const writer: any = linkedItems.find((i: any) => i.type === "Writer");
+          const linkedItems = Object.values(
+            linkedItemsQueries.data as Record<number, database.Item>,
+          );
+          const writer = linkedItems.find((i) => i.type === "Writer");
           if (writer) {
             const writerImage = await GetItemImage(writer.itemId);
             if (isMounted && writerImage) {
@@ -331,10 +337,10 @@ export default function ItemDetail({
 
     // Get outgoing "to" links (where this item is the source)
     const outgoingLinks = links.filter(
-      (link: any) => link.sourceItemId === Number(id),
+      (link) => link.sourceItemId === Number(id),
     );
     const linkedWords = outgoingLinks
-      .map((link: any) => {
+      .map((link) => {
         const linkedId = link.destinationItemId;
         const linkedItem = linkedItemsQueries.data?.[linkedId];
         return linkedItem?.word;
@@ -344,18 +350,25 @@ export default function ItemDetail({
     // Find references in all fields that are NOT linked
     const unlinkedRefs = allRefs.filter(
       (ref) =>
-        !linkedWords.some((w: string) => w.toLowerCase() === ref.toLowerCase()),
+        ref !== undefined &&
+        !linkedWords.some(
+          (w) => w !== undefined && w.toLowerCase() === ref.toLowerCase(),
+        ),
     );
 
     // Find linked items that are NOT in any text field
     const extraLinks = linkedWords.filter(
-      (word: string) =>
-        !allRefs.some((ref) => ref.toLowerCase() === word.toLowerCase()),
+      (word) =>
+        word !== undefined &&
+        !allRefs.some(
+          (ref) =>
+            ref !== undefined && ref.toLowerCase() === word.toLowerCase(),
+        ),
     );
 
     // Check for missing definition with single incoming link
     const incomingLinks = links.filter(
-      (link: any) => link.destinationItemId === Number(id),
+      (link) => link.destinationItemId === Number(id),
     );
     const hasMissingDefinition =
       (!item.definition ||
@@ -388,7 +401,7 @@ export default function ItemDetail({
     if (!item || !links) return;
 
     const incomingLinks = links.filter(
-      (link: any) => link.destinationItemId === Number(id),
+      (link) => link.destinationItemId === Number(id),
     );
     if (incomingLinks.length !== 1) return;
 
@@ -634,13 +647,13 @@ export default function ItemDetail({
               loading={deleteMutation.isPending}
               disabled={
                 links &&
-                links.filter((l: any) => l.destinationItemId === Number(id))
-                  .length > 0
+                links.filter((l) => l.destinationItemId === Number(id)).length >
+                  0
               }
               title={
                 links &&
-                links.filter((l: any) => l.destinationItemId === Number(id))
-                  .length > 0
+                links.filter((l) => l.destinationItemId === Number(id)).length >
+                  0
                   ? "Cannot delete: item has incoming connections"
                   : "Delete this item"
               }
@@ -1205,7 +1218,8 @@ export default function ItemDetail({
                         </Text>
                         <Group gap="xs">
                           {dataQuality.extraLinks.map(
-                            (word: string, idx: number) => {
+                            (word: string | undefined, idx: number) => {
+                              if (!word) return null;
                               const isDeleting = deletingLinkFor === word;
                               return (
                                 <Badge
@@ -1352,19 +1366,19 @@ export default function ItemDetail({
                 )}
                 <Text size="sm" fw={500}>
                   Outgoing (
-                  {links?.filter((l: any) => l.sourceItemId === Number(id))
-                    .length || 0}
+                  {links?.filter((l) => l.sourceItemId === Number(id)).length ||
+                    0}
                   )
                 </Text>
               </Group>
               {!outgoingCollapsed && (
                 <Stack gap="xs">
                   {links &&
-                  links.filter((l: any) => l.sourceItemId === Number(id))
-                    .length > 0 ? (
+                  links.filter((l) => l.sourceItemId === Number(id)).length >
+                    0 ? (
                     links
-                      .filter((link: any) => link.sourceItemId === Number(id))
-                      .map((link: any) => {
+                      .filter((link) => link.sourceItemId === Number(id))
+                      .map((link) => {
                         const linkedItemId = link.destinationItemId;
                         const linkedItem =
                           linkedItemsQueries.data?.[linkedItemId];
@@ -1444,7 +1458,7 @@ export default function ItemDetail({
                 )}
                 <Text size="sm" fw={500}>
                   Incoming (
-                  {links?.filter((l: any) => l.destinationItemId === Number(id))
+                  {links?.filter((l) => l.destinationItemId === Number(id))
                     .length || 0}
                   )
                 </Text>
@@ -1452,13 +1466,11 @@ export default function ItemDetail({
               {!incomingCollapsed && (
                 <Stack gap="xs">
                   {links &&
-                  links.filter((l: any) => l.destinationItemId === Number(id))
+                  links.filter((l) => l.destinationItemId === Number(id))
                     .length > 0 ? (
                     links
-                      .filter(
-                        (link: any) => link.destinationItemId === Number(id),
-                      )
-                      .map((link: any) => {
+                      .filter((link) => link.destinationItemId === Number(id))
+                      .map((link) => {
                         const linkedItemId = link.sourceItemId;
                         const linkedItem =
                           linkedItemsQueries.data?.[linkedItemId];

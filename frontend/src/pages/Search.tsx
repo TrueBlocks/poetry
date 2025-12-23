@@ -43,6 +43,14 @@ import { notifications } from "@mantine/notifications";
 import { DefinitionRenderer } from "@components/ItemDetail/DefinitionRenderer";
 import { useUIStore } from "@stores/useUIStore";
 import { database } from "@models";
+
+interface SavedSearch {
+  name: string;
+  query: string;
+  types?: string[];
+  source?: string;
+}
+
 // Helper to get first sentence from definition
 const getFirstSentence = (text: string | null | undefined): string => {
   if (!text) return "No definition";
@@ -86,7 +94,7 @@ export default function Search() {
   const [query, setQuery] = useState(currentSearch || "");
   const [debouncedQuery, setDebouncedQuery] = useState(currentSearch || "");
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [savedSearches, setSavedSearches] = useState<any[]>([]);
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedSource, setSelectedSource] = useState<string>("");
@@ -96,9 +104,9 @@ export default function Search() {
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [searchName, setSearchName] = useState("");
   const [showAllResults, setShowAllResults] = useState(false);
-  const [allItems, setAllItems] = useState<any[]>([]);
+  const [allItems, setAllItems] = useState<database.Item[]>([]);
   const navigate = useNavigate();
-  const resultRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const resultRefs = useRef<(HTMLElement | null)[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const combobox = useCombobox({
@@ -158,7 +166,7 @@ export default function Search() {
     data: results,
     isLoading,
     error,
-  } = useQuery({
+  } = useQuery<database.Item[] | Record<string, unknown>[]>({
     queryKey: [
       "search",
       debouncedQuery,
@@ -231,7 +239,7 @@ export default function Search() {
       const words: database.Item[] = [];
       const other: database.Item[] = [];
 
-      results.forEach((item: any) => {
+      (results as database.Item[]).forEach((item) => {
         const itemWord = item.word.trim().toLowerCase();
 
         if (itemWord === normalizedQuery) {
@@ -266,15 +274,15 @@ export default function Search() {
 
   // Fetch links for all result items to get writer names
   const linkQueries = useQueries({
-    queries: (results || []).map((item: any) => ({
+    queries: ((results || []) as database.Item[]).map((item) => ({
       queryKey: ["searchItemLinks", item.itemId],
       queryFn: async () => {
         const links = await GetItemLinks(item.itemId);
         const outgoingLinks = links.filter(
-          (link: any) => link.sourceItemId === item.itemId,
+          (link) => link.sourceItemId === item.itemId,
         );
         const writerItems = await Promise.all(
-          outgoingLinks.map(async (link: any) => {
+          outgoingLinks.map(async (link) => {
             const linkedItem = await GetItem(link.destinationItemId);
             return linkedItem?.type === "Writer" ? linkedItem.word : null;
           }),
@@ -288,7 +296,7 @@ export default function Search() {
   // Map item IDs to their writer names
   const itemWriters = useMemo(() => {
     const map: Record<number, string[]> = {};
-    results?.forEach((item: any, index: number) => {
+    (results as database.Item[] | undefined)?.forEach((item, index: number) => {
       const writers =
         linkQueries[index]?.data?.filter((w): w is string => w !== null) || [];
       map[item.itemId] = writers;
@@ -349,7 +357,7 @@ export default function Search() {
     }
   };
 
-  const handleLoadSavedSearch = async (saved: any) => {
+  const handleLoadSavedSearch = async (saved: SavedSearch) => {
     setQuery(saved.query);
     setDebouncedQuery(saved.query);
     setSelectedTypes(saved.types || []);
@@ -439,9 +447,9 @@ export default function Search() {
 
         if (
           selectedIndex !== undefined &&
-          (selectedIndex as any) !== "first-active" &&
-          (selectedIndex as number) >= 0 &&
-          (selectedIndex as number) < filteredRecentSearches.length
+          typeof selectedIndex === "number" &&
+          selectedIndex >= 0 &&
+          selectedIndex < filteredRecentSearches.length
         ) {
           e.preventDefault();
           const searchToDelete = filteredRecentSearches[selectedIndex];
@@ -615,7 +623,7 @@ export default function Search() {
                       </Text>
                       {savedSearches.length > 0 ? (
                         <Stack gap="xs">
-                          {savedSearches.map((saved: any) => (
+                          {savedSearches.map((saved) => (
                             <Group key={saved.name} justify="space-between">
                               <Button
                                 variant="light"
@@ -709,75 +717,89 @@ export default function Search() {
 
           {isSqlSearch ? (
             <Stack>
-              {results.map((row: any, index: number) => {
-                const item = { ...row };
-                if (item.item_id && !item.itemId) item.itemId = item.item_id;
-                const isItem = item.itemId && item.word;
+              {(results as Record<string, unknown>[]).map(
+                (row, index: number) => {
+                  const item = { ...row } as Record<string, unknown> &
+                    Partial<database.Item>;
+                  if ("item_id" in item && item.item_id && !item.itemId) {
+                    item.itemId = item.item_id as number;
+                  }
+                  const isItem = item.itemId && item.word;
 
-                return (
-                  <Paper key={index} p="md" withBorder shadow="sm" radius="md">
-                    {isItem ? (
-                      <Stack gap="xs">
-                        <Group justify="space-between" align="flex-start">
-                          <Group align="flex-start" wrap="nowrap">
-                            {item.type === "Writer" && (
-                              <SearchResultImage itemId={item.itemId} />
-                            )}
-                            <Title
-                              order={3}
-                              component={Link}
-                              {...({
-                                to: `/item/${item.itemId}?tab=detail`,
-                              } as any)}
-                              style={{
-                                textDecoration: "none",
-                                color: "inherit",
-                              }}
-                            >
-                              {item.word}
-                            </Title>
+                  return (
+                    <Paper
+                      key={index}
+                      p="md"
+                      withBorder
+                      shadow="sm"
+                      radius="md"
+                    >
+                      {isItem ? (
+                        <Stack gap="xs">
+                          <Group justify="space-between" align="flex-start">
+                            <Group align="flex-start" wrap="nowrap">
+                              {item.type === "Writer" && item.itemId && (
+                                <SearchResultImage itemId={item.itemId} />
+                              )}
+                              <Link
+                                to={`/item/${item.itemId ?? 0}?tab=detail`}
+                                style={{
+                                  textDecoration: "none",
+                                  color: "inherit",
+                                }}
+                              >
+                                <Title order={3}>{item.word}</Title>
+                              </Link>
+                            </Group>
+                            {item.type && <Badge>{item.type}</Badge>}
                           </Group>
-                          {item.type && <Badge>{item.type}</Badge>}
-                        </Group>
-                        {item.definition && (
-                          <DefinitionRenderer
-                            text={getFirstSentence(item.definition)}
-                            allItems={allItems}
-                            stopAudio={() => {}}
-                            currentAudioRef={audioRef}
-                            item={item}
-                          />
-                        )}
-                      </Stack>
-                    ) : (
-                      <Stack gap="xs">
-                        {Object.entries(row).map(([k, v]) => (
-                          <Group key={k} align="flex-start">
-                            <Text fw={700} size="sm" style={{ minWidth: 100 }}>
-                              {k}:
-                            </Text>
-                            <Text size="sm" style={{ wordBreak: "break-all" }}>
-                              {String(v)}
-                            </Text>
-                          </Group>
-                        ))}
-                      </Stack>
-                    )}
-                  </Paper>
-                );
-              })}
+                          {item.definition && (
+                            <DefinitionRenderer
+                              text={getFirstSentence(item.definition as string)}
+                              allItems={allItems}
+                              stopAudio={() => {}}
+                              currentAudioRef={audioRef}
+                              item={item as database.Item}
+                            />
+                          )}
+                        </Stack>
+                      ) : (
+                        <Stack gap="xs">
+                          {Object.entries(row).map(([k, v]) => (
+                            <Group key={k} align="flex-start">
+                              <Text
+                                fw={700}
+                                size="sm"
+                                style={{ minWidth: 100 }}
+                              >
+                                {k}:
+                              </Text>
+                              <Text
+                                size="sm"
+                                style={{ wordBreak: "break-all" }}
+                              >
+                                {String(v)}
+                              </Text>
+                            </Group>
+                          ))}
+                        </Stack>
+                      )}
+                    </Paper>
+                  );
+                },
+              )}
             </Stack>
           ) : (
             <>
               {exactMatches.length > 0 && (
                 <>
-                  {exactMatches.map((item: any, index: number) => {
+                  {exactMatches.map((item, index: number) => {
                     const globalIndex = index;
                     const isSelected = selectedIndex === globalIndex;
                     return (
                       <Paper
                         key={item.itemId}
-                        ref={(el: any) => {
+                        ref={(el: HTMLElement | null) => {
                           resultRefs.current[globalIndex] = el;
                         }}
                         component={Link}
@@ -860,13 +882,13 @@ export default function Search() {
                 </>
               )}
 
-              {wordMatches.map((item: any, index: number) => {
+              {wordMatches.map((item, index: number) => {
                 const globalIndex = exactMatches.length + index;
                 const isSelected = selectedIndex === globalIndex;
                 return (
                   <Paper
                     key={item.itemId}
-                    ref={(el: any) => {
+                    ref={(el: HTMLElement | null) => {
                       resultRefs.current[globalIndex] = el;
                     }}
                     component={Link}
@@ -943,18 +965,19 @@ export default function Search() {
                 <Divider my="md" label="Other Results" labelPosition="center" />
               )}
 
-              {otherResults.map((item: any, index: number) => {
+              {otherResults.map((item, index: number) => {
                 const globalIndex =
                   exactMatches.length + wordMatches.length + index;
                 const isSelected = selectedIndex === globalIndex;
+                const itemId = item.itemId as number;
                 return (
                   <Paper
-                    key={item.itemId}
-                    ref={(el: any) => {
+                    key={itemId}
+                    ref={(el: HTMLElement | null) => {
                       resultRefs.current[globalIndex] = el;
                     }}
                     component={Link}
-                    to={`/item/${item.itemId}?tab=detail`}
+                    to={`/item/${itemId}?tab=detail`}
                     shadow="sm"
                     p="md"
                     radius="md"
@@ -978,7 +1001,7 @@ export default function Search() {
                     <Stack gap="xs">
                       <Group align="flex-start" wrap="nowrap">
                         {item.type === "Writer" && (
-                          <SearchResultImage itemId={item.itemId} />
+                          <SearchResultImage itemId={itemId} />
                         )}
                         <Title
                           order={3}
@@ -988,35 +1011,36 @@ export default function Search() {
                               : "var(--mantine-color-blue-7)"
                           }
                         >
-                          {item.word}
+                          {item.word as React.ReactNode}
                         </Title>
                       </Group>
                       <div>
                         {item.definition ? (
                           <DefinitionRenderer
-                            text={getFirstSentence(item.definition)}
+                            text={getFirstSentence(item.definition as string)}
                             allItems={allItems}
                             stopAudio={() => {}}
                             currentAudioRef={audioRef}
-                            item={item}
+                            item={item as database.Item}
                           />
                         ) : (
                           <Text component="span">No definition</Text>
                         )}
-                        {itemWriters[item.itemId]?.length > 0 && (
-                          <Text component="span" size="sm" c="dimmed">
-                            {" "}
-                            Writers: {itemWriters[item.itemId].join(", ")}
-                          </Text>
-                        )}
+                        {itemWriters[itemId] &&
+                          itemWriters[itemId].length > 0 && (
+                            <Text component="span" size="sm" c="dimmed">
+                              {" "}
+                              Writers: {itemWriters[itemId].join(", ")}
+                            </Text>
+                          )}
                       </div>
                       <Group>
-                        <Badge>{item.type}</Badge>
-                        {item.source && (
+                        {item.type ? <Badge>{String(item.type)}</Badge> : null}
+                        {item.source ? (
                           <Text size="xs" c="dimmed">
-                            Source: {item.source}
+                            Source: {String(item.source)}
                           </Text>
-                        )}
+                        ) : null}
                       </Group>
                     </Stack>
                   </Paper>
@@ -1033,9 +1057,11 @@ export default function Search() {
           <Stack align="center" gap="xs">
             <Text size="sm" c="dimmed">
               Showing {allResults.length} of{" "}
-              {(results as any)?.totalCount || allResults.length} results
+              {(results as database.Item[])?.length || allResults.length}{" "}
+              results
             </Text>
-            {(results as any)?.hasMore && (
+            {allResults.length <
+              ((results as database.Item[])?.length || 0) && (
               <Button variant="light" onClick={() => setShowAllResults(true)}>
                 Show All Results
               </Button>
