@@ -18,7 +18,7 @@ import {
 } from "@wailsjs/go/main/App";
 import { AlertTriangle, Check } from "lucide-react";
 import { notifications } from "@mantine/notifications";
-import { SelfReferentialResult } from "./types";
+import { SelfRefResult } from "./types";
 import { database } from "@wailsjs/go/models";
 
 export function SelfReferentialReport() {
@@ -29,11 +29,11 @@ export function SelfReferentialReport() {
     queryKey: ["selfReferentialItems"],
     queryFn: async () => {
       const results = await GetSelfReferentialItems();
-      return results as SelfReferentialResult[];
+      return results as SelfRefResult[];
     },
   });
 
-  const handleFix = async (itemResult: SelfReferentialResult) => {
+  const handleFix = async (itemResult: SelfRefResult) => {
     setFixingItem(itemResult.itemId);
     try {
       const item = await GetItem(itemResult.itemId);

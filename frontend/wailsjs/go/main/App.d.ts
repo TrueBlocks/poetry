@@ -51,13 +51,13 @@ export function GetCapabilities():Promise<main.Capabilities>;
 
 export function GetConstants():Promise<Record<string, string>>;
 
-export function GetDanglingLinks():Promise<Array<Record<string, any>>>;
+export function GetDanglingLinks():Promise<Array<services.DanglingLinkResult>>;
 
 export function GetDatabaseFileSize():Promise<number>;
 
 export function GetDatabasePath():Promise<string>;
 
-export function GetDuplicateItems():Promise<Array<Record<string, any>>>;
+export function GetDuplicateItems():Promise<Array<services.DuplicateItemResult>>;
 
 export function GetEgoGraph(arg1:number,arg2:number):Promise<database.GraphData>;
 
@@ -77,17 +77,17 @@ export function GetItemImage(arg1:number):Promise<string>;
 
 export function GetItemLinks(arg1:number):Promise<Array<database.Link>>;
 
-export function GetItemsWithUnknownTypes():Promise<Array<Record<string, any>>>;
+export function GetItemsWithUnknownTypes():Promise<Array<services.ItemWithUnknownTypeResult>>;
 
-export function GetItemsWithoutDefinitions():Promise<Array<Record<string, any>>>;
+export function GetItemsWithoutDefinitions():Promise<Array<services.ItemWithoutDefinitionResult>>;
 
-export function GetLinkedItemsNotInDefinition():Promise<Array<Record<string, any>>>;
+export function GetLinkedItemsNotInDefinition():Promise<Array<services.LinkedItemNotInDefinitionResult>>;
 
 export function GetMarkedItems():Promise<Array<database.Item>>;
 
 export function GetNavigationHistory():Promise<Array<database.Item>>;
 
-export function GetOrphanedItems():Promise<Array<Record<string, any>>>;
+export function GetOrphanedItems():Promise<Array<services.OrphanedItemResult>>;
 
 export function GetPoetIds():Promise<Array<number>>;
 
@@ -101,7 +101,7 @@ export function GetReferencePattern():Promise<string>;
 
 export function GetSavedSearches():Promise<Array<settings.SavedSearch>>;
 
-export function GetSelfReferentialItems():Promise<Array<Record<string, any>>>;
+export function GetSelfReferentialItems():Promise<Array<services.SelfReferenceResult>>;
 
 export function GetSettings():Promise<settings.Settings>;
 
@@ -111,9 +111,9 @@ export function GetTTSCacheInfo():Promise<main.TTSCacheInfo>;
 
 export function GetTopHubs(arg1:number):Promise<Array<database.HubItem>>;
 
-export function GetUnknownTags():Promise<Array<Record<string, any>>>;
+export function GetUnknownTags():Promise<Array<services.UnknownTagResult>>;
 
-export function GetUnlinkedReferences():Promise<Array<Record<string, any>>>;
+export function GetUnlinkedReferences():Promise<Array<services.UnlinkedReferenceResult>>;
 
 export function Greet(arg1:string):Promise<string>;
 

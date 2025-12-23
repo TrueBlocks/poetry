@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/TrueBlocks/trueblocks-poetry/backend/database"
+	"github.com/TrueBlocks/trueblocks-poetry/backend/services"
 	"github.com/TrueBlocks/trueblocks-poetry/pkg/constants"
 )
 
@@ -77,7 +78,7 @@ func (a *App) CleanOrphanedLinks() (int, error) {
 }
 
 // GetDanglingLinks returns links that point to non-existent items
-func (a *App) GetDanglingLinks() ([]map[string]interface{}, error) {
+func (a *App) GetDanglingLinks() ([]services.DanglingLinkResult, error) {
 	query := database.MustLoadQuery("dangling_links")
 
 	rows, err := a.db.Query(query)
@@ -86,7 +87,7 @@ func (a *App) GetDanglingLinks() ([]map[string]interface{}, error) {
 	}
 	defer func() { _ = rows.Close() }()
 
-	var results []map[string]interface{}
+	var results []services.DanglingLinkResult
 	for rows.Next() {
 		var linkID, sourceItemID, destinationItemID int
 		var linkType, sourceWord, sourceType, missingSide string
@@ -104,14 +105,14 @@ func (a *App) GetDanglingLinks() ([]map[string]interface{}, error) {
 			sourceType = *sourceTypePtr
 		}
 
-		results = append(results, map[string]interface{}{
-			"linkId":            linkID,
-			"sourceItemId":      sourceItemID,
-			"destinationItemId": destinationItemID,
-			"linkType":          linkType,
-			"sourceWord":        sourceWord,
-			"sourceType":        sourceType,
-			"missingSide":       missingSide,
+		results = append(results, services.DanglingLinkResult{
+			LinkID:            linkID,
+			SourceItemID:      sourceItemID,
+			DestinationItemID: destinationItemID,
+			LinkType:          linkType,
+			SourceWord:        sourceWord,
+			SourceType:        sourceType,
+			MissingSide:       missingSide,
 		})
 	}
 

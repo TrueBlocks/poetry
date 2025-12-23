@@ -482,6 +482,126 @@ export namespace parser {
 
 export namespace services {
 	
+	export class DanglingLinkResult {
+	    linkId: number;
+	    sourceItemId: number;
+	    destinationItemId: number;
+	    linkType: string;
+	    sourceWord: string;
+	    sourceType: string;
+	    missingSide: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DanglingLinkResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.linkId = source["linkId"];
+	        this.sourceItemId = source["sourceItemId"];
+	        this.destinationItemId = source["destinationItemId"];
+	        this.linkType = source["linkType"];
+	        this.sourceWord = source["sourceWord"];
+	        this.sourceType = source["sourceType"];
+	        this.missingSide = source["missingSide"];
+	    }
+	}
+	export class DuplicateItemDetail {
+	    itemId: number;
+	    word: string;
+	    type: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DuplicateItemDetail(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.itemId = source["itemId"];
+	        this.word = source["word"];
+	        this.type = source["type"];
+	    }
+	}
+	export class DuplicateItemResult {
+	    strippedWord: string;
+	    original: DuplicateItemDetail;
+	    duplicates: DuplicateItemDetail[];
+	    count: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new DuplicateItemResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.strippedWord = source["strippedWord"];
+	        this.original = this.convertValues(source["original"], DuplicateItemDetail);
+	        this.duplicates = this.convertValues(source["duplicates"], DuplicateItemDetail);
+	        this.count = source["count"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ItemWithUnknownTypeResult {
+	    itemId: number;
+	    word: string;
+	    type: string;
+	    incomingLinkCount: number;
+	    singleIncomingLinkItemId?: number;
+	    singleIncomingLinkWord?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ItemWithUnknownTypeResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.itemId = source["itemId"];
+	        this.word = source["word"];
+	        this.type = source["type"];
+	        this.incomingLinkCount = source["incomingLinkCount"];
+	        this.singleIncomingLinkItemId = source["singleIncomingLinkItemId"];
+	        this.singleIncomingLinkWord = source["singleIncomingLinkWord"];
+	    }
+	}
+	export class ItemWithoutDefinitionResult {
+	    itemId: number;
+	    word: string;
+	    type: string;
+	    hasMissingData: boolean;
+	    singleIncomingLinkItemId?: number;
+	    singleIncomingLinkWord?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ItemWithoutDefinitionResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.itemId = source["itemId"];
+	        this.word = source["word"];
+	        this.type = source["type"];
+	        this.hasMissingData = source["hasMissingData"];
+	        this.singleIncomingLinkItemId = source["singleIncomingLinkItemId"];
+	        this.singleIncomingLinkWord = source["singleIncomingLinkWord"];
+	    }
+	}
 	export class LinkOrTagResult {
 	    linkCreated: boolean;
 	    message: string;
@@ -494,6 +614,58 @@ export namespace services {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.linkCreated = source["linkCreated"];
 	        this.message = source["message"];
+	    }
+	}
+	export class LinkedItemNotInDefinitionResult {
+	    itemId: number;
+	    word: string;
+	    type: string;
+	    missingReferences: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new LinkedItemNotInDefinitionResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.itemId = source["itemId"];
+	        this.word = source["word"];
+	        this.type = source["type"];
+	        this.missingReferences = source["missingReferences"];
+	    }
+	}
+	export class OrphanedItemResult {
+	    itemId: number;
+	    word: string;
+	    type: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new OrphanedItemResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.itemId = source["itemId"];
+	        this.word = source["word"];
+	        this.type = source["type"];
+	    }
+	}
+	export class SelfReferenceResult {
+	    itemId: number;
+	    word: string;
+	    type: string;
+	    tag: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SelfReferenceResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.itemId = source["itemId"];
+	        this.word = source["word"];
+	        this.type = source["type"];
+	        this.tag = source["tag"];
 	    }
 	}
 	export class TTSResult {
@@ -513,6 +685,78 @@ export namespace services {
 	        this.error = source["error"];
 	        this.errorType = source["errorType"];
 	    }
+	}
+	export class UnknownTagResult {
+	    itemId: number;
+	    word: string;
+	    type: string;
+	    unknownTags: string[];
+	    tagCount: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new UnknownTagResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.itemId = source["itemId"];
+	        this.word = source["word"];
+	        this.type = source["type"];
+	        this.unknownTags = source["unknownTags"];
+	        this.tagCount = source["tagCount"];
+	    }
+	}
+	export class UnlinkedReferenceDetail {
+	    ref: string;
+	    reason: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UnlinkedReferenceDetail(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ref = source["ref"];
+	        this.reason = source["reason"];
+	    }
+	}
+	export class UnlinkedReferenceResult {
+	    itemId: number;
+	    word: string;
+	    type: string;
+	    unlinkedRefs: UnlinkedReferenceDetail[];
+	    refCount: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new UnlinkedReferenceResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.itemId = source["itemId"];
+	        this.word = source["word"];
+	        this.type = source["type"];
+	        this.unlinkedRefs = this.convertValues(source["unlinkedRefs"], UnlinkedReferenceDetail);
+	        this.refCount = source["refCount"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 
 }

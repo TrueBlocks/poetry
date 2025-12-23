@@ -14,16 +14,7 @@ import { useState } from "react";
 import { GetDanglingLinks, DeleteLink } from "@wailsjs/go/main/App";
 import { LogInfo } from "@wailsjs/runtime/runtime.js";
 import { AlertTriangle, Trash2 } from "lucide-react";
-
-interface DanglingLink {
-  linkId: number;
-  sourceItemId: number;
-  destinationItemId: number;
-  linkType: string;
-  sourceWord: string;
-  sourceType: string;
-  missingSide: "source" | "destination";
-}
+import { DanglingLinkResult } from "./types";
 
 export function DanglingLinksReport() {
   const queryClient = useQueryClient();
@@ -33,7 +24,7 @@ export function DanglingLinksReport() {
     queryKey: ["danglingLinks"],
     queryFn: async () => {
       const results = await GetDanglingLinks();
-      return results as DanglingLink[];
+      return results as DanglingLinkResult[];
     },
   });
 

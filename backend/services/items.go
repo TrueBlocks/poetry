@@ -235,7 +235,7 @@ func (s *ItemService) DeleteItem(itemID int) error {
 }
 
 // GetItemsWithoutDefinitions returns items that have no definition or "MISSING DATA"
-func (s *ItemService) GetItemsWithoutDefinitions() ([]map[string]interface{}, error) {
+func (s *ItemService) GetItemsWithoutDefinitions() ([]ItemWithoutDefinitionResult, error) {
 	// Get all items
 	allItems, err := s.db.SearchItems("")
 	if err != nil {
@@ -243,7 +243,7 @@ func (s *ItemService) GetItemsWithoutDefinitions() ([]map[string]interface{}, er
 	}
 
 	// Find items without definitions or with "MISSING DATA"
-	var results []map[string]interface{}
+	var results []ItemWithoutDefinitionResult
 	for _, item := range allItems {
 		var hasMissingData bool
 		var includeItem bool
@@ -257,11 +257,11 @@ func (s *ItemService) GetItemsWithoutDefinitions() ([]map[string]interface{}, er
 		}
 
 		if includeItem {
-			result := map[string]interface{}{
-				"itemId":         item.ItemID,
-				"word":           item.Word,
-				"type":           item.Type,
-				"hasMissingData": hasMissingData,
+			result := ItemWithoutDefinitionResult{
+				ItemID:         item.ItemID,
+				Word:           item.Word,
+				Type:           item.Type,
+				HasMissingData: hasMissingData,
 			}
 
 			// Get all links for this item
@@ -279,8 +279,8 @@ func (s *ItemService) GetItemsWithoutDefinitions() ([]map[string]interface{}, er
 				if len(incomingLinks) == 1 {
 					sourceItem, err := s.db.GetItem(incomingLinks[0].SourceItemID)
 					if err == nil {
-						result["singleIncomingLinkItemId"] = sourceItem.ItemID
-						result["singleIncomingLinkWord"] = sourceItem.Word
+						result.SingleIncomingLinkItemID = sourceItem.ItemID
+						result.SingleIncomingLinkWord = sourceItem.Word
 					}
 				}
 			}
@@ -293,7 +293,7 @@ func (s *ItemService) GetItemsWithoutDefinitions() ([]map[string]interface{}, er
 }
 
 // GetItemsWithUnknownTypes returns items whose type is not Writer, Title, or Reference
-func (s *ItemService) GetItemsWithUnknownTypes() ([]map[string]interface{}, error) {
+func (s *ItemService) GetItemsWithUnknownTypes() ([]ItemWithUnknownTypeResult, error) {
 	// Get all items
 	allItems, err := s.db.SearchItems("")
 	if err != nil {
@@ -301,13 +301,13 @@ func (s *ItemService) GetItemsWithUnknownTypes() ([]map[string]interface{}, erro
 	}
 
 	// Find items with unknown types
-	var results []map[string]interface{}
+	var results []ItemWithUnknownTypeResult
 	for _, item := range allItems {
 		if item.Type != "Reference" && item.Type != "Title" && item.Type != "Writer" {
-			result := map[string]interface{}{
-				"itemId": item.ItemID,
-				"word":   item.Word,
-				"type":   item.Type,
+			result := ItemWithUnknownTypeResult{
+				ItemID: item.ItemID,
+				Word:   item.Word,
+				Type:   item.Type,
 			}
 
 			// Get all links for this item
@@ -322,14 +322,14 @@ func (s *ItemService) GetItemsWithUnknownTypes() ([]map[string]interface{}, erro
 				}
 
 				// Set the incoming link count
-				result["incomingLinkCount"] = len(incomingLinks)
+				result.IncomingLinkCount = len(incomingLinks)
 
 				// If exactly one incoming link, get source item info
 				if len(incomingLinks) == 1 {
 					sourceItem, err := s.db.GetItem(incomingLinks[0].SourceItemID)
 					if err == nil {
-						result["singleIncomingLinkItemId"] = sourceItem.ItemID
-						result["singleIncomingLinkWord"] = sourceItem.Word
+						result.SingleIncomingLinkItemID = sourceItem.ItemID
+						result.SingleIncomingLinkWord = sourceItem.Word
 					}
 				}
 			}
@@ -342,14 +342,14 @@ func (s *ItemService) GetItemsWithUnknownTypes() ([]map[string]interface{}, erro
 }
 
 // GetUnknownTags returns items with tags other than {word:, {writer:, or {title:
-func (s *ItemService) GetUnknownTags() ([]map[string]interface{}, error) {
+func (s *ItemService) GetUnknownTags() ([]UnknownTagResult, error) {
 	// Get all items
 	allItems, err := s.db.SearchItems("")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get items: %w", err)
 	}
 
-	var results []map[string]interface{}
+	var results []UnknownTagResult
 
 	for _, item := range allItems {
 		// Only check Reference, Title, or Writer types
@@ -386,12 +386,12 @@ func (s *ItemService) GetUnknownTags() ([]map[string]interface{}, error) {
 		}
 
 		if len(unknownTags) > 0 {
-			results = append(results, map[string]interface{}{
-				"itemId":      item.ItemID,
-				"word":        item.Word,
-				"type":        item.Type,
-				"unknownTags": unknownTags,
-				"tagCount":    len(unknownTags),
+			results = append(results, UnknownTagResult{
+				ItemID:      item.ItemID,
+				Word:        item.Word,
+				Type:        item.Type,
+				UnknownTags: unknownTags,
+				TagCount:    len(unknownTags),
 			})
 		}
 	}

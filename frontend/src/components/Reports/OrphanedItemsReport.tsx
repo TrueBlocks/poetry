@@ -11,14 +11,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { GetOrphanedItems } from "@wailsjs/go/main/App";
 import { AlertTriangle } from "lucide-react";
-import { SimpleItem } from "./types";
+import { OrphanedItemResult } from "./types";
 
 export function OrphanedItemsReport() {
   const { data: orphanedItems, isLoading } = useQuery({
     queryKey: ["orphanedItems"],
     queryFn: async () => {
       const results = await GetOrphanedItems();
-      return results as SimpleItem[];
+      return results as OrphanedItemResult[];
     },
   });
 

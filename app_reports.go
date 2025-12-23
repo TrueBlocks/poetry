@@ -6,11 +6,12 @@ import (
 	"strings"
 
 	"github.com/TrueBlocks/trueblocks-poetry/backend/database"
+	"github.com/TrueBlocks/trueblocks-poetry/backend/services"
 	"github.com/TrueBlocks/trueblocks-poetry/pkg/parser"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-func (a *App) GetUnlinkedReferences() ([]map[string]interface{}, error) {
+func (a *App) GetUnlinkedReferences() ([]services.UnlinkedReferenceResult, error) {
 	// Get all items
 	allItems, err := a.db.SearchItems("") // Empty search returns all
 	if err != nil {
@@ -39,7 +40,7 @@ func (a *App) GetUnlinkedReferences() ([]map[string]interface{}, error) {
 	}
 
 	// Analyze each item for unlinked references
-	var results []map[string]interface{}
+	var results []services.UnlinkedReferenceResult
 
 	for i := range allItems {
 		item := &allItems[i]
@@ -48,7 +49,7 @@ func (a *App) GetUnlinkedReferences() ([]map[string]interface{}, error) {
 		}
 
 		// Find all {word:}, {writer:}, {title:} references in definition
-		unlinkedRefs := []map[string]string{}
+		unlinkedRefs := []services.UnlinkedReferenceDetail{}
 
 		// Use centralized parser
 		refs := parser.ParseReferences(*item.Definition)
@@ -71,28 +72,28 @@ func (a *App) GetUnlinkedReferences() ([]map[string]interface{}, error) {
 			matchedItem := itemsByWord[strings.ToLower(matchWord)]
 			if matchedItem == nil {
 				// Item doesn't exist
-				unlinkedRefs = append(unlinkedRefs, map[string]string{
-					"ref":    refWord,
-					"reason": "missing",
+				unlinkedRefs = append(unlinkedRefs, services.UnlinkedReferenceDetail{
+					Ref:    refWord,
+					Reason: "missing",
 				})
 			} else {
 				// Item exists, check if it's linked
 				if linksMap[item.ItemID] == nil || !linksMap[item.ItemID][matchedItem.ItemID] {
-					unlinkedRefs = append(unlinkedRefs, map[string]string{
-						"ref":    refWord,
-						"reason": "unlinked",
+					unlinkedRefs = append(unlinkedRefs, services.UnlinkedReferenceDetail{
+						Ref:    refWord,
+						Reason: "unlinked",
 					})
 				}
 			}
 		}
 
 		if len(unlinkedRefs) > 0 {
-			results = append(results, map[string]interface{}{
-				"itemId":       item.ItemID,
-				"word":         item.Word,
-				"type":         item.Type,
-				"unlinkedRefs": unlinkedRefs,
-				"refCount":     len(unlinkedRefs),
+			results = append(results, services.UnlinkedReferenceResult{
+				ItemID:       item.ItemID,
+				Word:         item.Word,
+				Type:         item.Type,
+				UnlinkedRefs: unlinkedRefs,
+				RefCount:     len(unlinkedRefs),
 			})
 		}
 	}
@@ -160,7 +161,7 @@ func stripPossessive(text string) string {
 }
 
 // GetDuplicateItems returns a report of items with duplicate stripped names
-func (a *App) GetDuplicateItems() ([]map[string]interface{}, error) {
+func (a *App) GetDuplicateItems() ([]services.DuplicateItemResult, error) {
 	// Get all items
 	allItems, err := a.db.SearchItems("")
 	if err != nil {
@@ -175,7 +176,7 @@ func (a *App) GetDuplicateItems() ([]map[string]interface{}, error) {
 	}
 
 	// Find groups with more than one item
-	var results []map[string]interface{}
+	var results []services.DuplicateItemResult
 	for strippedWord, items := range groups {
 		if len(items) > 1 {
 			// Sort items by ID to have consistent ordering
@@ -187,22 +188,24 @@ func (a *App) GetDuplicateItems() ([]map[string]interface{}, error) {
 			original := items[0]
 			duplicates := items[1:]
 
-			duplicateInfo := []map[string]interface{}{}
+			duplicateInfo := []services.DuplicateItemDetail{}
 			for _, dup := range duplicates {
-				duplicateInfo = append(duplicateInfo, map[string]interface{}{
-					"itemId": dup.ItemID,
-					"word":   dup.Word,
+				duplicateInfo = append(duplicateInfo, services.DuplicateItemDetail{
+					ItemID: dup.ItemID,
+					Word:   dup.Word,
+					Type:   dup.Type,
 				})
 			}
 
-			results = append(results, map[string]interface{}{
-				"strippedWord": strippedWord,
-				"original": map[string]interface{}{
-					"itemId": original.ItemID,
-					"word":   original.Word,
+			results = append(results, services.DuplicateItemResult{
+				StrippedWord: strippedWord,
+				Original: services.DuplicateItemDetail{
+					ItemID: original.ItemID,
+					Word:   original.Word,
+					Type:   original.Type,
 				},
-				"duplicates": duplicateInfo,
-				"count":      len(duplicates),
+				Duplicates: duplicateInfo,
+				Count:      len(duplicates),
 			})
 		}
 	}
@@ -210,7 +213,7 @@ func (a *App) GetDuplicateItems() ([]map[string]interface{}, error) {
 	return results, nil
 }
 
-func (a *App) GetSelfReferentialItems() ([]map[string]interface{}, error) {
+func (a *App) GetSelfReferentialItems() ([]services.SelfReferenceResult, error) {
 	// Get all items that might have tags
 	query := database.MustLoadQuery("self_ref_items")
 
@@ -220,7 +223,7 @@ func (a *App) GetSelfReferentialItems() ([]map[string]interface{}, error) {
 	}
 	defer func() { _ = rows.Close() }()
 
-	var results []map[string]interface{}
+	var results []services.SelfReferenceResult
 
 	for rows.Next() {
 		var itemID int
@@ -275,11 +278,11 @@ func (a *App) GetSelfReferentialItems() ([]map[string]interface{}, error) {
 		}
 
 		if found {
-			results = append(results, map[string]interface{}{
-				"itemId": itemID,
-				"word":   word,
-				"type":   itemType,
-				"tag":    fmt.Sprintf("{%s: %s}", prefix, word),
+			results = append(results, services.SelfReferenceResult{
+				ItemID: itemID,
+				Word:   word,
+				Type:   itemType,
+				Tag:    fmt.Sprintf("{%s: %s}", prefix, word),
 			})
 		}
 	}
@@ -287,7 +290,7 @@ func (a *App) GetSelfReferentialItems() ([]map[string]interface{}, error) {
 }
 
 // GetOrphanedItems returns items with no incoming or outgoing links
-func (a *App) GetOrphanedItems() ([]map[string]interface{}, error) {
+func (a *App) GetOrphanedItems() ([]services.OrphanedItemResult, error) {
 	// Get all items
 	allItems, err := a.db.SearchItems("")
 	if err != nil {
@@ -308,13 +311,13 @@ func (a *App) GetOrphanedItems() ([]map[string]interface{}, error) {
 	}
 
 	// Find items without any links
-	var results []map[string]interface{}
+	var results []services.OrphanedItemResult
 	for _, item := range allItems {
 		if !connectedItems[item.ItemID] {
-			results = append(results, map[string]interface{}{
-				"itemId": item.ItemID,
-				"word":   item.Word,
-				"type":   item.Type,
+			results = append(results, services.OrphanedItemResult{
+				ItemID: item.ItemID,
+				Word:   item.Word,
+				Type:   item.Type,
 			})
 		}
 	}
@@ -323,7 +326,7 @@ func (a *App) GetOrphanedItems() ([]map[string]interface{}, error) {
 }
 
 // GetLinkedItemsNotInDefinition returns items that have links but those linked items aren't referenced in the definition
-func (a *App) GetLinkedItemsNotInDefinition() ([]map[string]interface{}, error) {
+func (a *App) GetLinkedItemsNotInDefinition() ([]services.LinkedItemNotInDefinitionResult, error) {
 	// Single SQL query to get all items with their outgoing links efficiently
 	query := `
 		SELECT 
@@ -383,7 +386,7 @@ func (a *App) GetLinkedItemsNotInDefinition() ([]map[string]interface{}, error) 
 	}
 
 	// Now check each item's text fields for missing references
-	var results []map[string]interface{}
+	var results []services.LinkedItemNotInDefinitionResult
 	for _, itemID := range itemOrder {
 		itemData := itemMap[itemID]
 		// Combine all text fields and strip possessives from tags
@@ -414,11 +417,11 @@ func (a *App) GetLinkedItemsNotInDefinition() ([]map[string]interface{}, error) 
 		}
 
 		if len(missingReferences) > 0 {
-			results = append(results, map[string]interface{}{
-				"itemId":            itemData["itemId"],
-				"word":              itemData["word"],
-				"type":              itemData["type"],
-				"missingReferences": missingReferences,
+			results = append(results, services.LinkedItemNotInDefinitionResult{
+				ItemID:            itemData["itemId"].(int),
+				Word:              itemData["word"].(string),
+				Type:              itemData["type"].(string),
+				MissingReferences: missingReferences,
 			})
 		}
 	}
@@ -427,17 +430,17 @@ func (a *App) GetLinkedItemsNotInDefinition() ([]map[string]interface{}, error) 
 }
 
 // GetItemsWithoutDefinitions returns items that have no definition or "MISSING DATA"
-func (a *App) GetItemsWithoutDefinitions() ([]map[string]interface{}, error) {
+func (a *App) GetItemsWithoutDefinitions() ([]services.ItemWithoutDefinitionResult, error) {
 	return a.itemService.GetItemsWithoutDefinitions()
 }
 
 // GetItemsWithUnknownTypes returns items whose type is not Writer, Title, or Reference
-func (a *App) GetItemsWithUnknownTypes() ([]map[string]interface{}, error) {
+func (a *App) GetItemsWithUnknownTypes() ([]services.ItemWithUnknownTypeResult, error) {
 	return a.itemService.GetItemsWithUnknownTypes()
 }
 
 // GetUnknownTags returns items with tags other than {word:, {writer:, or {title:
-func (a *App) GetUnknownTags() ([]map[string]interface{}, error) {
+func (a *App) GetUnknownTags() ([]services.UnknownTagResult, error) {
 	return a.itemService.GetUnknownTags()
 }
 

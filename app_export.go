@@ -367,7 +367,7 @@ func (a *App) ExportToMarkdown() (string, error) {
 		markdown.WriteString("|------|------|----------------|\n")
 		for _, item := range unlinkedRefs {
 			markdown.WriteString(fmt.Sprintf("| %s | %s | %v |\n",
-				item["word"], item["type"], item["refCount"]))
+				item.Word, item.Type, item.RefCount))
 		}
 		markdown.WriteString("\n")
 	} else {
@@ -380,10 +380,10 @@ func (a *App) ExportToMarkdown() (string, error) {
 	markdown.WriteString("[↑ Back to top](#top)\n\n")
 	if len(duplicates) > 0 {
 		markdown.WriteString("Items with duplicate stripped names.\n\n")
-		markdown.WriteString("| Word | Item ID |\n")
-		markdown.WriteString("|------|---------|\n")
+		markdown.WriteString("| Stripped Word | Count |\n")
+		markdown.WriteString("|---------------|-------|\n")
 		for _, item := range duplicates {
-			markdown.WriteString(fmt.Sprintf("| %s | %v |\n", item["word"], item["itemId"]))
+			markdown.WriteString(fmt.Sprintf("| %s | %v |\n", item.StrippedWord, item.Count))
 		}
 		markdown.WriteString("\n")
 	} else {
@@ -399,7 +399,7 @@ func (a *App) ExportToMarkdown() (string, error) {
 		markdown.WriteString("| Word | Type |\n")
 		markdown.WriteString("|------|------|\n")
 		for _, item := range orphanedItems {
-			markdown.WriteString(fmt.Sprintf("| %s | %s |\n", item["word"], item["type"]))
+			markdown.WriteString(fmt.Sprintf("| %s | %s |\n", item.Word, item.Type))
 		}
 		markdown.WriteString("\n")
 	} else {
@@ -416,7 +416,7 @@ func (a *App) ExportToMarkdown() (string, error) {
 		markdown.WriteString("|------|------|--------------------|\n")
 		for _, item := range linkedNotInDef {
 			markdown.WriteString(fmt.Sprintf("| %s | %s | %v |\n",
-				item["word"], item["type"], item["unreferencedCount"]))
+				item.Word, item.Type, len(item.MissingReferences)))
 		}
 		markdown.WriteString("\n")
 	} else {
@@ -432,7 +432,7 @@ func (a *App) ExportToMarkdown() (string, error) {
 		markdown.WriteString("| Word | Type |\n")
 		markdown.WriteString("|------|------|\n")
 		for _, item := range missingDefs {
-			markdown.WriteString(fmt.Sprintf("| %s | %s |\n", item["word"], item["type"]))
+			markdown.WriteString(fmt.Sprintf("| %s | %s |\n", item.Word, item.Type))
 		}
 		markdown.WriteString("\n")
 	} else {
@@ -448,7 +448,7 @@ func (a *App) ExportToMarkdown() (string, error) {
 		markdown.WriteString("| Word | Type |\n")
 		markdown.WriteString("|------|------|\n")
 		for _, item := range unknownTypes {
-			markdown.WriteString(fmt.Sprintf("| %s | %s |\n", item["word"], item["type"]))
+			markdown.WriteString(fmt.Sprintf("| %s | %s |\n", item.Word, item.Type))
 		}
 		markdown.WriteString("\n")
 	} else {
@@ -465,7 +465,7 @@ func (a *App) ExportToMarkdown() (string, error) {
 		markdown.WriteString("|------|------|-------------------|\n")
 		for _, item := range unknownTags {
 			markdown.WriteString(fmt.Sprintf("| %s | %s | %v |\n",
-				item["word"], item["type"], item["tagCount"]))
+				item.Word, item.Type, item.TagCount))
 		}
 		markdown.WriteString("\n")
 	} else {

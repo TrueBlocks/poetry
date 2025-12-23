@@ -1,58 +1,14 @@
-// Shared types for Reports components
-export interface UnlinkedRefDetail {
-  ref: string;
-  reason: "missing" | "unlinked";
-}
+import { services } from "@wailsjs/go/models";
 
-export interface UnlinkedRefResult {
-  itemId: number;
-  word: string;
-  type: string;
-  unlinkedRefs: UnlinkedRefDetail[];
-  refCount: number;
-}
-
-export interface DuplicateItem {
-  itemId: number;
-  word: string;
-  type: string;
-}
-
-export interface DuplicateResult {
-  strippedWord: string;
-  original: DuplicateItem;
-  duplicates: DuplicateItem[];
-  count: number;
-}
-
-export interface SimpleItem {
-  itemId: number;
-  word: string;
-  type: string;
-  incomingLinkCount?: number;
-  singleIncomingLinkItemId?: number;
-  singleIncomingLinkWord?: string;
-  hasMissingData?: boolean;
-}
-
-export interface UnknownTagsResult {
-  itemId: number;
-  word: string;
-  type: string;
-  unknownTags: string[];
-  tagCount: number;
-}
-
-export interface LinkedNotInDefResult {
-  itemId: number;
-  word: string;
-  type: string;
-  missingReferences: string[];
-}
-
-export interface SelfReferentialResult {
-  itemId: number;
-  word: string;
-  type: string;
-  tag: string;
-}
+// Re-export generated types for convenience and backward compatibility
+export type UnlinkedRefResult = services.UnlinkedReferenceResult;
+export type UnlinkedRefDetail = services.UnlinkedReferenceDetail;
+export type DuplicateResult = services.DuplicateItemResult;
+export type DuplicateItem = services.DuplicateItemDetail;
+export type UnknownTagsResult = services.UnknownTagResult;
+export type LinkedNotInDefResult = services.LinkedItemNotInDefinitionResult;
+export type SelfRefResult = services.SelfReferenceResult;
+export type DanglingLinkResult = services.DanglingLinkResult;
+export type ItemWithUnknownTypeResult = services.ItemWithUnknownTypeResult;
+export type ItemWithoutDefinitionResult = services.ItemWithoutDefinitionResult;
+export type OrphanedItemResult = services.OrphanedItemResult;
