@@ -11,6 +11,7 @@ import (
 	"github.com/TrueBlocks/trueblocks-poetry/backend/database"
 	"github.com/TrueBlocks/trueblocks-poetry/pkg/constants"
 	"github.com/TrueBlocks/trueblocks-poetry/pkg/parser"
+	"github.com/TrueBlocks/trueblocks-poetry/pkg/validator"
 )
 
 // ItemService handles item operations
@@ -123,11 +124,21 @@ func (s *ItemService) CreateLinkOrRemoveTags(sourceItemID int, refWord string) (
 
 // CreateItem creates a new item
 func (s *ItemService) CreateItem(item database.Item) (int, error) {
+	if err := validator.ValidateItem(item); err != nil {
+		return 0, err
+	}
 	return s.db.CreateItem(item)
 }
 
 // UpdateItem updates an existing item
 func (s *ItemService) UpdateItem(item database.Item) error {
+	if err := validator.ValidateID(item.ItemID); err != nil {
+		return err
+	}
+	if err := validator.ValidateItem(item); err != nil {
+		return err
+	}
+
 	// Delete TTS cache for this item
 	cacheDir, err := constants.GetTTSCacheDir()
 	if err == nil {
@@ -147,6 +158,9 @@ func (s *ItemService) ToggleItemMark(itemID int, marked bool) error {
 
 // DeleteItem deletes an item
 func (s *ItemService) DeleteItem(itemID int) error {
+	if err := validator.ValidateID(itemID); err != nil {
+		return err
+	}
 	slog.Info("[ItemService] DeleteItem called", "id", itemID)
 
 	// Delete TTS cache for this item
@@ -360,11 +374,26 @@ func (s *ItemService) GetItemLinks(itemID int) ([]database.Link, error) {
 
 // CreateLink creates a new link between items
 func (s *ItemService) CreateLink(sourceID, destID int, linkType string) error {
+	if err := validator.ValidateID(sourceID); err != nil {
+		return fmt.Errorf("invalid sourceID: %w", err)
+	}
+	if err := validator.ValidateID(destID); err != nil {
+		return fmt.Errorf("invalid destID: %w", err)
+	}
+	if sourceID == destID {
+		return fmt.Errorf("cannot create self-link")
+	}
+	if err := validator.ValidateLinkType(linkType); err != nil {
+		return err
+	}
 	return s.db.CreateLink(sourceID, destID, linkType)
 }
 
 // DeleteLink deletes a link
 func (s *ItemService) DeleteLink(linkID int) error {
+	if err := validator.ValidateID(linkID); err != nil {
+		return err
+	}
 	slog.Info("[ItemService] DeleteLink called", "id", linkID)
 	err := s.db.DeleteLink(linkID)
 	if err != nil {
