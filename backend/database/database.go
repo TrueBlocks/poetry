@@ -285,11 +285,7 @@ func (db *DB) GetExtendedStats() (*DashboardStats, error) {
 
 	// Orphans (Items with no links)
 	var orphanCount int
-	queryOrphans := `
-		SELECT COUNT(*) FROM items 
-		WHERE item_id NOT IN (SELECT source_item_id FROM links) 
-		AND item_id NOT IN (SELECT destination_item_id FROM links)
-	`
+	queryOrphans := MustLoadQuery("orphans")
 	if err := db.conn.QueryRow(queryOrphans).Scan(&orphanCount); err != nil {
 		return nil, fmt.Errorf("failed to count orphans: %w", err)
 	}
@@ -297,32 +293,33 @@ func (db *DB) GetExtendedStats() (*DashboardStats, error) {
 	// Quotes (Titles with brackets in definition)
 	// Note: This SQL query approximates the logic in parser.IsPoem()
 	// We use LIKE for performance instead of fetching all rows to check balanced brackets
-	queryQuotes := `SELECT COUNT(*) FROM items WHERE type = 'Title' AND definition LIKE '%[%' AND definition LIKE '%]%'`
+	queryQuotes := MustLoadQuery("quotes_count")
 	if err := db.conn.QueryRow(queryQuotes).Scan(&stats.QuoteCount); err != nil {
 		return nil, fmt.Errorf("failed to count quotes: %w", err)
 	}
 
 	// Cited (Items with a source)
-	queryCited := `SELECT COUNT(*) FROM items WHERE source IS NOT NULL AND source != ''`
+	queryCited := MustLoadQuery("cited_count")
 	if err := db.conn.QueryRow(queryCited).Scan(&stats.CitedCount); err != nil {
 		return nil, fmt.Errorf("failed to count cited items: %w", err)
 	}
 
 	// Stubs (Items with no definition)
 	var stubCount int
-	queryStubs := `SELECT COUNT(*) FROM items WHERE definition IS NULL OR definition = ''`
+	queryStubs := MustLoadQuery("stubs_count")
 	if err := db.conn.QueryRow(queryStubs).Scan(&stubCount); err != nil {
 		return nil, fmt.Errorf("failed to count stubs: %w", err)
 	}
 
 	// Writers
-	queryWriters := `SELECT COUNT(*) FROM items WHERE type = 'Writer'`
+	queryWriters := MustLoadQuery("writers_count")
 	if err := db.conn.QueryRow(queryWriters).Scan(&stats.WriterCount); err != nil {
 		return nil, fmt.Errorf("failed to count writers: %w", err)
 	}
 
 	// Poets (Writers with image and poems)
-	rows, err := db.conn.Query("SELECT item_id FROM items WHERE type = 'Writer'")
+	queryWritersList := MustLoadQuery("writers")
+	rows, err := db.conn.Query(queryWritersList)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query writers for poet count: %w", err)
 	}
@@ -348,12 +345,7 @@ func (db *DB) GetExtendedStats() (*DashboardStats, error) {
 
 		// Check linked poems (incoming links from Titles)
 		var poemCount int
-		queryPoems := `
-			SELECT COUNT(*) 
-			FROM links l 
-			JOIN items i ON l.source_item_id = i.item_id 
-			WHERE l.destination_item_id = ? AND i.type = 'Title'
-		`
+		queryPoems := MustLoadQuery("poems_for_writer")
 		if err := db.conn.QueryRow(queryPoems, itemId).Scan(&poemCount); err != nil {
 			continue
 		}
@@ -365,21 +357,20 @@ func (db *DB) GetExtendedStats() (*DashboardStats, error) {
 	stats.PoetCount = poetCount
 
 	// Titles
-	queryTitles := `SELECT COUNT(*) FROM items WHERE type = 'Title'`
+	queryTitles := MustLoadQuery("titles_count")
 	if err := db.conn.QueryRow(queryTitles).Scan(&stats.TitleCount); err != nil {
 		return nil, fmt.Errorf("failed to count titles: %w", err)
 	}
 
 	// Words (Reference)
-	queryWords := `SELECT COUNT(*) FROM items WHERE type = 'Reference'`
+	queryWords := MustLoadQuery("words_count")
 	if err := db.conn.QueryRow(queryWords).Scan(&stats.WordCount); err != nil {
 		return nil, fmt.Errorf("failed to count words: %w", err)
 	}
 
 	// Self Referential Items
 	var selfRefCount int
-	querySelfRef := `SELECT item_id, word, type, definition, derivation, appendicies FROM items 
-              WHERE definition LIKE '%{%' OR derivation LIKE '%{%' OR appendicies LIKE '%{%'`
+	querySelfRef := MustLoadQuery("self_ref_items")
 
 	rows, err = db.conn.Query(querySelfRef)
 	if err != nil {
@@ -1216,7 +1207,7 @@ func (db *DB) scanLinks(rows *sql.Rows) ([]Link, error) {
 
 // GetAllItems returns all items
 func (db *DB) GetAllItems() ([]Item, error) {
-	query := `SELECT item_id, word, type, definition, derivation, appendicies, source, source_pg, mark, created_at, modified_at FROM items ORDER BY word`
+	query := MustLoadQuery("all_items")
 	rows, err := db.conn.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all items: %w", err)
@@ -1227,7 +1218,7 @@ func (db *DB) GetAllItems() ([]Item, error) {
 
 // GetAllLinks returns all links
 func (db *DB) GetAllLinks() ([]Link, error) {
-	query := `SELECT link_id, source_item_id, destination_item_id, link_type, created_at FROM links ORDER BY link_id`
+	query := MustLoadQuery("all_links")
 	rows, err := db.conn.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all links: %w", err)
@@ -1367,7 +1358,7 @@ func (db *DB) GetEgoGraph(centerNodeID int, depth int) (*GraphData, error) {
 
 // GetAllCliches returns all cliches
 func (db *DB) GetAllCliches() ([]Cliche, error) {
-	query := `SELECT cliche_id, phrase, definition, created_at FROM cliches ORDER BY phrase`
+	query := MustLoadQuery("all_cliches")
 	rows, err := db.conn.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all cliches: %w", err)
@@ -1387,7 +1378,7 @@ func (db *DB) GetAllCliches() ([]Cliche, error) {
 
 // GetAllNames returns all names
 func (db *DB) GetAllNames() ([]Name, error) {
-	query := `SELECT name_id, name, type, gender, description, notes, created_at FROM names ORDER BY name`
+	query := MustLoadQuery("all_names")
 	rows, err := db.conn.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all names: %w", err)
@@ -1439,7 +1430,7 @@ func (db *DB) GetAllLiteraryTerms() ([]LiteraryTerm, error) {
 
 // GetAllSources returns all sources
 func (db *DB) GetAllSources() ([]Source, error) {
-	query := `SELECT source_id, title, author, notes, created_at FROM sources ORDER BY title`
+	query := MustLoadQuery("all_sources")
 	rows, err := db.conn.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all sources: %w", err)

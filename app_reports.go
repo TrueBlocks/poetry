@@ -212,8 +212,7 @@ func (a *App) GetDuplicateItems() ([]map[string]interface{}, error) {
 
 func (a *App) GetSelfReferentialItems() ([]map[string]interface{}, error) {
 	// Get all items that might have tags
-	query := `SELECT item_id, word, type, definition, derivation, appendicies FROM items 
-              WHERE definition LIKE '%{%' OR derivation LIKE '%{%' OR appendicies LIKE '%{%'`
+	query := database.MustLoadQuery("self_ref_items")
 
 	rows, err := a.db.Query(query)
 	if err != nil {
