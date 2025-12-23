@@ -80,19 +80,58 @@ export function ReferenceLink({
     });
 
     try {
-      const base64Audio = await SpeakWord(finalText);
-      notifications.hide("tts-inline-loading");
+      const result = await SpeakWord(
+        finalText,
+        parentItem?.type || "",
+        parentItem?.word || "",
+        1,
+      );
 
-      if (!base64Audio || base64Audio === "") {
-        notifications.show({
-          title: "No Audio Generated",
-          message: "The TTS service returned no audio",
-          color: "orange",
+      if (result.error) {
+        notifications.update({
+          id: "tts-inline-loading",
+          title: "TTS Error",
+          message: result.error,
+          color: "red",
+          loading: false,
+          autoClose: result.errorType === "missing_key" ? false : 5000,
+          withCloseButton: true,
         });
         return;
       }
 
-      const audioBlob = base64ToBlob(base64Audio, "audio/mpeg");
+      if (result.cached) {
+        notifications.update({
+          id: "tts-inline-loading",
+          title: "Using cached audio",
+          message: "Playing from cache",
+          color: "green",
+          loading: false,
+          autoClose: 1500,
+        });
+      } else {
+        notifications.hide("tts-inline-loading");
+      }
+
+      const audioData = result.audioData;
+      let uint8Array: Uint8Array;
+      if (typeof audioData === "string") {
+        const binaryString = atob(audioData);
+        uint8Array = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          uint8Array[i] = binaryString.charCodeAt(i);
+        }
+      } else if (audioData instanceof Uint8Array) {
+        uint8Array = audioData;
+      } else if (Array.isArray(audioData)) {
+        uint8Array = new Uint8Array(audioData);
+      } else {
+        throw new Error("Unexpected audio data format");
+      }
+
+      const audioBlob = new Blob([uint8Array as BlobPart], {
+        type: "audio/mpeg",
+      });
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
 
@@ -239,14 +278,4 @@ export function ReferenceLink({
       )}
     </span>
   );
-}
-
-function base64ToBlob(base64: string, mimeType: string): Blob {
-  const byteCharacters = atob(base64);
-  const byteNumbers = new Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
-  }
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: mimeType });
 }
