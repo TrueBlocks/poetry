@@ -51,11 +51,12 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getItemColor } from "../utils/colors";
 import { parseReferences } from "../utils/references";
 import { DefinitionRenderer } from "../components/ItemDetail/DefinitionRenderer";
 import { useUIStore } from "../stores/useUIStore";
+import { useAudioPlayer } from "../hooks/useAudioPlayer";
 
 // Alias for backward compatibility
 const parseDefinitionReferences = parseReferences;
@@ -85,28 +86,21 @@ export default function ItemDetail({
     useState(false);
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [itemImage, setItemImage] = useState<string | null>(null);
-  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Helper function to stop any currently playing audio
-  const stopAudio = () => {
-    if (currentAudioRef.current) {
-      currentAudioRef.current.pause();
-      currentAudioRef.current.currentTime = 0;
-      currentAudioRef.current = null;
-    }
-  };
+  // Use audio player hook
+  const { currentAudioRef, stopAudio } = useAudioPlayer();
 
   // Stop audio when component unmounts or id changes
   useEffect(() => {
     return () => stopAudio();
-  }, [id]);
+  }, [id, stopAudio]);
 
   // Stop audio on any click anywhere in the document
   useEffect(() => {
     const handleClick = () => stopAudio();
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
-  }, []);
+  }, [stopAudio]);
 
   // Toggle reveal markdown
   const toggleRevealMarkdown = () => {
@@ -208,7 +202,7 @@ export default function ItemDetail({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [item, id, queryClient, navigate, onEnterEditMode]);
+  }, [item, id, queryClient, navigate, onEnterEditMode, stopAudio]);
 
   const { data: links } = useQuery({
     queryKey: ["links", id],
