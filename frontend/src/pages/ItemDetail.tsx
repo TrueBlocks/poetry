@@ -308,7 +308,7 @@ export default function ItemDetail({
 
         if (isMounted) setItemImage(null);
       } catch (error) {
-        console.error("Failed to load item image:", error);
+        LogError(`Failed to load item image: ${error}`);
         if (isMounted) setItemImage(null);
       }
     };
@@ -535,7 +535,7 @@ export default function ItemDetail({
         color: "green",
       });
     } catch (error) {
-      console.error("Failed to delete link:", error);
+      LogError(`Failed to delete link: ${error}`);
       notifications.show({
         title: "Error",
         message: "Failed to delete link",

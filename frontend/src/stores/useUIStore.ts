@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { LogError } from "@utils/logger";
 import { persist, createJSONStorage, StateStorage } from "zustand/middleware";
 import {
   GetSettings,
@@ -76,7 +77,7 @@ const storage: StateStorage = {
       };
       return JSON.stringify(state);
     } catch (e) {
-      console.error("Failed to load settings", e);
+      LogError(`Failed to load settings: ${e}`);
       return null;
     }
   },
@@ -119,7 +120,7 @@ const storage: StateStorage = {
 
       await UpdateSettings(current);
     } catch (e) {
-      console.error("Failed to save settings", e);
+      LogError(`Failed to save settings: ${e}`);
     }
   },
   removeItem: async (_name: string): Promise<void> => {

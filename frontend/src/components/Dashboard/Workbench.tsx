@@ -14,6 +14,7 @@ import { CheckSquare, ArrowRight, Network } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { database } from "@wailsjs/go/models";
 import { ToggleItemMark } from "@wailsjs/go/main/App";
+import { LogError } from "@utils/logger";
 
 interface WorkbenchProps {
   items: database.Item[] | null;
@@ -30,7 +31,7 @@ export function Workbench({ items, onToggle }: WorkbenchProps) {
       queryClient.invalidateQueries({ queryKey: ["markedItems"] });
       queryClient.invalidateQueries({ queryKey: ["allItems"] });
     } catch (error) {
-      console.error("Failed to unmark item:", error);
+      LogError(`Failed to unmark item: ${error}`);
     }
   };
 

@@ -13,6 +13,7 @@ import {
 } from "@mantine/core";
 import { Download, FileJson, FileText, FolderOpen } from "lucide-react";
 import { notifications } from "@mantine/notifications";
+import { LogError } from "@utils/logger";
 
 export default function Export() {
   const [exporting, setExporting] = useState(false);
@@ -26,7 +27,7 @@ export default function Export() {
         const settings = await GetSettings();
         setExportFolder(settings.exportFolder || "");
       } catch (error) {
-        console.error("Failed to load settings:", error);
+        LogError(`Failed to load settings: ${error}`);
       } finally {
         setLoadingSettings(false);
       }
@@ -49,7 +50,7 @@ export default function Export() {
         });
       }
     } catch (error) {
-      console.error("Failed to select folder:", error);
+      LogError(`Failed to select folder: ${error}`);
       notifications.show({
         title: "Selection Failed",
         message: String(error),
@@ -81,7 +82,7 @@ export default function Export() {
       });
       return false;
     } catch (error) {
-      console.error("Failed to select folder:", error);
+      LogError(`Failed to select folder: ${error}`);
       notifications.show({
         title: "Selection Failed",
         message: String(error),
@@ -106,7 +107,7 @@ export default function Export() {
         color: "green",
       });
     } catch (error) {
-      console.error("Export failed:", error);
+      LogError(`Export failed: ${error}`);
       notifications.show({
         title: "Export Failed",
         message: String(error),
@@ -133,7 +134,7 @@ export default function Export() {
         color: "green",
       });
     } catch (error) {
-      console.error("Export failed:", error);
+      LogError(`Export failed: ${error}`);
       notifications.show({
         title: "Export Failed",
         message: String(error),
@@ -166,7 +167,7 @@ export default function Export() {
         color: "teal",
       });
     } catch (error) {
-      console.error("Export failed:", error);
+      LogError(`Export failed: ${error}`);
       notifications.show({
         title: "Export Failed",
         message: String(error),

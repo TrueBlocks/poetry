@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
 import { GetSettings } from "@wailsjs/go/main/App.js";
+import { LogError } from "@utils/logger";
 
 export default function useKeyboardShortcuts(
   commandPaletteOpen: boolean,
@@ -138,7 +139,7 @@ export default function useKeyboardShortcuts(
               color: "teal",
             });
           } catch (error) {
-            console.error("Export failed:", error);
+            LogError(`Export failed: ${error}`);
             notifications.show({
               title: "Export Failed",
               message: String(error),

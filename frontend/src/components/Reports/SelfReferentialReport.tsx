@@ -18,6 +18,7 @@ import {
 } from "@wailsjs/go/main/App";
 import { AlertTriangle, Check } from "lucide-react";
 import { notifications } from "@mantine/notifications";
+import { LogError } from "@utils/logger";
 import { SelfRefResult } from "./types";
 import { database } from "@wailsjs/go/models";
 
@@ -93,7 +94,7 @@ export function SelfReferentialReport() {
         });
       }
     } catch (error) {
-      console.error("Failed to fix item:", error);
+      LogError(`Failed to fix item: ${error}`);
       notifications.show({
         title: "Error",
         message: "Failed to fix item",

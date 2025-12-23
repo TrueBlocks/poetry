@@ -18,6 +18,7 @@ import {
 import { AlertTriangle } from "lucide-react";
 import { notifications } from "@mantine/notifications";
 import { LinkedNotInDefResult } from "./types";
+import { LogError } from "@utils/logger";
 import { lookupItemByRef } from "./utils";
 
 export function LinkedItemsNotInDefinitionReport() {
@@ -54,7 +55,7 @@ export function LinkedItemsNotInDefinitionReport() {
         color: "green",
       });
     } catch (error) {
-      console.error("Failed to delete link:", error);
+      LogError(`Failed to delete link: ${error}`);
       notifications.show({
         title: "Error",
         message: "Failed to delete link",

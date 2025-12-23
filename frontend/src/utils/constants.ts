@@ -1,3 +1,5 @@
+import { LogError } from "@utils/logger";
+
 export const Patterns = {
   // Default values matching backend pkg/parser/parser.go
   // These will be updated from the backend on app startup
@@ -17,7 +19,7 @@ export const updatePatterns = (patterns: Record<string, string>) => {
     try {
       Patterns.ReferenceTag = new RegExp(patterns.ReferenceTagPattern, "gi");
     } catch (e) {
-      console.error("Failed to update ReferenceTag pattern", e);
+      LogError(`Failed to update ReferenceTag pattern: ${e}`);
     }
   }
 
@@ -25,7 +27,7 @@ export const updatePatterns = (patterns: Record<string, string>) => {
     try {
       Patterns.GenericTag = new RegExp(patterns.GenericTagPattern, "gi");
     } catch (e) {
-      console.error("Failed to update GenericTag pattern", e);
+      LogError(`Failed to update GenericTag pattern: ${e}`);
     }
   }
 };

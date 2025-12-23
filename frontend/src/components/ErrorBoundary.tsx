@@ -1,6 +1,7 @@
 import { Component, ReactNode } from "react";
 import { Container, Title, Text, Button, Paper, Stack } from "@mantine/core";
 import { AlertTriangle } from "lucide-react";
+import { LogError } from "@utils/logger";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -31,7 +32,9 @@ export class ErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("ErrorBoundary caught an error:", error, errorInfo);
+    LogError(
+      `ErrorBoundary caught an error: ${error}, ${errorInfo.componentStack}`,
+    );
     this.setState({
       error,
       errorInfo,

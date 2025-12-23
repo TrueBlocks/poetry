@@ -14,6 +14,7 @@ import { useState } from "react";
 import { GetDuplicateItems, MergeDuplicateItems } from "@wailsjs/go/main/App";
 import { AlertTriangle } from "lucide-react";
 import { DuplicateResult } from "./types";
+import { LogError } from "@utils/logger";
 
 export function DuplicateItemsReport() {
   const queryClient = useQueryClient();
@@ -41,7 +42,7 @@ export function DuplicateItemsReport() {
       queryClient.invalidateQueries({ queryKey: ["unlinkedReferences"] });
       queryClient.invalidateQueries({ queryKey: ["orphanedItems"] });
     } catch (error) {
-      console.error("Failed to merge duplicates:", error);
+      LogError(`Failed to merge duplicates: ${error}`);
     } finally {
       setDeletingDuplicates(null);
     }

@@ -9,6 +9,7 @@ import Graph from "./Graph";
 import ItemEdit from "./ItemEdit";
 import { GetSettings, GetItem, GetItemByWord } from "@wailsjs/go/main/App.js";
 import { useUIStore } from "@stores/useUIStore";
+import { LogError } from "@utils/logger";
 
 export default function ItemPage() {
   const { id } = useParams<{ id: string }>();
@@ -46,7 +47,7 @@ export default function ItemPage() {
             });
           }
         })
-        .catch(console.error);
+        .catch((err) => LogError(`Failed to save last word: ${err}`));
     }
   }, [error, id, isNewItem, navigate, searchParams, setLastWordId]);
 

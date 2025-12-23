@@ -24,6 +24,7 @@ import { AlertTriangle } from "lucide-react";
 import { UnlinkedRefResult } from "./types";
 import { lookupItemByRef } from "./utils";
 import { Patterns } from "@utils/constants";
+import { LogError } from "@utils/logger";
 
 export function UnlinkedReferencesReport() {
   const queryClient = useQueryClient();
@@ -44,14 +45,14 @@ export function UnlinkedReferencesReport() {
     try {
       const destItem = await lookupItemByRef(refWord);
       if (!destItem) {
-        console.error("Could not find item:", refWord);
+        LogError(`Could not find item: ${refWord}`);
         return;
       }
 
       await CreateLink(sourceItemId, destItem.itemId, "reference");
       queryClient.invalidateQueries({ queryKey: ["unlinkedReferences"] });
     } catch (error) {
-      console.error("Failed to create link:", error);
+      LogError(`Failed to create link: ${error}`);
     } finally {
       setCreatingLink(null);
     }

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { SaveWindowPosition } from "@wailsjs/go/main/App";
 import { WindowGetPosition, WindowGetSize } from "@wailsjs/runtime/runtime";
+import { LogError } from "@utils/logger";
 
 export function useWindowPersistence() {
   const lastSavedPosition = useRef({ x: 0, y: 0, width: 0, height: 0 });
@@ -27,7 +28,7 @@ export function useWindowPersistence() {
           await SaveWindowPosition(x, y, width, height);
         }
       } catch (err) {
-        console.error("Failed to save window position:", err);
+        LogError(`Failed to save window position: ${err}`);
       }
     };
 

@@ -148,7 +148,7 @@ const nodeTypes: NodeTypes = {
 export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
   useEffect(() => {
     if (selectedItemId) {
-      console.log("Graph selected item:", selectedItemId);
+      LogInfo(`Graph selected item: ${selectedItemId}`);
     }
   }, [selectedItemId]);
   const { id } = useParams<{ id: string }>();

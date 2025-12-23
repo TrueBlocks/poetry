@@ -36,6 +36,7 @@ import {
   GetPoetIds,
 } from "@wailsjs/go/main/App.js";
 import { LogInfo, LogError } from "@wailsjs/runtime/runtime.js";
+import { LogError as UtilsLogError } from "@utils/logger";
 import {
   ArrowUp,
   ArrowDown,
@@ -728,7 +729,7 @@ export default function Tables() {
           queryClient.invalidateQueries({ queryKey: ["adHocQuery"] });
         }
       } catch (error) {
-        console.error("Failed to toggle mark:", error);
+        UtilsLogError(`Failed to toggle mark: ${error}`);
       }
     },
     [selectedTable, queryClient, debouncedSearchQuery],

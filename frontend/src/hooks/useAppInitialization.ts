@@ -8,6 +8,7 @@ import {
   GetConstants,
 } from "@wailsjs/go/main/App.js";
 import { updatePatterns } from "@utils/constants";
+import { LogError } from "@utils/logger";
 
 export function useAppInitialization() {
   const [loading, setLoading] = useState(true);
@@ -59,7 +60,9 @@ export function useAppInitialization() {
                           setInitialPath(`/item/${poetryItem.itemId}`);
                         }
                       })
-                      .catch(console.error);
+                      .catch((e) =>
+                        LogError(`Failed to get poetry item: ${e}`),
+                      );
                   });
               }
               break;
@@ -81,11 +84,11 @@ export function useAppInitialization() {
                     setInitialPath(`/item/${poetryItem.itemId}`);
                   }
                 })
-                .catch(console.error);
+                .catch((e) => LogError(`Failed to get poetry item: ${e}`));
             });
         }
       })
-      .catch(console.error)
+      .catch((e) => LogError(`Failed to initialize app: ${e}`))
       .finally(() => setLoading(false));
   }, []);
 

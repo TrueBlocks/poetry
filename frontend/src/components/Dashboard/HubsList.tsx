@@ -14,6 +14,7 @@ import { Network, ArrowRight, CheckSquare } from "lucide-react";
 import { database } from "@wailsjs/go/models";
 import { ToggleItemMark } from "@wailsjs/go/main/App";
 import { useQueryClient } from "@tanstack/react-query";
+import { LogError } from "@utils/logger";
 
 interface HubsListProps {
   hubs: database.HubItem[] | null;
@@ -36,7 +37,7 @@ export function HubsList({ hubs, onToggle }: HubsListProps) {
       queryClient.invalidateQueries({ queryKey: ["topHubs"] });
       queryClient.invalidateQueries({ queryKey: ["markedItems"] });
     } catch (error) {
-      console.error("Failed to toggle mark:", error);
+      LogError(`Failed to toggle mark: ${error}`);
     }
   };
 

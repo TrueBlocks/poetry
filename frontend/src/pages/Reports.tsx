@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { CheckpointDatabase } from "@wailsjs/go/main/App";
 import { LinkIntegrityReport, ItemHealthReport } from "@components/Reports";
+import { LogError } from "@utils/logger";
 
 export default function Reports() {
   const queryClient = useQueryClient();
@@ -16,7 +17,7 @@ export default function Reports() {
         try {
           await CheckpointDatabase();
         } catch (error) {
-          console.error("Failed to checkpoint database:", error);
+          LogError(`Failed to checkpoint database: ${error}`);
         }
         queryClient.invalidateQueries({ queryKey: ["unlinkedReferences"] });
         queryClient.invalidateQueries({ queryKey: ["duplicateItems"] });

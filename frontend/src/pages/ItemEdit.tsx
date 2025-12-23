@@ -20,6 +20,7 @@ import {
   useMantineColorScheme,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import { LogError, LogWarning } from "@utils/logger";
 import {
   GetItem,
   CreateItem,
@@ -132,7 +133,7 @@ export default function ItemEdit({
             setCachedImage(null);
           }
         })
-        .catch(console.error)
+        .catch((err) => LogError(`Failed to load image: ${err}`))
         .finally(() => setIsImageLoading(false));
     } else if (isNew) {
       // Reset form when creating new item
@@ -211,7 +212,7 @@ export default function ItemEdit({
           return { itemId: Number(id) };
         }
       } catch (error) {
-        console.error("Error in mutationFn:", error);
+        LogError(`Error in mutationFn: ${error}`);
         throw error;
       }
     },
@@ -221,7 +222,7 @@ export default function ItemEdit({
       // Save or delete image based on current state
       try {
         if (isImageLoading) {
-          console.warn(
+          LogWarning(
             "Image is still loading, skipping image update to prevent accidental deletion",
           );
         } else if (pastedImage) {
@@ -234,7 +235,7 @@ export default function ItemEdit({
           await DeleteItemImage(savedItemId);
         }
       } catch (error) {
-        console.error("Error saving image:", error);
+        LogError(`Error saving image: ${error}`);
       }
 
       notifications.show({
@@ -257,10 +258,10 @@ export default function ItemEdit({
       }
     },
     onError: (error: Error) => {
-      console.error("Save failed:", error);
-      console.error("Full error object:", error);
-      console.error("Error message:", error?.message);
-      console.error("Error stack:", error?.stack);
+      LogError(`Save failed: ${error}`);
+      LogError(`Full error object: ${error}`);
+      LogError(`Error message: ${error?.message}`);
+      LogError(`Error stack: ${error?.stack}`);
       notifications.show({
         title: "Error Saving Item",
         message: error?.message || String(error) || "Failed to save changes",

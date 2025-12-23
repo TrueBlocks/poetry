@@ -24,6 +24,7 @@ import { LogInfo, LogError } from "@wailsjs/runtime/runtime";
 import { database } from "@wailsjs/go/models";
 import { notifications } from "@mantine/notifications";
 import { AlertCircle, Check, Search, ArrowRight } from "lucide-react";
+import { LogError as UtilsLogError } from "@utils/logger";
 
 const ITEM_TYPES = [
   "Reference",
@@ -61,7 +62,7 @@ export function ItemManagerTool() {
           if (settings.managerNewType) setNewType(settings.managerNewType);
         }
       })
-      .catch(console.error);
+      .catch((e) => UtilsLogError(`Failed to load settings: ${e}`));
   }, []);
 
   // Save settings on change
@@ -74,10 +75,12 @@ export function ItemManagerTool() {
             managerOldType: oldType,
             managerNewType: newType,
           });
-          UpdateSettings(newSettings).catch(console.error);
+          UpdateSettings(newSettings).catch((e) =>
+            UtilsLogError(`Failed to update settings: ${e}`),
+          );
         }
       })
-      .catch(console.error);
+      .catch((e) => UtilsLogError(`Failed to get settings: ${e}`));
   }, [oldType, newType]);
 
   useEffect(() => {
