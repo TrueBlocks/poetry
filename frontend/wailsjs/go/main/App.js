@@ -86,6 +86,10 @@ export function GetAllSources() {
   return window['go']['main']['App']['GetAllSources']();
 }
 
+export function GetCapabilities() {
+  return window['go']['main']['App']['GetCapabilities']();
+}
+
 export function GetConstants() {
   return window['go']['main']['App']['GetConstants']();
 }

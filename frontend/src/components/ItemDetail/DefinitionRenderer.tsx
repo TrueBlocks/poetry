@@ -1,4 +1,5 @@
 import { useMantineColorScheme } from "@mantine/core";
+import { Fragment } from "react";
 import { PoemRenderer } from "./PoemRenderer";
 import { ReferenceLink } from "./ReferenceLink";
 import { parseReferenceTags, parseTextSegments } from "@utils/tagParser";
@@ -89,7 +90,7 @@ export function DefinitionRenderer({
       {segments.map((segment, idx) => {
         if (segment.type === "poem") {
           return (
-            <>
+            <Fragment key={`poem-segment-${idx}`}>
               {segment.preText && segment.preText.trim().length > 0 && (
                 <div key={`pre-poem-${idx}`} style={{ marginBottom: "1rem" }}>
                   {renderTextWithLinks(segment.preText, `pre-${idx}`)}
@@ -109,7 +110,7 @@ export function DefinitionRenderer({
                   {renderTextWithLinks(segment.postText, `post-${idx}`)}
                 </div>
               )}
-            </>
+            </Fragment>
           );
         }
 

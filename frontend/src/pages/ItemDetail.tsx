@@ -30,7 +30,6 @@ import {
   DeleteLinkByItems,
   CreateLinkOrRemoveTags,
   GetItemImage,
-  GetEnvVars,
 } from "@wailsjs/go/main/App.js";
 import { LogInfo, LogError, BrowserOpenURL } from "@wailsjs/runtime/runtime.js";
 import { database } from "@models";
@@ -54,6 +53,7 @@ import { parseReferences } from "@utils/references";
 import { DefinitionRenderer } from "@components/ItemDetail/DefinitionRenderer";
 import { useUIStore } from "@stores/useUIStore";
 import { useAudioPlayer } from "@hooks/useAudioPlayer";
+import { useCapabilities } from "@hooks/useItemData";
 
 // Alias for backward compatibility
 const parseDefinitionReferences = parseReferences;
@@ -121,10 +121,7 @@ export default function ItemDetail({
     queryFn: () => GetItem(Number(id)),
   });
 
-  const { data: envVars } = useQuery({
-    queryKey: ["envVars"],
-    queryFn: GetEnvVars,
-  });
+  const { data: capabilities } = useCapabilities();
 
   // Keyboard shortcuts: cmd+s to save/normalize, cmd+e to edit, cmd+r to reload
   useEffect(() => {
@@ -726,11 +723,11 @@ export default function ItemDetail({
                         variant="light"
                         color="blue"
                         title={
-                          envVars?.["OPENAI_API_KEY"]
+                          capabilities?.hasTts
                             ? "Pronounce word"
                             : "Configure OpenAI API Key in Settings to enable TTS"
                         }
-                        disabled={!envVars?.["OPENAI_API_KEY"]}
+                        disabled={!capabilities?.hasTts}
                         onClick={async () => {
                           // Stop any currently playing audio
                           stopAudio();

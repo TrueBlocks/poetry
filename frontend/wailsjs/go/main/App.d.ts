@@ -47,6 +47,8 @@ export function GetAllSettings():Promise<Record<string, any>>;
 
 export function GetAllSources():Promise<Array<database.Source>>;
 
+export function GetCapabilities():Promise<main.Capabilities>;
+
 export function GetConstants():Promise<Record<string, string>>;
 
 export function GetDanglingLinks():Promise<Array<Record<string, any>>>;

@@ -399,6 +399,18 @@ Returns environment variables (filtered to exclude sensitive keys).
 
 **Returns**: Map of environment variables
 
+---
+
+### `GetCapabilities() *Capabilities`
+
+Returns the available features of the application based on configuration.
+
+**Returns**: Struct with boolean flags:
+- `HasTTS`: True if TTS is enabled (OpenAI key present)
+- `HasImages`: True if image generation is enabled
+- `HasAI`: True if AI features are enabled (Anthropic key present)
+
+
 **Security Note**: Automatically filters out `OPENAI_API_KEY` and other sensitive values.
 
 ---

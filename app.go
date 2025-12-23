@@ -95,6 +95,22 @@ func (a *App) startup(ctx context.Context) {
 	}
 }
 
+// Capabilities defines what features are available based on configuration
+type Capabilities struct {
+	HasTTS    bool `json:"hasTts"`
+	HasImages bool `json:"hasImages"`
+	HasAI     bool `json:"hasAi"`
+}
+
+// GetCapabilities returns the available features of the application
+func (a *App) GetCapabilities() *Capabilities {
+	return &Capabilities{
+		HasTTS:    os.Getenv("OPENAI_API_KEY") != "",
+		HasImages: true, // Always available
+		HasAI:     os.Getenv("OPENAI_API_KEY") != "",
+	}
+}
+
 // RunAdHocQuery executes a raw SQL query
 func (a *App) RunAdHocQuery(query string) ([]map[string]interface{}, error) {
 	return a.adhoc.RunAdHocQuery(query)

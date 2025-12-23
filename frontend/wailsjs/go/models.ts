@@ -364,6 +364,22 @@ export namespace database {
 
 export namespace main {
 	
+	export class Capabilities {
+	    hasTts: boolean;
+	    hasImages: boolean;
+	    hasAi: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Capabilities(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.hasTts = source["hasTts"];
+	        this.hasImages = source["hasImages"];
+	        this.hasAi = source["hasAi"];
+	    }
+	}
 	export class ImageCacheInfo {
 	    fileCount: number;
 	    totalSize: number;

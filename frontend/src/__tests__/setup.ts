@@ -37,6 +37,9 @@ vi.mock("../../wailsjs/go/main/App.js", () => ({
   SaveSettings: vi.fn(() => Promise.resolve()),
   GetItemImage: vi.fn(() => Promise.resolve("")),
   GetEnvVars: vi.fn(() => Promise.resolve({})),
+  GetCapabilities: vi.fn(() =>
+    Promise.resolve({ hasTts: false, hasImages: true, hasAi: false }),
+  ),
   HasEnvFile: vi.fn(() => Promise.resolve(true)),
 }));
 

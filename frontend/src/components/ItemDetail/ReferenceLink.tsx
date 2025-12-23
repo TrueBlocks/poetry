@@ -8,7 +8,7 @@ import {
 import { notifications } from "@mantine/notifications";
 import { Network, Volume2, Copy } from "lucide-react";
 import { SpeakWord } from "@wailsjs/go/main/App.js";
-import { useItemImage, useEnvVars } from "@hooks/useItemData";
+import { useItemImage, useCapabilities } from "@hooks/useItemData";
 import { prepareTTSText } from "@utils/tts";
 import { REFERENCE_COLOR_MAP } from "@utils/references";
 import { database } from "@models";
@@ -33,7 +33,7 @@ export function ReferenceLink({
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
   const imageUrl = useItemImage(matchedItem.itemId, matchedItem.type);
-  const { data: envVars } = useEnvVars();
+  const { data: capabilities } = useCapabilities();
 
   const isDark = colorScheme === "dark";
   const colorName = REFERENCE_COLOR_MAP[refType];
@@ -256,11 +256,11 @@ export function ReferenceLink({
               verticalAlign: "middle",
             }}
             title={
-              envVars?.["OPENAI_API_KEY"]
+              capabilities?.hasTts
                 ? "Read quoted text"
                 : "Configure OpenAI API Key in Settings to enable TTS"
             }
-            disabled={!envVars?.["OPENAI_API_KEY"]}
+            disabled={!capabilities?.hasTts}
             onClick={handleTTSClick}
           >
             <Volume2 size={14} />
