@@ -30,7 +30,20 @@ func NewItemService(db *database.DB, imageService *ImageService) *ItemService {
 
 // SearchItems performs full-text search on items
 func (s *ItemService) SearchItems(query string) ([]database.Item, error) {
-	return s.db.SearchItems(query)
+	items, err := s.db.SearchItems(query)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse definitions for all items
+	for i := range items {
+		if items[i].Definition != nil {
+			isPoem := parser.IsPoem(items[i].Type, *items[i].Definition)
+			items[i].ParsedDef = parser.ParseDefinition(*items[i].Definition, isPoem)
+		}
+	}
+
+	return items, nil
 }
 
 // SearchItemsWithOptions performs advanced search with filters
@@ -42,6 +55,13 @@ func (s *ItemService) SearchItemsWithOptions(options database.SearchOptions) ([]
 
 	// Post-filter based on HasImage and HasTts if either is enabled
 	if !options.HasImage && !options.HasTts {
+		// Parse definitions for all items
+		for i := range items {
+			if items[i].Definition != nil {
+				isPoem := parser.IsPoem(items[i].Type, *items[i].Definition)
+				items[i].ParsedDef = parser.ParseDefinition(*items[i].Definition, isPoem)
+			}
+		}
 		return items, nil
 	}
 
@@ -71,6 +91,11 @@ func (s *ItemService) SearchItemsWithOptions(options database.SearchOptions) ([]
 		}
 
 		if includeItem {
+			// Parse definition
+			if item.Definition != nil {
+				isPoem := parser.IsPoem(item.Type, *item.Definition)
+				item.ParsedDef = parser.ParseDefinition(*item.Definition, isPoem)
+			}
 			filtered = append(filtered, item)
 		}
 	}
@@ -85,17 +110,46 @@ func (s *ItemService) GetItem(itemID int) (*database.Item, error) {
 		slog.Error("[GetItem] ERROR fetching item", "id", itemID, "error", err)
 		return nil, err
 	}
+
+	// Parse definition into structured segments
+	if item.Definition != nil {
+		isPoem := parser.IsPoem(item.Type, *item.Definition)
+		item.ParsedDef = parser.ParseDefinition(*item.Definition, isPoem)
+	}
+
 	return item, nil
 }
 
 // GetItemByWord retrieves a single item by word
 func (s *ItemService) GetItemByWord(word string) (*database.Item, error) {
-	return s.db.GetItemByWord(word)
+	item, err := s.db.GetItemByWord(word)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse definition into structured segments
+	if item.Definition != nil {
+		isPoem := parser.IsPoem(item.Type, *item.Definition)
+		item.ParsedDef = parser.ParseDefinition(*item.Definition, isPoem)
+	}
+
+	return item, nil
 }
 
 // GetRandomItem returns a random item
 func (s *ItemService) GetRandomItem() (*database.Item, error) {
-	return s.db.GetRandomItem()
+	item, err := s.db.GetRandomItem()
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse definition into structured segments
+	if item.Definition != nil {
+		isPoem := parser.IsPoem(item.Type, *item.Definition)
+		item.ParsedDef = parser.ParseDefinition(*item.Definition, isPoem)
+	}
+
+	return item, nil
 }
 
 // GetPoetIds returns a list of item IDs for writers that have an image and at least one poem

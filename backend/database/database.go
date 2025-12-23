@@ -40,17 +40,18 @@ func (db *DB) Conn() *sql.DB {
 
 // Item represents a word/term entry
 type Item struct {
-	ItemID      int       `json:"itemId"`
-	Word        string    `json:"word"`
-	Type        string    `json:"type"`
-	Definition  *string   `json:"definition"`
-	Derivation  *string   `json:"derivation"`
-	Appendicies *string   `json:"appendicies"`
-	Source      *string   `json:"source"`
-	SourcePg    *string   `json:"sourcePg"`
-	Mark        *string   `json:"mark"`
-	CreatedAt   time.Time `json:"createdAt"`
-	ModifiedAt  time.Time `json:"modifiedAt"`
+	ItemID      int              `json:"itemId"`
+	Word        string           `json:"word"`
+	Type        string           `json:"type"`
+	Definition  *string          `json:"definition"`
+	ParsedDef   []parser.Segment `json:"parsedDefinition,omitempty"`
+	Derivation  *string          `json:"derivation"`
+	Appendicies *string          `json:"appendicies"`
+	Source      *string          `json:"source"`
+	SourcePg    *string          `json:"sourcePg"`
+	Mark        *string          `json:"mark"`
+	CreatedAt   time.Time        `json:"createdAt"`
+	ModifiedAt  time.Time        `json:"modifiedAt"`
 }
 
 // Link represents a relationship between items

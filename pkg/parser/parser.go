@@ -6,6 +6,43 @@ import (
 	"strings"
 )
 
+// SegmentType represents the type of a content segment
+type SegmentType string
+
+const (
+	SegmentText  SegmentType = "text"
+	SegmentQuote SegmentType = "quote"
+	SegmentPoem  SegmentType = "poem"
+)
+
+// TokenType represents the type of a token within a segment
+type TokenType string
+
+const (
+	TokenText      TokenType = "text"
+	TokenReference TokenType = "reference"
+)
+
+// Token represents a parsed unit of text or a reference tag
+type Token struct {
+	Type        TokenType `json:"type"`
+	Content     string    `json:"content"`
+	RefType     string    `json:"refType,omitempty"`
+	RefWord     string    `json:"refWord,omitempty"`
+	DisplayWord string    `json:"displayWord,omitempty"`
+}
+
+// Segment represents a block of content (text, quote, or poem)
+type Segment struct {
+	Type       SegmentType `json:"type"`
+	Content    string      `json:"content"`
+	PreText    string      `json:"preText,omitempty"`
+	PostText   string      `json:"postText,omitempty"`
+	Tokens     []Token     `json:"tokens,omitempty"`     // For text/quote content
+	PreTokens  []Token     `json:"preTokens,omitempty"`  // For poem pre-text
+	PostTokens []Token     `json:"postTokens,omitempty"` // For poem post-text
+}
+
 // ReferenceTagPattern is the regex pattern for matching valid reference tags
 // Matches: {type: value} where type is word, writer, or title
 const ReferenceTagPattern = `\{(word|writer|title):\s*([^}]+)\}`
@@ -143,16 +180,120 @@ func IsPoem(itemType, definition string) bool {
 	return openCount == 1 && closeCount == 1
 }
 
-// ExtractPoemContent extracts the text inside the first pair of square brackets.
-// Returns empty string if no brackets are found or if indices are invalid.
-func ExtractPoemContent(definition string) string {
-	start := strings.Index(definition, "[")
-	end := strings.LastIndex(definition, "]")
+// ParseTokens parses text into tokens (text, reference tags)
+func ParseTokens(text string) []Token {
+	var tokens []Token
+	lastIndex := 0
+	matches := referenceRegex.FindAllStringSubmatchIndex(text, -1)
 
-	if start == -1 || end == -1 || start >= end {
-		return ""
+	for _, match := range matches {
+		// Add text before the match
+		if match[0] > lastIndex {
+			tokens = append(tokens, Token{
+				Type:    TokenText,
+				Content: text[lastIndex:match[0]],
+			})
+		}
+
+		// Extract tag details
+		fullTag := text[match[0]:match[1]]
+		refType := strings.ToLower(text[match[2]:match[3]])
+		refWord := strings.TrimSpace(text[match[4]:match[5]])
+
+		tokens = append(tokens, Token{
+			Type:        TokenReference,
+			Content:     fullTag,
+			RefType:     refType,
+			RefWord:     refWord,
+			DisplayWord: refWord,
+		})
+
+		lastIndex = match[1]
 	}
 
-	// Return content inside brackets, trimmed of whitespace
-	return strings.TrimSpace(definition[start+1 : end])
+	// Add remaining text
+	if lastIndex < len(text) {
+		tokens = append(tokens, Token{
+			Type:    TokenText,
+			Content: text[lastIndex:],
+		})
+	}
+
+	return tokens
+}
+
+// ParseDefinition parses the full definition text into structured segments
+func ParseDefinition(text string, isPoemType bool) []Segment {
+	// Check if it's a poem
+	if isPoemType {
+		// Regex to match: pre-text [poem content] post-text
+		// Using (?s) to allow . to match newlines
+		re := regexp.MustCompile(`(?s)^([\s\S]*?)\[([\s\S]*)\]([\s\S]*)$`)
+		match := re.FindStringSubmatch(text)
+
+		if len(match) == 4 {
+			// It's a poem
+			preText := match[1]
+			content := strings.TrimSpace(match[2])
+			postText := match[3]
+
+			return []Segment{{
+				Type:       SegmentPoem,
+				Content:    content,
+				PreText:    preText,
+				PostText:   postText,
+				PreTokens:  ParseTokens(preText),
+				PostTokens: ParseTokens(postText),
+				// Note: Poem content lines are parsed by the frontend PoemRenderer currently.
+				// We could parse them here too if we wanted to move all logic to backend.
+			}}
+		}
+	}
+
+	// Split by block quotes (text between [ and ])
+	// Regex: [ \n content \n ]
+	blockQuoteRegex := regexp.MustCompile(`\[\s*\n([\s\S]*?)\n\s*\]`)
+	matches := blockQuoteRegex.FindAllStringSubmatchIndex(text, -1)
+
+	var segments []Segment
+	lastIdx := 0
+
+	for _, match := range matches {
+		// Add text before the quote
+		if match[0] > lastIdx {
+			content := text[lastIdx:match[0]]
+			segments = append(segments, Segment{
+				Type:    SegmentText,
+				Content: content,
+				Tokens:  ParseTokens(content),
+			})
+		}
+
+		// Add the quote content
+		// match[2]:match[3] is the captured group content
+		quoteContent := text[match[2]:match[3]]
+		// Strip trailing \ or / from each line (legacy format cleanup)
+		quoteContent = regexp.MustCompile(`(?m)[\\/]$`).ReplaceAllString(quoteContent, "")
+
+		segments = append(segments, Segment{
+			Type:    SegmentQuote,
+			Content: quoteContent,
+			// Quotes also contain text that might have tags
+			Tokens: ParseTokens(quoteContent),
+		})
+
+		lastIdx = match[1]
+	}
+
+	// Add remaining text
+	if lastIdx < len(text) {
+		content := text[lastIdx:]
+		segments = append(segments, Segment{
+			Type:    SegmentText,
+			Content: content,
+			Tokens:  ParseTokens(content),
+		})
+	}
+
+	return segments
 }

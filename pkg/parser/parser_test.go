@@ -110,43 +110,45 @@ func TestIsPoem(t *testing.T) {
 	}
 }
 
-func TestExtractPoemContent(t *testing.T) {
+func TestParseDefinition(t *testing.T) {
 	tests := []struct {
 		name       string
 		definition string
-		want       string
+		isPoem     bool
+		wantType   SegmentType
+		wantCount  int
 	}{
 		{
-			name:       "Standard Extraction",
+			name:       "Standard Poem",
 			definition: "Intro [Poem Content]",
-			want:       "Poem Content",
+			isPoem:     true,
+			wantType:   SegmentPoem,
+			wantCount:  1,
 		},
 		{
-			name:       "Multiline Extraction",
+			name:       "Multiline Poem",
 			definition: "[\nLine 1\nLine 2\n]",
-			want:       "Line 1\nLine 2",
+			isPoem:     true,
+			wantType:   SegmentPoem,
+			wantCount:  1,
 		},
 		{
-			name:       "No Brackets",
-			definition: "Just text",
-			want:       "",
-		},
-		{
-			name:       "Empty Brackets",
-			definition: "[]",
-			want:       "",
-		},
-		{
-			name:       "Nested Brackets (Should take outer)",
-			definition: "[Outer [Inner] Outer]",
-			want:       "Outer [Inner] Outer",
+			name:       "Regular Text with Quotes",
+			definition: "Some text [\nQuote\n] more text",
+			isPoem:     false,
+			wantType:   SegmentText, // First segment
+			wantCount:  3,           // Text, Quote, Text
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ExtractPoemContent(tt.definition); got != tt.want {
-				t.Errorf("ExtractPoemContent() = %q, want %q", got, tt.want)
+			segments := ParseDefinition(tt.definition, tt.isPoem)
+			if len(segments) != tt.wantCount {
+				t.Errorf("ParseDefinition() count = %d, want %d", len(segments), tt.wantCount)
+			}
+			if len(segments) > 0 && segments[0].Type != tt.wantType {
+				t.Errorf("ParseDefinition() first type = %v, want %v", segments[0].Type, tt.wantType)
 			}
 		})
 	}

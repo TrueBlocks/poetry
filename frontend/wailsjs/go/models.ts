@@ -109,6 +109,7 @@ export namespace database {
 	    word: string;
 	    type: string;
 	    definition?: string;
+	    parsedDefinition?: parser.Segment[];
 	    derivation?: string;
 	    appendicies?: string;
 	    source?: string;
@@ -129,6 +130,7 @@ export namespace database {
 	        this.word = source["word"];
 	        this.type = source["type"];
 	        this.definition = source["definition"];
+	        this.parsedDefinition = this.convertValues(source["parsedDefinition"], parser.Segment);
 	        this.derivation = source["derivation"];
 	        this.appendicies = source["appendicies"];
 	        this.source = source["source"];
@@ -407,6 +409,73 @@ export namespace main {
 	        this.fileCount = source["fileCount"];
 	        this.totalSize = source["totalSize"];
 	    }
+	}
+
+}
+
+export namespace parser {
+	
+	export class Token {
+	    type: string;
+	    content: string;
+	    refType?: string;
+	    refWord?: string;
+	    displayWord?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Token(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.content = source["content"];
+	        this.refType = source["refType"];
+	        this.refWord = source["refWord"];
+	        this.displayWord = source["displayWord"];
+	    }
+	}
+	export class Segment {
+	    type: string;
+	    content: string;
+	    preText?: string;
+	    postText?: string;
+	    tokens?: Token[];
+	    preTokens?: Token[];
+	    postTokens?: Token[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Segment(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.content = source["content"];
+	        this.preText = source["preText"];
+	        this.postText = source["postText"];
+	        this.tokens = this.convertValues(source["tokens"], Token);
+	        this.preTokens = this.convertValues(source["preTokens"], Token);
+	        this.postTokens = this.convertValues(source["postTokens"], Token);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 
 }

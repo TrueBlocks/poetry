@@ -1,5 +1,9 @@
 import { Patterns } from "./constants";
 
+/**
+ * @deprecated Use backend parser (parser.ParseDefinition) instead.
+ * This file is kept for fallback compatibility but should be removed in future versions.
+ */
 export interface ParsedTag {
   type: "text" | "reference";
   content: string;
