@@ -135,50 +135,6 @@ export default function ItemDetail({
     queryFn: GetEnvVars,
   });
 
-  // Auto-save items modified before this hardcoded date (December 13, 2025, 2:15 PM EST)
-  useEffect(() => {
-    if (!item) return;
-
-    const cutoffDate = new Date("2025-12-13T14:15:00-05:00");
-    const itemModified = new Date(item.modifiedAt);
-
-    if (itemModified < cutoffDate) {
-      LogInfo(
-        `[ItemDetail] Auto-saving item ${item.word} - last modified: ${itemModified.toISOString()}`,
-      );
-
-      // Perform auto-save
-      UpdateItem({
-        itemId: item.itemId,
-        word: item.word,
-        type: item.type,
-        definition: item.definition || "",
-        derivation: item.derivation || "",
-        appendicies: item.appendicies || "",
-        source: item.source || "",
-        sourcePg: item.sourcePg || "",
-        mark: item.mark || "",
-        createdAt: undefined,
-        modifiedAt: undefined,
-        convertValues: function (_a: any, _classs: any, _asMap?: boolean) {
-          throw new Error("Function not implemented.");
-        },
-      })
-        .then(() => {
-          // Invalidate and refetch to show updated timestamp
-          queryClient.invalidateQueries({ queryKey: ["item", id] });
-          notifications.show({
-            title: "Auto-saved",
-            message: "Item updated automatically",
-            color: "blue",
-            icon: <Check size={18} />,
-          });
-        })
-        .catch((error) => {
-          LogError(`[ItemDetail] Auto-save failed: ${error}`);
-        });
-    }
-  }, [item, id, queryClient]);
   // Keyboard shortcuts: cmd+s to save/normalize, cmd+e to edit, cmd+r to reload
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {

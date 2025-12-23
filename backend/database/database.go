@@ -1570,3 +1570,31 @@ func (db *DB) DeleteLiteraryTerm(termID int) error {
 	}
 	return nil
 }
+
+// GetSetting retrieves a setting value from the database
+func (db *DB) GetSetting(key string) (string, error) {
+	var value string
+	err := db.conn.QueryRow("SELECT value FROM settings WHERE key = ?", key).Scan(&value)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed to get setting: %w", err)
+	}
+	return value, nil
+}
+
+// SetSetting stores or updates a setting value in the database
+func (db *DB) SetSetting(key, value string) error {
+	_, err := db.conn.Exec(`
+		INSERT INTO settings (key, value, updated_at) 
+		VALUES (?, ?, CURRENT_TIMESTAMP)
+		ON CONFLICT(key) DO UPDATE SET 
+			value = excluded.value,
+			updated_at = CURRENT_TIMESTAMP
+	`, key, value)
+	if err != nil {
+		return fmt.Errorf("failed to set setting: %w", err)
+	}
+	return nil
+}

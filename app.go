@@ -91,6 +91,66 @@ func (a *App) startup(ctx context.Context) {
 	a.ttsService = services.NewTTSService(db)
 	a.imageService = services.NewImageService()
 	a.itemService = services.NewItemService(db, a.imageService)
+
+	// Run one-time data migrations
+	if err := a.runMigration1(); err != nil {
+		slog.Warn("Migration 1 failed", "error", err)
+	}
+}
+
+// runMigration1 normalizes all item text fields (lowercase {word:} tags, strip line numbers)
+// Runs once on startup if migration_1 setting is not set
+func (a *App) runMigration1() error {
+	// Check if migration already ran
+	if value, _ := a.db.GetSetting("migration_1"); value == "true" {
+		slog.Info("Migration 1 already completed, skipping")
+		return nil
+	}
+
+	slog.Info("Starting migration 1: normalizing all items")
+
+	// Get all items
+	items, err := a.db.GetAllItems()
+	if err != nil {
+		return fmt.Errorf("failed to get items for migration: %w", err)
+	}
+
+	slog.Info("Migration 1: processing items", "count", len(items))
+
+	// Get TTS cache directory for cleanup
+	cacheDir, err := constants.GetTTSCacheDir()
+	if err != nil {
+		slog.Warn("Migration 1: failed to get TTS cache dir", "error", err)
+	}
+
+	// Normalize each item
+	for i, item := range items {
+		if err := a.db.UpdateItem(item); err != nil {
+			slog.Warn("Migration 1: failed to update item", "itemId", item.ItemID, "word", item.Word, "error", err)
+			continue
+		}
+
+		// Delete TTS cache for this item (same as UpdateItem service does)
+		if cacheDir != "" {
+			cacheFile := fmt.Sprintf("%s/%d.mp3", cacheDir, item.ItemID)
+			if err := os.Remove(cacheFile); err != nil && !os.IsNotExist(err) {
+				slog.Warn("Migration 1: failed to delete TTS cache", "itemId", item.ItemID, "error", err)
+			}
+		}
+
+		// Log progress every 100 items
+		if (i+1)%100 == 0 {
+			slog.Info("Migration 1: progress", "processed", i+1, "total", len(items))
+		}
+	}
+
+	// Mark migration as complete
+	if err := a.db.SetSetting("migration_1", "true"); err != nil {
+		return fmt.Errorf("failed to save migration_1 setting: %w", err)
+	}
+
+	slog.Info("Migration 1: completed successfully", "items_processed", len(items))
+	return nil
 }
 
 // RunAdHocQuery executes a raw SQL query
