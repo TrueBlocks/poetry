@@ -124,8 +124,14 @@ export function DefinitionRenderer({
     });
   };
 
-  // Use backend parsed definition if available
-  if (item?.parsedDefinition && item.parsedDefinition.length > 0) {
+  // Use backend parsed definition if available AND it matches the text being rendered
+  // This prevents the definition from being used when rendering derivation or appendicies
+  const shouldUseBackendParsing =
+    item?.parsedDefinition &&
+    item.parsedDefinition.length > 0 &&
+    item.definition === text;
+
+  if (shouldUseBackendParsing && item.parsedDefinition) {
     return (
       <>
         {item.parsedDefinition.map((segment, idx) => {

@@ -20,7 +20,6 @@ import KeyboardShortcutsHelp from "./components/KeyboardShortcutsHelp";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useWindowPersistence } from "./hooks/useWindowPersistence";
-import { LogInfo } from "@wailsjs/runtime/runtime.js";
 import { FirstRunModal } from "./components/FirstRunModal";
 import { useUIStore } from "./stores/useUIStore";
 import { useAppInitialization } from "./hooks/useAppInitialization";
@@ -38,7 +37,7 @@ function AppContent({ initialPath }: { initialPath: string }) {
   // Navigate to initial path (last viewed word) ONCE on mount only
   useEffect(() => {
     if (!hasNavigated.current && initialPath !== "/") {
-      LogInfo(`[App] Initial navigation to: ${initialPath}`);
+      // LogInfo(`[App] Initial navigation to: ${initialPath}`);
       navigate(initialPath, { replace: true });
       hasNavigated.current = true;
     }
@@ -64,7 +63,7 @@ function AppContent({ initialPath }: { initialPath: string }) {
       view = "settings";
     }
 
-    LogInfo(`[App] View changed to: ${view}`);
+    // LogInfo(`[App] View changed to: ${view}`);
     setLastView(view);
   }, [location.pathname, setLastView]);
 

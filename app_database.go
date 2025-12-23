@@ -67,13 +67,13 @@ func (a *App) runMigration1() error {
 
 // CheckpointDatabase flushes WAL to main database file
 func (a *App) CheckpointDatabase() error {
-	slog.Info("[App] Checkpointing database WAL")
+	// slog.Info("[App] Checkpointing database WAL")
 	return a.db.Checkpoint()
 }
 
 // CleanOrphanedLinks removes links pointing to non-existent items
 func (a *App) CleanOrphanedLinks() (int, error) {
-	slog.Info("[App] Cleaning orphaned links")
+	// slog.Info("[App] Cleaning orphaned links")
 	return a.db.CleanOrphanedLinks()
 }
 

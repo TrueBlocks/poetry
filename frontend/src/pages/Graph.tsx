@@ -267,7 +267,7 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
 
   const handleNodeClick = useCallback<NodeMouseHandler>(
     (event, node) => {
-      LogInfo(`[Graph] Node clicked: ${node.data.label} (${node.data.id})`);
+      // LogInfo(`[Graph] Node clicked: ${node.data.label} (${node.data.id})`);
 
       // Update current item tracking
       const nodeId = Number(node.data.id);
@@ -306,7 +306,7 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
   useEffect(() => {
     if (!items || !links) return;
 
-    LogInfo(`[Graph] Loaded ${items.length} items and ${links.length} links`);
+    // LogInfo(`[Graph] Loaded ${items.length} items and ${links.length} links`);
 
     // Pre-process links to handle bidirectional rule:
     // If an item has both an incoming and an outgoing link to the same other item, remove one of them.
@@ -734,9 +734,9 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
       }
     });
 
-    LogInfo(
-      `[Graph] Setting ${newNodes.length} nodes and ${newEdges.length} edges`,
-    );
+    // LogInfo(
+    //   `[Graph] Setting ${newNodes.length} nodes and ${newEdges.length} edges`,
+    // );
     setNodes(newNodes);
     setEdges(newEdges);
 

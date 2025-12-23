@@ -207,12 +207,12 @@ export default function ItemDetail({
   // Log delete button state for debugging
   useEffect(() => {
     if (links && item) {
-      const incomingLinks = links.filter(
-        (l) => l.destinationItemId === Number(id),
-      );
-      LogInfo(
-        `[ItemDetail] Delete button state - Item: ${item.word}, Incoming links: ${incomingLinks.length}, Disabled: ${incomingLinks.length > 0}`,
-      );
+      // const _incomingLinks = links.filter(
+      //   (l) => l.destinationItemId === Number(id),
+      // );
+      // LogInfo(
+      //   `[ItemDetail] Delete button state - Item: ${item.word}, Incoming links: ${_incomingLinks.length}, Disabled: ${_incomingLinks.length > 0}`,
+      // );
     }
   }, [links, item, id]);
 
@@ -385,12 +385,12 @@ export default function ItemDetail({
   }, [item, links, allItems, linkedItemsQueries.data, id]);
 
   const handleDelete = () => {
-    LogInfo(
-      `[ItemDetail] handleDelete called for item ID: ${id}, word: ${item?.word}`,
-    );
-    LogInfo(
-      `[ItemDetail] Deleting item immediately (no incoming links), calling deleteMutation.mutate()`,
-    );
+    // LogInfo(
+    //   `[ItemDetail] handleDelete called for item ID: ${id}, word: ${item?.word}`,
+    // );
+    // LogInfo(
+    //   `[ItemDetail] Deleting item immediately (no incoming links), calling deleteMutation.mutate()`,
+    // );
     deleteMutation.mutate();
   };
 
@@ -403,13 +403,13 @@ export default function ItemDetail({
     if (incomingLinks.length !== 1) return;
 
     const incomingLink = incomingLinks[0];
-    LogInfo(
-      `[ItemDetail] Deleting incoming link from ${incomingLink.sourceItemId} to ${id}`,
-    );
+    // LogInfo(
+    //   `[ItemDetail] Deleting incoming link from ${incomingLink.sourceItemId} to ${id}`,
+    // );
 
     try {
       await DeleteLinkByItems(incomingLink.sourceItemId, Number(id));
-      LogInfo("[ItemDetail] Incoming link deleted successfully");
+      // LogInfo("[ItemDetail] Incoming link deleted successfully");
       // Refetch both item and links to reload the entire view
       queryClient.invalidateQueries({ queryKey: ["item", id] });
       queryClient.invalidateQueries({ queryKey: ["itemLinks", id] });

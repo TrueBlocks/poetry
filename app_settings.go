@@ -53,7 +53,7 @@ func (a *App) SaveCurrentSearch(query string) error {
 
 // SaveLastWord saves last viewed word immediately
 func (a *App) SaveLastWord(wordID int) error {
-	slog.Info("[SaveLastWord] Saving last word ID", "id", wordID)
+	// slog.Info("[SaveLastWord] Saving last word ID", "id", wordID)
 	err := a.settings.UpdateLastWord(wordID)
 	if err != nil {
 		slog.Error("[SaveLastWord] ERROR", "error", err)

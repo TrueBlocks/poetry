@@ -50,8 +50,8 @@ type Item struct {
 	Source      *string          `json:"source"`
 	SourcePg    *string          `json:"sourcePg"`
 	Mark        *string          `json:"mark"`
-	CreatedAt   time.Time        `json:"createdAt"`
-	ModifiedAt  time.Time        `json:"modifiedAt"`
+	CreatedAt   time.Time        `json:"createdAt" ts_type:"Date"`
+	ModifiedAt  time.Time        `json:"modifiedAt" ts_type:"Date"`
 }
 
 // Link represents a relationship between items
@@ -60,7 +60,7 @@ type Link struct {
 	SourceItemID      int       `json:"sourceItemId"`
 	DestinationItemID int       `json:"destinationItemId"`
 	LinkType          string    `json:"linkType"`
-	CreatedAt         time.Time `json:"createdAt"`
+	CreatedAt         time.Time `json:"createdAt" ts_type:"Date"`
 }
 
 // GraphData represents a subset of the graph
@@ -82,7 +82,7 @@ type Cliche struct {
 	ClicheID   int       `json:"clicheId"`
 	Phrase     string    `json:"phrase"`
 	Definition *string   `json:"definition"`
-	CreatedAt  time.Time `json:"createdAt"`
+	CreatedAt  time.Time `json:"createdAt" ts_type:"Date"`
 }
 
 // Name represents a proper name entry
@@ -93,7 +93,7 @@ type Name struct {
 	Gender      *string   `json:"gender"`
 	Description *string   `json:"description"`
 	Notes       *string   `json:"notes"`
-	CreatedAt   time.Time `json:"createdAt"`
+	CreatedAt   time.Time `json:"createdAt" ts_type:"Date"`
 }
 
 // LiteraryTerm represents a literary term entry
@@ -104,7 +104,7 @@ type LiteraryTerm struct {
 	Definition    *string   `json:"definition"`
 	Examples      *string   `json:"examples"`
 	Notes         *string   `json:"notes"`
-	CreatedAt     time.Time `json:"createdAt"`
+	CreatedAt     time.Time `json:"createdAt" ts_type:"Date"`
 	ExistsInItems bool      `json:"existsInItems"`
 }
 
@@ -114,7 +114,7 @@ type Source struct {
 	Title     string    `json:"title"`
 	Author    *string   `json:"author"`
 	Notes     *string   `json:"notes"`
-	CreatedAt time.Time `json:"createdAt"`
+	CreatedAt time.Time `json:"createdAt" ts_type:"Date"`
 }
 
 // SearchOptions represents advanced search parameters

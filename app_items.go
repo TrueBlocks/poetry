@@ -58,7 +58,7 @@ func (a *App) ToggleItemMark(itemID int, marked bool) error {
 
 // DeleteItem deletes an item
 func (a *App) DeleteItem(itemID int) error {
-	slog.Info("[App] DeleteItem called", "id", itemID)
+	// slog.Info("[App] DeleteItem called", "id", itemID)
 
 	// Update settings: remove from history and update lastWordId if needed
 	settings := a.settings.Get()
