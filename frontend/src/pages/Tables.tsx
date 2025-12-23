@@ -46,8 +46,6 @@ import {
 } from "lucide-react";
 import { notifications } from "@mantine/notifications";
 import { useUIStore } from "../stores/useUIStore";
-// import { getItemColor } from '../utils/colors'
-// import { DefinitionRenderer } from '../components/ItemDetail/DefinitionRenderer'
 
 const ITEMS_PER_PAGE = 15;
 

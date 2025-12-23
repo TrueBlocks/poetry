@@ -200,19 +200,14 @@ export default function ItemEdit({
 
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      // console.log('Saving item:', { isNew, data })
       try {
         if (isNew || data.itemId === 0) {
           // Generate a new item ID using current timestamp + random component
           const newItemId = Date.now() + Math.floor(Math.random() * 1000);
-          // console.log('Creating new item with ID:', newItemId)
           await CreateItem({ ...data, itemId: newItemId } as any);
-          // console.log('Create result: success')
           return { newId: newItemId };
         } else {
-          // console.log('Updating existing item:', data.itemId)
           await UpdateItem(data as any);
-          // console.log('Update result: success')
           return { itemId: Number(id) };
         }
       } catch (error) {
@@ -221,8 +216,6 @@ export default function ItemEdit({
       }
     },
     onSuccess: async (data: any) => {
-      // console.log('Save successful:', data)
-
       const savedItemId = data.newId || data.itemId || Number(id);
 
       // Save or delete image based on current state

@@ -539,22 +539,17 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
           const angleSpan = Math.abs(endAngle - startAngle);
           const arcLength = angleSpan * baseRadius; // Approx arc length at base radius
 
-          // 2. Determine Density
+          // Determine density based on vertical spacing requirements
           const nodeHeight = 24; // Height of node + vertical padding
-          // const nodeWidth = 140; // Approx width to clear horizontal overlap
-
-          // How many pixels of arc are available per node?
           const pixelsPerNode = arcLength / nodes.length;
 
-          // If pixelsPerNode < nodeHeight, we have vertical overlap.
-          // We need enough layers so that (layers * pixelsPerNode) >= nodeHeight
-          // i.e. when we wrap back to layer 0, we have moved down enough.
+          // Calculate layers needed to prevent vertical overlap
           let layers = 1;
           if (pixelsPerNode < nodeHeight) {
             layers = Math.ceil(nodeHeight / pixelsPerNode);
           }
 
-          // Cap layers to keep it reasonable (e.g. max 10 layers)
+          // Cap layers to keep it reasonable
           layers = Math.min(layers, 12);
 
           const layerStep = 120; // Horizontal step per layer
