@@ -8,9 +8,9 @@ import {
 } from "@mantine/core";
 import { Link as RouterLink } from "react-router-dom";
 import { History, ChevronDown, ChevronUp } from "lucide-react";
-import { database } from "../../../wailsjs/go/models";
-import { getItemColor } from "../../utils/colors";
-import { useUIStore } from "../../stores/useUIStore";
+import { database } from "@wailsjs/go/models";
+import { getItemColor } from "@utils/colors";
+import { useUIStore } from "@stores/useUIStore";
 
 interface NavigationHistoryProps {
   history: database.Item[] | null;

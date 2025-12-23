@@ -7,12 +7,8 @@ import { useEffect, useState } from "react";
 import ItemDetail from "./ItemDetail";
 import Graph from "./Graph";
 import ItemEdit from "./ItemEdit";
-import {
-  GetSettings,
-  GetItem,
-  GetItemByWord,
-} from "../../wailsjs/go/main/App.js";
-import { useUIStore } from "../stores/useUIStore";
+import { GetSettings, GetItem, GetItemByWord } from "@wailsjs/go/main/App.js";
+import { useUIStore } from "@stores/useUIStore";
 
 export default function ItemPage() {
   const { id } = useParams<{ id: string }>();

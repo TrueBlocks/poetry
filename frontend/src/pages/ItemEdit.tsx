@@ -27,7 +27,7 @@ import {
   SaveItemImage,
   GetItemImage,
   DeleteItemImage,
-} from "../../wailsjs/go/main/App.js";
+} from "@wailsjs/go/main/App.js";
 import {
   ArrowLeft,
   Save,
@@ -37,7 +37,7 @@ import {
   Plus,
   Image as ImageIcon,
 } from "lucide-react";
-import { useReferenceValidation } from "../hooks/useReferenceValidation";
+import { useReferenceValidation } from "@hooks/useReferenceValidation";
 
 export default function ItemEdit({
   onSave,

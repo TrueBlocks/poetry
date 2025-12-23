@@ -4,7 +4,7 @@ import {
   GetSettings,
   UpdateSettings,
   SaveLastWord,
-} from "../../wailsjs/go/main/App";
+} from "@wailsjs/go/main/App";
 
 interface TableSort {
   field1: string;

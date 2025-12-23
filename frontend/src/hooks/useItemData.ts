@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { GetItemImage, GetEnvVars } from "../../wailsjs/go/main/App.js";
+import { GetItemImage, GetEnvVars } from "@wailsjs/go/main/App.js";
 
 export function useItemImage(itemId: number, itemType: string) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);

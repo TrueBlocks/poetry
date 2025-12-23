@@ -7,10 +7,10 @@ import {
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { Network, Volume2, Copy } from "lucide-react";
-import { SpeakWord } from "../../../wailsjs/go/main/App.js";
-import { useItemImage, useEnvVars } from "../../hooks/useItemData";
-import { prepareTTSText } from "../../utils/tts";
-import { REFERENCE_COLOR_MAP } from "../../utils/references";
+import { SpeakWord } from "@wailsjs/go/main/App.js";
+import { useItemImage, useEnvVars } from "@hooks/useItemData";
+import { prepareTTSText } from "@utils/tts";
+import { REFERENCE_COLOR_MAP } from "@utils/references";
 
 interface ReferenceLinkProps {
   matchedItem: any;

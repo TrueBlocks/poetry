@@ -8,7 +8,7 @@ import {
   PasswordInput,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { SaveEnvVar } from "../../wailsjs/go/main/App";
+import { SaveEnvVar } from "@wailsjs/go/main/App";
 import { Check, Sparkles } from "lucide-react";
 
 interface FirstRunModalProps {

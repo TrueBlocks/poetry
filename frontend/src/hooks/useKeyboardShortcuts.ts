@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
-import { GetSettings } from "../../wailsjs/go/main/App.js";
+import { GetSettings } from "@wailsjs/go/main/App.js";
 
 export default function useKeyboardShortcuts(
   commandPaletteOpen: boolean,

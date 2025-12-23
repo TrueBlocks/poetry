@@ -12,7 +12,7 @@ import {
   GetSettings,
   SaveReportLinkIntegrityCollapsed,
   SaveTabSelection,
-} from "../../../wailsjs/go/main/App";
+} from "@wailsjs/go/main/App";
 
 export function LinkIntegrityReport() {
   const [activeTab, setActiveTab] = useState<string | null>("missing");

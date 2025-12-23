@@ -12,8 +12,8 @@ import {
 import { Link as RouterLink } from "react-router-dom";
 import { CheckSquare, ArrowRight, Network } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { database } from "../../../wailsjs/go/models";
-import { ToggleItemMark } from "../../../wailsjs/go/main/App";
+import { database } from "@wailsjs/go/models";
+import { ToggleItemMark } from "@wailsjs/go/main/App";
 
 interface WorkbenchProps {
   items: database.Item[] | null;

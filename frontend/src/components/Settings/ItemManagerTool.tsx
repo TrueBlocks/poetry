@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import * as models from "../../../wailsjs/go/models";
+import * as models from "@wailsjs/go/models";
 import {
   TextInput,
   Button,
@@ -19,9 +19,9 @@ import {
   GetSettings,
   UpdateSettings,
   DeleteItem,
-} from "../../../wailsjs/go/main/App";
-import { LogInfo, LogError } from "../../../wailsjs/runtime/runtime";
-import { database } from "../../../wailsjs/go/models";
+} from "@wailsjs/go/main/App";
+import { LogInfo, LogError } from "@wailsjs/runtime/runtime";
+import { database } from "@wailsjs/go/models";
 import { notifications } from "@mantine/notifications";
 import { AlertCircle, Check, Search, ArrowRight } from "lucide-react";
 

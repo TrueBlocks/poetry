@@ -31,12 +31,8 @@ import {
   CreateLinkOrRemoveTags,
   GetItemImage,
   GetEnvVars,
-} from "../../wailsjs/go/main/App.js";
-import {
-  LogInfo,
-  LogError,
-  BrowserOpenURL,
-} from "../../wailsjs/runtime/runtime.js";
+} from "@wailsjs/go/main/App.js";
+import { LogInfo, LogError, BrowserOpenURL } from "@wailsjs/runtime/runtime.js";
 import {
   ArrowLeft,
   Edit,
@@ -52,11 +48,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
-import { getItemColor } from "../utils/colors";
-import { parseReferences } from "../utils/references";
-import { DefinitionRenderer } from "../components/ItemDetail/DefinitionRenderer";
-import { useUIStore } from "../stores/useUIStore";
-import { useAudioPlayer } from "../hooks/useAudioPlayer";
+import { getItemColor } from "@utils/colors";
+import { parseReferences } from "@utils/references";
+import { DefinitionRenderer } from "@components/ItemDetail/DefinitionRenderer";
+import { useUIStore } from "@stores/useUIStore";
+import { useAudioPlayer } from "@hooks/useAudioPlayer";
 
 // Alias for backward compatibility
 const parseDefinitionReferences = parseReferences;

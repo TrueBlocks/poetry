@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Container, Title, Tabs, Loader, Center } from "@mantine/core";
 import { Settings as SettingsIcon, Wrench } from "lucide-react";
-import { GeneralSettings } from "../components/Settings/GeneralSettings";
-import { MaintenanceSettings } from "../components/Settings/MaintenanceSettings";
-import { GetAllSettings } from "../../wailsjs/go/main/App";
-import { useUIStore } from "../stores/useUIStore";
+import { GeneralSettings } from "@components/Settings/GeneralSettings";
+import { MaintenanceSettings } from "@components/Settings/MaintenanceSettings";
+import { GetAllSettings } from "@wailsjs/go/main/App";
+import { useUIStore } from "@stores/useUIStore";
 
 export default function Settings() {
   const { tabSelections, setTabSelection } = useUIStore();

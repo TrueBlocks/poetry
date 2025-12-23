@@ -11,8 +11,8 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { GetDanglingLinks, DeleteLink } from "../../../wailsjs/go/main/App";
-import { LogInfo } from "../../../wailsjs/runtime/runtime.js";
+import { GetDanglingLinks, DeleteLink } from "@wailsjs/go/main/App";
+import { LogInfo } from "@wailsjs/runtime/runtime.js";
 import { AlertTriangle, Trash2 } from "lucide-react";
 
 interface DanglingLink {

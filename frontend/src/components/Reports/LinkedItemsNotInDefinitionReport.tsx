@@ -14,7 +14,7 @@ import { useState } from "react";
 import {
   GetLinkedItemsNotInDefinition,
   DeleteLinkByItems,
-} from "../../../wailsjs/go/main/App";
+} from "@wailsjs/go/main/App";
 import { AlertTriangle } from "lucide-react";
 import { notifications } from "@mantine/notifications";
 import { LinkedNotInDefResult } from "./types";

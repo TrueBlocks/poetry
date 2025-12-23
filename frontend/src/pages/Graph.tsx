@@ -47,10 +47,10 @@ import {
   GetSettings,
   GetItemImage,
   GetEgoGraph,
-} from "../../wailsjs/go/main/App.js";
-import { LogInfo } from "../../wailsjs/runtime/runtime.js";
-import { getItemColor, getItemTextColor } from "../utils/colors";
-import { useUIStore } from "../stores/useUIStore";
+} from "@wailsjs/go/main/App.js";
+import { LogInfo } from "@wailsjs/runtime/runtime.js";
+import { getItemColor, getItemTextColor } from "@utils/colors";
+import { useUIStore } from "@stores/useUIStore";
 
 // Custom node component
 function CustomNode({ data }: any) {

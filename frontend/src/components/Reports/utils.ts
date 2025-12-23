@@ -1,5 +1,5 @@
-import { stripPossessive } from "../../utils/references";
-import { GetItemByWord } from "../../../wailsjs/go/main/App";
+import { stripPossessive } from "@utils/references";
+import { GetItemByWord } from "@wailsjs/go/main/App";
 
 /**
  * Helper function to strip possessive from reference word and look up item

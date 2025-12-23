@@ -1,8 +1,8 @@
 import { useMantineColorScheme } from "@mantine/core";
 import { PoemRenderer } from "./PoemRenderer";
 import { ReferenceLink } from "./ReferenceLink";
-import { parseReferenceTags, parseTextSegments } from "../../utils/tagParser";
-import { stripPossessive } from "../../utils/references";
+import { parseReferenceTags, parseTextSegments } from "@utils/tagParser";
+import { stripPossessive } from "@utils/references";
 
 interface DefinitionRendererProps {
   text: string;

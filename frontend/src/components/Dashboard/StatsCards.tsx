@@ -11,7 +11,7 @@ import {
   PenTool,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { database } from "../../../wailsjs/go/models";
+import { database } from "@wailsjs/go/models";
 
 interface StatsCardsProps {
   stats: database.DashboardStats | null;

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Command } from "cmdk";
 import { Search, Home, Network, Plus, FileText } from "lucide-react";
-import { SearchItems } from "../../wailsjs/go/main/App.js";
+import { SearchItems } from "@wailsjs/go/main/App.js";
 import { useQuery } from "@tanstack/react-query";
 
 interface CommandPaletteProps {

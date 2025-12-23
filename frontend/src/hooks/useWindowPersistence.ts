@@ -1,9 +1,6 @@
 import { useEffect, useRef } from "react";
-import { SaveWindowPosition } from "../../wailsjs/go/main/App";
-import {
-  WindowGetPosition,
-  WindowGetSize,
-} from "../../wailsjs/runtime/runtime";
+import { SaveWindowPosition } from "@wailsjs/go/main/App";
+import { WindowGetPosition, WindowGetSize } from "@wailsjs/runtime/runtime";
 
 export function useWindowPersistence() {
   const lastSavedPosition = useRef({ x: 0, y: 0, width: 0, height: 0 });

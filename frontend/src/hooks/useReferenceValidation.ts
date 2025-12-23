@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { GetAllItems } from "../../wailsjs/go/main/App.js";
-import { parseReferences } from "../utils/references";
+import { GetAllItems } from "@wailsjs/go/main/App.js";
+import { parseReferences } from "@utils/references";
 
 interface ValidationResult {
   reference: string;

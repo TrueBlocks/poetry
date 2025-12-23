@@ -14,7 +14,19 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@pages/*": ["./src/pages/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@stores/*": ["./src/stores/*"],
+      "@wailsjs/*": ["./wailsjs/*"],
+      "@models": ["./wailsjs/go/models"],
+      "@runtime/*": ["./wailsjs/runtime/*"]
+    }
   },
   "include": ["src"],
   "exclude": ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx", "**/*.backup.tsx"],

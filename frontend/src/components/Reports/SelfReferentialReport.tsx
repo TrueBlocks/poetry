@@ -15,11 +15,11 @@ import {
   GetSelfReferentialItems,
   GetItem,
   UpdateItem,
-} from "../../../wailsjs/go/main/App";
+} from "@wailsjs/go/main/App";
 import { AlertTriangle, Check } from "lucide-react";
 import { notifications } from "@mantine/notifications";
 import { SelfReferentialResult } from "./types";
-import { database } from "../../../wailsjs/go/models";
+import { database } from "@wailsjs/go/models";
 
 export function SelfReferentialReport() {
   const queryClient = useQueryClient();

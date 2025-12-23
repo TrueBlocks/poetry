@@ -12,8 +12,8 @@ import {
   Check,
   Volume2,
 } from "lucide-react";
-import { BrowserOpenURL } from "../../../wailsjs/runtime/runtime.js";
-import { getItemColor } from "../../utils/colors";
+import { BrowserOpenURL } from "@wailsjs/runtime/runtime.js";
+import { getItemColor } from "@utils/colors";
 
 interface ItemHeaderProps {
   item: any;

@@ -1,8 +1,8 @@
 import { Container, Title, Text, Stack } from "@mantine/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { CheckpointDatabase } from "../../wailsjs/go/main/App";
-import { LinkIntegrityReport, ItemHealthReport } from "../components/Reports";
+import { CheckpointDatabase } from "@wailsjs/go/main/App";
+import { LinkIntegrityReport, ItemHealthReport } from "@components/Reports";
 
 export default function Reports() {
   const queryClient = useQueryClient();

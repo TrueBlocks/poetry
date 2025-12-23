@@ -36,13 +36,13 @@ import {
   GetAllItems,
   RunAdHocQuery,
   GetItemImage,
-} from "../../wailsjs/go/main/App.js";
-import { database } from "../../wailsjs/go/models";
-import { LogInfo } from "../../wailsjs/runtime/runtime.js";
+} from "@wailsjs/go/main/App.js";
+import { database } from "@wailsjs/go/models";
+import { LogInfo } from "@wailsjs/runtime/runtime.js";
 import { Search as SearchIcon, Save, Trash2 } from "lucide-react";
 import { notifications } from "@mantine/notifications";
-import { DefinitionRenderer } from "../components/ItemDetail/DefinitionRenderer";
-import { useUIStore } from "../stores/useUIStore";
+import { DefinitionRenderer } from "@components/ItemDetail/DefinitionRenderer";
+import { useUIStore } from "@stores/useUIStore";
 
 // Helper to get first sentence from definition
 const getFirstSentence = (text: string | null | undefined): string => {

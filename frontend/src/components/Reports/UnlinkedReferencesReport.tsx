@@ -17,13 +17,13 @@ import {
   GetItem,
   UpdateItem,
   DeleteLinkByItems,
-} from "../../../wailsjs/go/main/App";
-import { database } from "../../../wailsjs/go/models";
-import { LogInfo } from "../../../wailsjs/runtime/runtime.js";
+} from "@wailsjs/go/main/App";
+import { database } from "@wailsjs/go/models";
+import { LogInfo } from "@wailsjs/runtime/runtime.js";
 import { AlertTriangle } from "lucide-react";
 import { UnlinkedRefResult } from "./types";
 import { lookupItemByRef } from "./utils";
-import { Patterns } from "../../utils/constants";
+import { Patterns } from "@utils/constants";
 
 export function UnlinkedReferencesReport() {
   const queryClient = useQueryClient();

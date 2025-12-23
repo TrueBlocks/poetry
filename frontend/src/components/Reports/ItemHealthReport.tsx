@@ -18,7 +18,7 @@ import {
   GetSettings,
   SaveReportItemHealthCollapsed,
   SaveTabSelection,
-} from "../../../wailsjs/go/main/App";
+} from "@wailsjs/go/main/App";
 
 export function ItemHealthReport() {
   const [activeTab, setActiveTab] = useState<string | null>("duplicates");

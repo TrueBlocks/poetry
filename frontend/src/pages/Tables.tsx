@@ -34,8 +34,8 @@ import {
   AddRecentSearch,
   ToggleItemMark,
   GetPoetIds,
-} from "../../wailsjs/go/main/App.js";
-import { LogInfo, LogError } from "../../wailsjs/runtime/runtime.js";
+} from "@wailsjs/go/main/App.js";
+import { LogInfo, LogError } from "@wailsjs/runtime/runtime.js";
 import {
   ArrowUp,
   ArrowDown,
@@ -45,7 +45,7 @@ import {
   Merge,
 } from "lucide-react";
 import { notifications } from "@mantine/notifications";
-import { useUIStore } from "../stores/useUIStore";
+import { useUIStore } from "@stores/useUIStore";
 
 const ITEMS_PER_PAGE = 15;
 

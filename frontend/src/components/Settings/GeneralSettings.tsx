@@ -20,10 +20,10 @@ import {
   GetImageCacheInfo,
   GetDatabaseFileSize,
   GetItem,
-} from "../../../wailsjs/go/main/App.js";
+} from "@wailsjs/go/main/App.js";
 import { AlertCircle, Search, Edit } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { FirstRunModal } from "../FirstRunModal";
+import { FirstRunModal } from "@components/FirstRunModal";
 
 export function GeneralSettings() {
   const queryClient = useQueryClient();

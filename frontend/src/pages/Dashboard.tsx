@@ -21,15 +21,15 @@ import {
   GetMarkedItems,
   GetTopHubs,
   GetAllItems,
-} from "../../wailsjs/go/main/App.js";
+} from "@wailsjs/go/main/App.js";
 import { Sparkles, Plus } from "lucide-react";
-import { StatsCards } from "../components/Dashboard/StatsCards";
-import { NavigationHistory } from "../components/Dashboard/NavigationHistory";
-import { Workbench } from "../components/Dashboard/Workbench";
-import { HubsList } from "../components/Dashboard/HubsList";
-import { DefinitionRenderer } from "../components/ItemDetail/DefinitionRenderer";
-import { REFERENCE_COLOR_MAP } from "../utils/references";
-import { useUIStore } from "../stores/useUIStore";
+import { StatsCards } from "@components/Dashboard/StatsCards";
+import { NavigationHistory } from "@components/Dashboard/NavigationHistory";
+import { Workbench } from "@components/Dashboard/Workbench";
+import { HubsList } from "@components/Dashboard/HubsList";
+import { DefinitionRenderer } from "@components/ItemDetail/DefinitionRenderer";
+import { REFERENCE_COLOR_MAP } from "@utils/references";
+import { useUIStore } from "@stores/useUIStore";
 
 // interface DashboardProps {
 //   // stats: Record<string, number> | null // Deprecated, we fetch extended stats now

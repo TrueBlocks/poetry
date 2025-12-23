@@ -11,8 +11,8 @@ import {
 } from "@mantine/core";
 import { Link as RouterLink } from "react-router-dom";
 import { Network, ArrowRight, CheckSquare } from "lucide-react";
-import { database } from "../../../wailsjs/go/models";
-import { ToggleItemMark } from "../../../wailsjs/go/main/App";
+import { database } from "@wailsjs/go/models";
+import { ToggleItemMark } from "@wailsjs/go/main/App";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface HubsListProps {

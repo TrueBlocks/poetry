@@ -11,10 +11,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import {
-  GetDuplicateItems,
-  MergeDuplicateItems,
-} from "../../../wailsjs/go/main/App";
+import { GetDuplicateItems, MergeDuplicateItems } from "@wailsjs/go/main/App";
 import { AlertTriangle } from "lucide-react";
 import { DuplicateResult } from "./types";
 

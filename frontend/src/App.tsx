@@ -27,8 +27,8 @@ import {
   GetItemByWord,
   HasEnvFile,
   GetConstants,
-} from "../wailsjs/go/main/App.js";
-import { LogInfo } from "../wailsjs/runtime/runtime.js";
+} from "@wailsjs/go/main/App.js";
+import { LogInfo } from "@wailsjs/runtime/runtime.js";
 import { FirstRunModal } from "./components/FirstRunModal";
 import { useUIStore } from "./stores/useUIStore";
 import { updatePatterns } from "./utils/constants";

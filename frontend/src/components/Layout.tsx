@@ -20,10 +20,10 @@ import {
   FileText,
   Table2,
 } from "lucide-react";
-import useDarkMode from "../hooks/useDarkMode";
+import useDarkMode from "@hooks/useDarkMode";
 import Footer from "./Footer";
-import { LogInfo } from "../../wailsjs/runtime/runtime.js";
-import { useUIStore } from "../stores/useUIStore";
+import { LogInfo } from "@wailsjs/runtime/runtime.js";
+import { useUIStore } from "@stores/useUIStore";
 
 interface LayoutProps {
   stats?: Record<string, number> | null;

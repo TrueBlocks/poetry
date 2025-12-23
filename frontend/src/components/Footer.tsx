@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Group, Text } from "@mantine/core";
-import { GetSettings, GetItem } from "../../wailsjs/go/main/App.js";
+import { GetSettings, GetItem } from "@wailsjs/go/main/App.js";
 
 export default function Footer() {
   const { data: settings } = useQuery({

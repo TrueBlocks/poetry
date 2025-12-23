@@ -9,7 +9,7 @@ import {
 } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { GetOrphanedItems } from "../../../wailsjs/go/main/App";
+import { GetOrphanedItems } from "@wailsjs/go/main/App";
 import { AlertTriangle } from "lucide-react";
 import { SimpleItem } from "./types";
 

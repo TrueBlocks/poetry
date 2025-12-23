@@ -9,10 +9,11 @@ import unusedImports from 'eslint-plugin-unused-imports';
 
 export default [
   {
-    ignores: ['wailsjs/**'],
+    ignores: ['wailsjs/**', '**/wailsjs/**'],
   },
   {
     files: ['**/*.ts', '**/*.tsx'],
+    ignores: ['wailsjs/**', '**/wailsjs/**'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -50,6 +51,18 @@ export default [
         'warn',
         { vars: 'all', varsIgnorePattern: '^_', argsIgnorePattern: '^_' },
       ],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../*', '../../*', '../../../*', '../../../../*'],
+              message:
+                'Use path aliases (@components, @utils, @hooks, @stores, @pages, @wailsjs) instead of relative imports',
+            },
+          ],
+        },
+      ],
     },
     settings: {
       react: {
@@ -58,9 +71,10 @@ export default [
     },
   },
   {
-    files: ['**/__tests__/**/*', '**/__mocks__/**/*'],
+    files: ['**/__tests__/**/*', '**/__mocks__/**/*', '**/__test__/**/*'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      'no-restricted-imports': 'off',
     },
   },
 ];

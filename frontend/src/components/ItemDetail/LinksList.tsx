@@ -8,7 +8,7 @@ import {
   useMantineColorScheme,
 } from "@mantine/core";
 import { Network, ChevronDown, ChevronRight } from "lucide-react";
-import { getItemColor } from "../../utils/colors";
+import { getItemColor } from "@utils/colors";
 
 interface LinksListProps {
   itemId: number;
