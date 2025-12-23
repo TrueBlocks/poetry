@@ -117,7 +117,9 @@ func (a *App) GetReferencePattern() string {
 func (a *App) shutdown(ctx context.Context) {
 	// Close database connection and checkpoint WAL
 	if a.db != nil {
-		_ = a.db.Close()
+		if err := a.db.Close(); err != nil {
+			slog.Error("Failed to close database during shutdown", "error", err)
+		}
 	}
 }
 
