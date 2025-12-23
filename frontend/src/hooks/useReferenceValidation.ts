@@ -54,7 +54,7 @@ export function useReferenceValidation(text: string, debounceMs: number = 500) {
 
     for (const ref of references) {
       const matchedItem = allItems.find(
-        (item: any) => item.word.toLowerCase() === ref.toLowerCase(),
+        (item) => item.word.toLowerCase() === ref.toLowerCase(),
       );
 
       results.set(ref, {

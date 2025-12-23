@@ -14,11 +14,12 @@ import {
 } from "lucide-react";
 import { BrowserOpenURL } from "@wailsjs/runtime/runtime.js";
 import { getItemColor } from "@utils/colors";
+import { database } from "@models";
 
 interface ItemHeaderProps {
-  item: any;
+  item: database.Item;
   itemId: string;
-  links: any[] | null;
+  links: database.Link[] | null;
   revealMarkdown: boolean;
   onToggleRevealMarkdown: () => void;
   onDelete: () => void;
@@ -104,14 +105,13 @@ export function ItemHeader({
               loading={deleteLoading}
               disabled={
                 (links &&
-                  links.filter(
-                    (l: any) => l.destinationItemId === Number(itemId),
-                  ).length > 0) ||
+                  links.filter((l) => l.destinationItemId === Number(itemId))
+                    .length > 0) ||
                 undefined
               }
               title={
                 links &&
-                links.filter((l: any) => l.destinationItemId === Number(itemId))
+                links.filter((l) => l.destinationItemId === Number(itemId))
                   .length > 0
                   ? "Cannot delete: item has incoming connections"
                   : "Delete this item"

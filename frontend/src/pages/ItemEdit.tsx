@@ -38,7 +38,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { useReferenceValidation } from "@hooks/useReferenceValidation";
-
+import { database } from "@models";
 export default function ItemEdit({
   onSave,
   onCancel,
@@ -85,7 +85,7 @@ export default function ItemEdit({
         source: "",
         sourcePg: "",
         mark: "",
-      } as any);
+      } as database.Item);
       queryClient.invalidateQueries({ queryKey: ["allItems"] });
       notifications.show({
         title: "Item Created",
@@ -204,10 +204,10 @@ export default function ItemEdit({
         if (isNew || data.itemId === 0) {
           // Generate a new item ID using current timestamp + random component
           const newItemId = Date.now() + Math.floor(Math.random() * 1000);
-          await CreateItem({ ...data, itemId: newItemId } as any);
+          await CreateItem({ ...data, itemId: newItemId } as database.Item);
           return { newId: newItemId };
         } else {
-          await UpdateItem(data as any);
+          await UpdateItem(data as database.Item);
           return { itemId: Number(id) };
         }
       } catch (error) {
@@ -215,7 +215,7 @@ export default function ItemEdit({
         throw error;
       }
     },
-    onSuccess: async (data: any) => {
+    onSuccess: async (data: { newId?: number; itemId?: number }) => {
       const savedItemId = data.newId || data.itemId || Number(id);
 
       // Save or delete image based on current state
@@ -256,7 +256,7 @@ export default function ItemEdit({
         }
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       console.error("Save failed:", error);
       console.error("Full error object:", error);
       console.error("Error message:", error?.message);

@@ -51,6 +51,26 @@ import {
 import { LogInfo } from "@wailsjs/runtime/runtime.js";
 import { getItemColor, getItemTextColor } from "@utils/colors";
 import { useUIStore } from "@stores/useUIStore";
+import { database } from "@models";
+
+// D3 simulation node type
+interface GraphNode extends database.Item {
+  id: string;
+  connections: number;
+  x?: number;
+  y?: number;
+  fx?: number | null;
+  fy?: number | null;
+  isIncomingNode?: boolean;
+  isOutgoingNode?: boolean;
+}
+
+// D3 simulation link type
+interface GraphLink {
+  source: string | GraphNode;
+  target: string | GraphNode;
+  type?: string;
+}
 
 // Custom node component
 function CustomNode({ data }: any) {
@@ -397,13 +417,11 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
     }
 
     // Create simulation nodes
-    let simulationNodes: any[] = [];
+    let simulationNodes: GraphNode[] = [];
 
     if (selectedNode !== null) {
       // RADIAL LAYOUT: Duplicate nodes for bidirectional links
-      const centerItem = filteredItems.find(
-        (i: any) => i.itemId === selectedNode,
-      );
+      const centerItem = filteredItems.find((i) => i.itemId === selectedNode);
       if (centerItem) {
         simulationNodes.push({
           id: String(centerItem.itemId),
@@ -412,6 +430,9 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
           type: centerItem.type,
           connections: connectionCounts.get(centerItem.itemId) || 0,
           definition: centerItem.definition,
+          createdAt: centerItem.createdAt,
+          modifiedAt: centerItem.modifiedAt,
+          convertValues: centerItem.convertValues,
           x: 0,
           y: 0,
           fx: 0,
@@ -419,16 +440,16 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
         });
       }
 
-      filteredItems.forEach((item: any) => {
+      filteredItems.forEach((item) => {
         if (item.itemId === selectedNode) return;
 
         const isIncoming = visibleLinks.some(
-          (l: any) =>
+          (l) =>
             l.destinationItemId === selectedNode &&
             l.sourceItemId === item.itemId,
         );
         const isOutgoing = visibleLinks.some(
-          (l: any) =>
+          (l) =>
             l.sourceItemId === selectedNode &&
             l.destinationItemId === item.itemId,
         );
@@ -441,6 +462,9 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
             type: item.type,
             connections: connectionCounts.get(item.itemId) || 0,
             definition: item.definition,
+            createdAt: item.createdAt,
+            modifiedAt: item.modifiedAt,
+            convertValues: item.convertValues,
             x: Math.random() * 500,
             y: Math.random() * 500,
             isIncomingNode: true,
@@ -455,6 +479,9 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
             type: item.type,
             connections: connectionCounts.get(item.itemId) || 0,
             definition: item.definition,
+            createdAt: item.createdAt,
+            modifiedAt: item.modifiedAt,
+            convertValues: item.convertValues,
             x: Math.random() * 500,
             y: Math.random() * 500,
             isOutgoingNode: true,
@@ -463,25 +490,28 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
       });
     } else {
       // STANDARD LAYOUT
-      simulationNodes = filteredItems.map((item: any) => ({
+      simulationNodes = filteredItems.map((item) => ({
         id: String(item.itemId),
         itemId: item.itemId,
         word: item.word,
         type: item.type,
         connections: connectionCounts.get(item.itemId) || 0,
         definition: item.definition,
+        createdAt: item.createdAt,
+        modifiedAt: item.modifiedAt,
+        convertValues: item.convertValues,
         x: Math.random() * 500,
         y: Math.random() * 500,
-        fx: undefined as number | undefined,
-        fy: undefined as number | undefined,
+        fx: undefined,
+        fy: undefined,
       }));
     }
 
     // Create simulation links
-    const nodeIds = new Set(simulationNodes.map((n: any) => n.id));
-    const simulationLinks: any[] = [];
+    const nodeIds = new Set(simulationNodes.map((n) => n.id));
+    const simulationLinks: GraphLink[] = [];
 
-    visibleLinks.forEach((link: any) => {
+    visibleLinks.forEach((link) => {
       const sourceId = String(link.sourceItemId);
       const targetId = String(link.destinationItemId);
 
@@ -529,7 +559,7 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
 
         // Helper to position nodes in an arc with dynamic staggering
         const layoutArc = (
-          nodes: any[],
+          nodes: GraphNode[],
           startAngle: number,
           endAngle: number,
         ) => {

@@ -9,11 +9,12 @@ import {
 } from "@mantine/core";
 import { Network, ChevronDown, ChevronRight } from "lucide-react";
 import { getItemColor } from "@utils/colors";
+import { database } from "@models";
 
 interface LinksListProps {
   itemId: number;
-  links: any[] | null;
-  linkedItemsData: Record<number, any>;
+  links: database.Link[] | null;
+  linkedItemsData: Record<number, database.Item>;
   outgoingCollapsed: boolean;
   incomingCollapsed: boolean;
   onToggleOutgoing: () => void;
@@ -56,17 +57,16 @@ export function LinksList({
             )}
             <Text size="sm" fw={500}>
               Outgoing (
-              {links?.filter((l: any) => l.sourceItemId === itemId).length || 0}
-              )
+              {links?.filter((l) => l.sourceItemId === itemId).length || 0})
             </Text>
           </Group>
           {!outgoingCollapsed && (
             <Stack gap="xs">
               {links &&
-              links.filter((l: any) => l.sourceItemId === itemId).length > 0 ? (
+              links.filter((l) => l.sourceItemId === itemId).length > 0 ? (
                 links
-                  .filter((link: any) => link.sourceItemId === itemId)
-                  .map((link: any) => {
+                  .filter((link) => link.sourceItemId === itemId)
+                  .map((link) => {
                     const linkedItemId = link.destinationItemId;
                     const linkedItem = linkedItemsData?.[linkedItemId];
 
@@ -145,19 +145,17 @@ export function LinksList({
             )}
             <Text size="sm" fw={500}>
               Incoming (
-              {links?.filter((l: any) => l.destinationItemId === itemId)
-                .length || 0}
+              {links?.filter((l) => l.destinationItemId === itemId).length || 0}
               )
             </Text>
           </Group>
           {!incomingCollapsed && (
             <Stack gap="xs">
               {links &&
-              links.filter((l: any) => l.destinationItemId === itemId).length >
-                0 ? (
+              links.filter((l) => l.destinationItemId === itemId).length > 0 ? (
                 links
-                  .filter((link: any) => link.destinationItemId === itemId)
-                  .map((link: any) => {
+                  .filter((link) => link.destinationItemId === itemId)
+                  .map((link) => {
                     const linkedItemId = link.sourceItemId;
                     const linkedItem = linkedItemsData?.[linkedItemId];
 

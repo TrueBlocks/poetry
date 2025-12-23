@@ -4,6 +4,7 @@ import { Command } from "cmdk";
 import { Search, Home, Network, Plus, FileText } from "lucide-react";
 import { SearchItems } from "@wailsjs/go/main/App.js";
 import { useQuery } from "@tanstack/react-query";
+import { database } from "@models";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -182,7 +183,7 @@ export default function CommandPalette({
                 heading="Search Results"
                 style={{ padding: "0.5rem" }}
               >
-                {searchResults.slice(0, 10).map((item: any) => (
+                {searchResults.slice(0, 10).map((item: database.Item) => (
                   <Command.Item
                     key={item.itemId}
                     onSelect={() =>

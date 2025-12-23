@@ -37,13 +37,12 @@ import {
   RunAdHocQuery,
   GetItemImage,
 } from "@wailsjs/go/main/App.js";
-import { database } from "@wailsjs/go/models";
 import { LogInfo } from "@wailsjs/runtime/runtime.js";
 import { Search as SearchIcon, Save, Trash2 } from "lucide-react";
 import { notifications } from "@mantine/notifications";
 import { DefinitionRenderer } from "@components/ItemDetail/DefinitionRenderer";
 import { useUIStore } from "@stores/useUIStore";
-
+import { database } from "@models";
 // Helper to get first sentence from definition
 const getFirstSentence = (text: string | null | undefined): string => {
   if (!text) return "No definition";
@@ -228,9 +227,9 @@ export default function Search() {
 
       const normalizedQuery = debouncedQuery.trim().toLowerCase();
 
-      const exact: any[] = [];
-      const words: any[] = [];
-      const other: any[] = [];
+      const exact: database.Item[] = [];
+      const words: database.Item[] = [];
+      const other: database.Item[] = [];
 
       results.forEach((item: any) => {
         const itemWord = item.word.trim().toLowerCase();

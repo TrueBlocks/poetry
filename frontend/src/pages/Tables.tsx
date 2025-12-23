@@ -46,6 +46,17 @@ import {
 } from "lucide-react";
 import { notifications } from "@mantine/notifications";
 import { useUIStore } from "@stores/useUIStore";
+import { database } from "@models";
+
+// Union type for all possible table data
+type TableData =
+  | database.Item
+  | database.Link
+  | database.Cliche
+  | database.Name
+  | database.LiteraryTerm
+  | database.Source
+  | Record<string, unknown>;
 
 const ITEMS_PER_PAGE = 15;
 
@@ -70,7 +81,7 @@ interface ColumnDef {
 interface SortableTableProps {
   tableName: string;
   columns: ColumnDef[];
-  data: any[];
+  data: TableData[];
   keyField: string;
   sortState: SortState;
   onSort: (field: string) => void;
@@ -461,7 +472,7 @@ export default function Tables() {
   };
 
   // Sort data
-  const sortData = (data: any[]) => {
+  const sortData = (data: TableData[]) => {
     if (!sortState.field1) return data;
 
     return [...data].sort((a, b) => {
@@ -509,7 +520,7 @@ export default function Tables() {
 
   // Calculate pagination for current table
   const getCurrentData = () => {
-    let sourceData: any[] = [];
+    let sourceData: TableData[] = [];
 
     if (selectedTable === "items" && allItems) {
       sourceData = allItems;

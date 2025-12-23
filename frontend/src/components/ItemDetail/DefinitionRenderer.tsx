@@ -3,13 +3,14 @@ import { PoemRenderer } from "./PoemRenderer";
 import { ReferenceLink } from "./ReferenceLink";
 import { parseReferenceTags, parseTextSegments } from "@utils/tagParser";
 import { stripPossessive } from "@utils/references";
+import { database } from "@models";
 
 interface DefinitionRendererProps {
   text: string;
-  allItems: any[];
+  allItems: database.Item[];
   stopAudio: () => void;
   currentAudioRef: React.MutableRefObject<HTMLAudioElement | null>;
-  item?: any;
+  item?: database.Item;
 }
 
 export function DefinitionRenderer({
@@ -46,7 +47,7 @@ export function DefinitionRenderer({
           : tag.matchWord!;
 
       const matchedItem = allItems?.find(
-        (item: any) => item.word.toLowerCase() === matchWord.toLowerCase(),
+        (item) => item.word.toLowerCase() === matchWord.toLowerCase(),
       );
 
       if (matchedItem) {

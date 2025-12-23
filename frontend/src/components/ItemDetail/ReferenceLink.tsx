@@ -11,14 +11,15 @@ import { SpeakWord } from "@wailsjs/go/main/App.js";
 import { useItemImage, useEnvVars } from "@hooks/useItemData";
 import { prepareTTSText } from "@utils/tts";
 import { REFERENCE_COLOR_MAP } from "@utils/references";
+import { database } from "@models";
 
 interface ReferenceLinkProps {
-  matchedItem: any;
+  matchedItem: database.Item;
   displayWord: string;
   refType: string;
   stopAudio: () => void;
   currentAudioRef: React.MutableRefObject<HTMLAudioElement | null>;
-  parentItem?: any;
+  parentItem?: database.Item;
 }
 
 export function ReferenceLink({
@@ -61,7 +62,10 @@ export function ReferenceLink({
 
     stopAudio();
 
-    const finalText = prepareTTSText(matchedItem.definition, matchedItem.word);
+    const finalText = prepareTTSText(
+      matchedItem.definition || "",
+      matchedItem.word,
+    );
     if (!finalText) {
       notifications.show({
         title: "No Quote Found",
@@ -149,11 +153,12 @@ export function ReferenceLink({
         color: "green",
         autoClose: 3000,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       notifications.hide("tts-inline-loading");
       notifications.show({
         title: "Error",
-        message: err.message || "Failed to generate speech",
+        message:
+          err instanceof Error ? err.message : "Failed to generate speech",
         color: "red",
       });
     }
@@ -164,7 +169,7 @@ export function ReferenceLink({
     e.stopPropagation();
 
     const quoteRegex = /\[\s*\n([\s\S]*?)\n\s*\]/;
-    const match = matchedItem.definition.match(quoteRegex);
+    const match = matchedItem.definition?.match(quoteRegex);
     if (match && match[1]) {
       const quotedText = match[1].replace(/[\\\/]$/gm, "").trim();
       await navigator.clipboard.writeText(quotedText);

@@ -15,8 +15,6 @@ export default function Footer() {
     enabled: !!settings?.lastWordId && settings.lastWordId > 0,
   });
 
-  const dbFilename = (settings as any)?.database?.file || "poetry.db";
-
   let currentItemDisplay = "None - Select an item";
   if (currentItem?.word) {
     currentItemDisplay = currentItem.word;
@@ -36,7 +34,7 @@ export default function Footer() {
       }}
     >
       <Text size="xs" c="dimmed">
-        DB: {dbFilename}
+        DB: poetry.db
       </Text>
       <Group gap="xl">
         {currentSearch && <Text size="xs">Search: {currentSearch}</Text>}
