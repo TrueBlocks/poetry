@@ -20,18 +20,10 @@ import KeyboardShortcutsHelp from "./components/KeyboardShortcutsHelp";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useWindowPersistence } from "./hooks/useWindowPersistence";
-import {
-  GetStats,
-  GetSettings,
-  GetItem,
-  GetItemByWord,
-  HasEnvFile,
-  GetConstants,
-} from "@wailsjs/go/main/App.js";
 import { LogInfo } from "@wailsjs/runtime/runtime.js";
 import { FirstRunModal } from "./components/FirstRunModal";
 import { useUIStore } from "./stores/useUIStore";
-import { updatePatterns } from "./utils/constants";
+import { useAppInitialization } from "./hooks/useAppInitialization";
 
 function AppContent({ initialPath }: { initialPath: string }) {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -110,84 +102,8 @@ function AppContent({ initialPath }: { initialPath: string }) {
 }
 
 function App() {
-  const [_, setStats] = useState<Record<string, number> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [initialPath, setInitialPath] = useState<string>("/");
-  const [firstRunModalOpen, setFirstRunModalOpen] = useState(false);
-
-  useEffect(() => {
-    // Load initial stats and settings
-    Promise.all([GetStats(), GetSettings(), HasEnvFile(), GetConstants()])
-      .then(([statsData, settings, hasEnv, constants]) => {
-        if (constants) updatePatterns(constants);
-        setStats(statsData);
-
-        // Check for First Run condition
-        // If .env file does not exist, show First Run Modal
-        if (!hasEnv) {
-          setFirstRunModalOpen(true);
-        }
-
-        // Determine initial path based on lastView preference
-        if (settings.lastView) {
-          switch (settings.lastView) {
-            case "graph":
-              setInitialPath("/graph");
-              break;
-            case "search":
-              setInitialPath("/search");
-              break;
-            case "export":
-              setInitialPath("/export");
-              break;
-            case "reports":
-              setInitialPath("/reports");
-              break;
-            case "tables":
-              setInitialPath("/tables");
-              break;
-            case "item":
-              if (settings.lastWordId && settings.lastWordId > 0) {
-                GetItem(settings.lastWordId)
-                  .then(() => {
-                    setInitialPath(`/item/${settings.lastWordId}`);
-                  })
-                  .catch(() => {
-                    GetItemByWord("poetry")
-                      .then((poetryItem) => {
-                        if (poetryItem) {
-                          setInitialPath(`/item/${poetryItem.itemId}`);
-                        }
-                      })
-                      .catch(console.error);
-                  });
-              }
-              break;
-            case "dashboard":
-            default:
-              // Stay on dashboard (default '/')
-              break;
-          }
-        } else if (settings.lastWordId && settings.lastWordId > 0) {
-          // Fallback to old behavior if lastView not set
-          GetItem(settings.lastWordId)
-            .then(() => {
-              setInitialPath(`/item/${settings.lastWordId}`);
-            })
-            .catch(() => {
-              GetItemByWord("poetry")
-                .then((poetryItem) => {
-                  if (poetryItem) {
-                    setInitialPath(`/item/${poetryItem.itemId}`);
-                  }
-                })
-                .catch(console.error);
-            });
-        }
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+  const { loading, initialPath, firstRunModalOpen, setFirstRunModalOpen } =
+    useAppInitialization();
 
   if (loading) {
     return (
