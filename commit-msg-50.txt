@@ -1,9 +1,0 @@
-Remove commented-out and dead code
-
-- Delete Graph.backup.tsx (915 lines, rely on git history)
-- Remove commented-out imports in Tables.tsx
-- Remove commented-out console.log debug statements in ItemEdit.tsx
-- Clean up verbose comments in Graph.tsx layout calculation
-- Run yarn lint --fix to clean up formatting
-
-Closes #50
