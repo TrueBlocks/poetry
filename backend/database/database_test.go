@@ -127,6 +127,8 @@ CREATE TABLE IF NOT EXISTS items (
     source TEXT,
     source_pg TEXT,
     mark TEXT,
+    has_image INTEGER DEFAULT 0,
+    has_tts INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     modified_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -146,6 +148,8 @@ CREATE TABLE IF NOT EXISTS links (
 
 CREATE INDEX IF NOT EXISTS idx_items_word ON items(word COLLATE NOCASE);
 CREATE INDEX IF NOT EXISTS idx_items_type ON items(type);
+CREATE INDEX IF NOT EXISTS idx_items_has_image ON items(has_image);
+CREATE INDEX IF NOT EXISTS idx_items_has_tts ON items(has_tts);
 CREATE INDEX IF NOT EXISTS idx_links_source ON links(source_item_id);
 CREATE INDEX IF NOT EXISTS idx_links_destination ON links(destination_item_id);
 `

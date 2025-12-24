@@ -77,6 +77,8 @@ export namespace database {
 	    source?: string;
 	    sourcePg?: string;
 	    mark?: string;
+	    hasImage: number;
+	    hasTts: number;
 	    createdAt: Date;
 	    modifiedAt: Date;
 	
@@ -96,6 +98,8 @@ export namespace database {
 	        this.source = source["source"];
 	        this.sourcePg = source["sourcePg"];
 	        this.mark = source["mark"];
+	        this.hasImage = source["hasImage"];
+	        this.hasTts = source["hasTts"];
 	        this.createdAt = source["createdAt"];
 	        this.modifiedAt = source["modifiedAt"];
 	    }

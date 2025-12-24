@@ -50,6 +50,8 @@ type Item struct {
 	Source      *string          `json:"source"`
 	SourcePg    *string          `json:"sourcePg"`
 	Mark        *string          `json:"mark"`
+	HasImage    int              `json:"hasImage"`
+	HasTts      int              `json:"hasTts"`
 	CreatedAt   time.Time        `json:"createdAt" ts_type:"Date"`
 	ModifiedAt  time.Time        `json:"modifiedAt" ts_type:"Date"`
 }
@@ -517,7 +519,7 @@ func (db *DB) GetTopHubs(limit int) ([]HubItem, error) {
 func (db *DB) GetMarkedItems() ([]Item, error) {
 	query := `
 		SELECT item_id, word, type, definition, derivation,
-		       appendicies, source, source_pg, mark, created_at, modified_at
+		       appendicies, source, source_pg, mark, has_image, has_tts, created_at, modified_at
 		FROM items
 		WHERE mark IS NOT NULL AND mark != ''
 		ORDER BY modified_at DESC
@@ -542,7 +544,7 @@ func (db *DB) SearchItems(query string) ([]Item, error) {
 		// Return all items if query is empty (for reference matching)
 		sqlQuery = `
 			SELECT item_id, word, type, definition, derivation,
-			       appendicies, source, source_pg, mark, created_at, modified_at
+			       appendicies, source, source_pg, mark, has_image, has_tts, created_at, modified_at
 			FROM items
 			ORDER BY word
 		`
@@ -554,7 +556,7 @@ func (db *DB) SearchItems(query string) ([]Item, error) {
 		// Try FTS5 search first for better performance and relevance ranking
 		sqlQuery = `
 			SELECT items.item_id, items.word, items.type, items.definition, items.derivation,
-			       items.appendicies, items.source, items.source_pg, items.mark, 
+			       items.appendicies, items.source, items.source_pg, items.mark, items.has_image, items.has_tts,
 			       items.created_at, items.modified_at
 			FROM items_fts
 			JOIN items ON items.item_id = items_fts.rowid
@@ -569,7 +571,7 @@ func (db *DB) SearchItems(query string) ([]Item, error) {
 			searchTerm := "%" + query + "%"
 			sqlQuery = `
 				SELECT item_id, word, type, definition, derivation,
-				       appendicies, source, source_pg, mark, created_at, modified_at
+				       appendicies, source, source_pg, mark, has_image, has_tts, created_at, modified_at
 				FROM items
 				WHERE word LIKE ? OR definition LIKE ? OR derivation LIKE ? OR appendicies LIKE ?
 				ORDER BY 
@@ -591,7 +593,7 @@ func (db *DB) SearchItems(query string) ([]Item, error) {
 		err := rows.Scan(
 			&item.ItemID, &item.Word, &item.Type, &item.Definition,
 			&item.Derivation, &item.Appendicies, &item.Source, &item.SourcePg,
-			&item.Mark, &item.CreatedAt, &item.ModifiedAt,
+			&item.Mark, &item.HasImage, &item.HasTts, &item.CreatedAt, &item.ModifiedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan item: %w", err)
@@ -639,7 +641,7 @@ func (db *DB) SearchItemsWithOptions(options SearchOptions) ([]Item, error) {
 	if options.Query == "" {
 		sqlQuery = `
 			SELECT item_id, word, type, definition, derivation,
-			       appendicies, source, source_pg, mark, created_at, modified_at
+			       appendicies, source, source_pg, mark, has_image, has_tts, created_at, modified_at
 			FROM items
 		`
 		if len(whereClauses) > 0 {
@@ -662,7 +664,7 @@ func (db *DB) SearchItemsWithOptions(options SearchOptions) ([]Item, error) {
 
 		sqlQuery = `
 			SELECT item_id, word, type, definition, derivation,
-			       appendicies, source, source_pg, mark, created_at, modified_at
+			       appendicies, source, source_pg, mark, has_image, has_tts, created_at, modified_at
 			FROM items
 			WHERE (IFNULL(word, '') REGEXP ? OR IFNULL(definition, '') REGEXP ? OR IFNULL(derivation, '') REGEXP ? OR IFNULL(appendicies, '') REGEXP ?)
 		`
@@ -684,7 +686,7 @@ func (db *DB) SearchItemsWithOptions(options SearchOptions) ([]Item, error) {
 	normalizedQuery := normalizeFTS5Query(options.Query)
 	sqlQuery = `
 		SELECT items.item_id, items.word, items.type, items.definition, items.derivation,
-		       items.appendicies, items.source, items.source_pg, items.mark,
+		       items.appendicies, items.source, items.source_pg, items.mark, items.has_image, items.has_tts,
 		       items.created_at, items.modified_at
 		FROM items_fts
 		JOIN items ON items.item_id = items_fts.rowid
@@ -704,7 +706,7 @@ func (db *DB) SearchItemsWithOptions(options SearchOptions) ([]Item, error) {
 		searchTerm := "%" + options.Query + "%"
 		sqlQuery = `
 			SELECT item_id, word, type, definition, derivation,
-			       appendicies, source, source_pg, mark, created_at, modified_at
+			       appendicies, source, source_pg, mark, has_image, has_tts, created_at, modified_at
 			FROM items
 			WHERE (word LIKE ? OR definition LIKE ? OR derivation LIKE ? OR appendicies LIKE ?)
 		`
@@ -750,7 +752,7 @@ func scanItems(rows *sql.Rows) ([]Item, error) {
 func (db *DB) GetItem(itemID int) (*Item, error) {
 	query := `
 		SELECT item_id, word, type, definition, derivation,
-		       appendicies, source, source_pg, mark, created_at, modified_at
+		       appendicies, source, source_pg, mark, has_image, has_tts, created_at, modified_at
 		FROM items
 		WHERE item_id = ?
 	`
@@ -759,7 +761,7 @@ func (db *DB) GetItem(itemID int) (*Item, error) {
 	err := db.conn.QueryRow(query, itemID).Scan(
 		&item.ItemID, &item.Word, &item.Type, &item.Definition,
 		&item.Derivation, &item.Appendicies, &item.Source, &item.SourcePg,
-		&item.Mark, &item.CreatedAt, &item.ModifiedAt,
+		&item.Mark, &item.HasImage, &item.HasTts, &item.CreatedAt, &item.ModifiedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("item not found")
@@ -775,7 +777,7 @@ func (db *DB) GetItem(itemID int) (*Item, error) {
 func (db *DB) GetRandomItem() (*Item, error) {
 	query := `
 		SELECT item_id, word, type, definition, derivation,
-		       appendicies, source, source_pg, mark, created_at, modified_at
+		       appendicies, source, source_pg, mark, has_image, has_tts, created_at, modified_at
 		FROM items
 		ORDER BY RANDOM()
 		LIMIT 1
@@ -785,7 +787,7 @@ func (db *DB) GetRandomItem() (*Item, error) {
 	err := db.conn.QueryRow(query).Scan(
 		&item.ItemID, &item.Word, &item.Type, &item.Definition,
 		&item.Derivation, &item.Appendicies, &item.Source, &item.SourcePg,
-		&item.Mark, &item.CreatedAt, &item.ModifiedAt,
+		&item.Mark, &item.HasImage, &item.HasTts, &item.CreatedAt, &item.ModifiedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("no items found")
@@ -801,7 +803,7 @@ func (db *DB) GetRandomItem() (*Item, error) {
 func (db *DB) GetItemByWord(word string) (*Item, error) {
 	query := `
 		SELECT item_id, word, type, definition, derivation,
-		       appendicies, source, source_pg, mark, created_at, modified_at
+		       appendicies, source, source_pg, mark, has_image, has_tts, created_at, modified_at
 		FROM items
 		WHERE LOWER(word) = LOWER(?)
 		LIMIT 1
@@ -811,7 +813,7 @@ func (db *DB) GetItemByWord(word string) (*Item, error) {
 	err := db.conn.QueryRow(query, word).Scan(
 		&item.ItemID, &item.Word, &item.Type, &item.Definition,
 		&item.Derivation, &item.Appendicies, &item.Source, &item.SourcePg,
-		&item.Mark, &item.CreatedAt, &item.ModifiedAt,
+		&item.Mark, &item.HasImage, &item.HasTts, &item.CreatedAt, &item.ModifiedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("item not found")
@@ -963,7 +965,7 @@ func (db *DB) GetItemLinks(itemID int) ([]Link, error) {
 func (db *DB) GetRecentItems(limit int) ([]Item, error) {
 	query := `
 		SELECT item_id, word, type, definition, derivation,
-		       appendicies, source, source_pg, mark, created_at, modified_at
+		       appendicies, source, source_pg, mark, has_image, has_tts, created_at, modified_at
 		FROM items
 		ORDER BY modified_at DESC
 		LIMIT ?
@@ -1188,7 +1190,7 @@ func (db *DB) scanItems(rows *sql.Rows) ([]Item, error) {
 		err := rows.Scan(
 			&item.ItemID, &item.Word, &item.Type, &item.Definition,
 			&item.Derivation, &item.Appendicies, &item.Source, &item.SourcePg,
-			&item.Mark, &item.CreatedAt, &item.ModifiedAt,
+			&item.Mark, &item.HasImage, &item.HasTts, &item.CreatedAt, &item.ModifiedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan item: %w", err)
@@ -1315,7 +1317,7 @@ func (db *DB) GetEgoGraph(centerNodeID int, depth int) (*GraphData, error) {
 	}
 
 	queryItems := fmt.Sprintf(`
-		SELECT item_id, word, type, definition, derivation, appendicies, source, source_pg, mark, created_at, modified_at 
+		SELECT item_id, word, type, definition, derivation, appendicies, source, source_pg, mark, has_image, has_tts, created_at, modified_at 
 		FROM items 
 		WHERE item_id IN (%s)
 		ORDER BY word

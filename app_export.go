@@ -21,6 +21,87 @@ func resolveTagsForMarkdown(text string) string {
 	})
 }
 
+// copyImageToExport copies an image file to the export folder's images subdirectory
+func copyImageToExport(itemID int, exportFolder string) (string, error) {
+	imagesDir, err := constants.GetImagesDir()
+	if err != nil {
+		return "", err
+	}
+
+	srcPath := filepath.Join(imagesDir, fmt.Sprintf("%d.png", itemID))
+
+	// Check if source image exists
+	if _, err := os.Stat(srcPath); os.IsNotExist(err) {
+		return "", nil
+	}
+
+	// Create images subdirectory in export folder
+	exportImagesDir := filepath.Join(exportFolder, "images")
+	if err := os.MkdirAll(exportImagesDir, 0755); err != nil {
+		return "", fmt.Errorf("failed to create export images directory: %w", err)
+	}
+
+	// Copy image to export folder
+	destPath := filepath.Join(exportImagesDir, fmt.Sprintf("%d.png", itemID))
+	data, err := os.ReadFile(srcPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read image: %w", err)
+	}
+
+	if err := os.WriteFile(destPath, data, 0644); err != nil {
+		return "", fmt.Errorf("failed to write image: %w", err)
+	}
+
+	// Return relative path for markdown
+	return fmt.Sprintf("images/%d.png", itemID), nil
+}
+
+// writeItemToMarkdown writes an item's details to the markdown builder
+func writeItemToMarkdown(item database.Item, markdown *strings.Builder, exportFolder string) {
+	fmt.Fprintf(markdown, "## %s\n\n", item.Word)
+	fmt.Fprintf(markdown, "**Type:** %s\n\n", item.Type)
+
+	// Add image if present
+	if item.HasImage == 1 {
+		if imagePath, err := copyImageToExport(item.ItemID, exportFolder); err == nil && imagePath != "" {
+			fmt.Fprintf(markdown, "![%s](%s)\n\n", item.Word, imagePath)
+		}
+	}
+
+	// Add TTS note if present
+	if item.HasTts == 1 {
+		markdown.WriteString("🔊 **Has TTS**\n\n")
+	}
+
+	if item.Definition != nil && *item.Definition != "" {
+		resolved := resolveTagsForMarkdown(*item.Definition)
+		fmt.Fprintf(markdown, "### Definition\n\n%s\n\n", resolved)
+	}
+
+	if item.Derivation != nil && *item.Derivation != "" {
+		resolved := resolveTagsForMarkdown(*item.Derivation)
+		fmt.Fprintf(markdown, "### Etymology\n\n%s\n\n", resolved)
+	}
+
+	if item.Appendicies != nil && *item.Appendicies != "" {
+		resolved := resolveTagsForMarkdown(*item.Appendicies)
+		fmt.Fprintf(markdown, "### Notes\n\n%s\n\n", resolved)
+	}
+
+	if (item.Source != nil && *item.Source != "") || (item.SourcePg != nil && *item.SourcePg != "") {
+		if item.Source != nil {
+			resolved := resolveTagsForMarkdown(*item.Source)
+			fmt.Fprintf(markdown, "**Source:** %s", resolved)
+		}
+		if item.SourcePg != nil && *item.SourcePg != "" {
+			fmt.Fprintf(markdown, ", p. %s", *item.SourcePg)
+		}
+		markdown.WriteString("\n\n")
+	}
+
+	markdown.WriteString("---\n\n")
+}
+
 // ExportToJSON exports all data to a JSON file and returns the full path
 func (a *App) ExportToJSON() (string, error) {
 	items, err := a.db.GetAllItems()
@@ -189,6 +270,20 @@ func (a *App) ExportToMarkdown() (string, error) {
 	dbPath, _ := constants.GetDatabasePath()
 	exportFolder := s.ExportFolder
 
+	// Set up export folder early
+	if exportFolder == "" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("failed to get home directory: %w", err)
+		}
+		exportFolder = filepath.Join(homeDir, "Documents", "PoetryExports")
+	}
+
+	// Create export directory
+	if err := os.MkdirAll(exportFolder, 0755); err != nil {
+		return "", fmt.Errorf("failed to create export directory: %w", err)
+	}
+
 	var markdown strings.Builder
 	markdown.WriteString("<a name=\"top\"></a>\n\n")
 	markdown.WriteString("# Poetry Database Export\n\n")
@@ -213,144 +308,28 @@ func (a *App) ExportToMarkdown() (string, error) {
 	markdown.WriteString("# References\n\n")
 	markdown.WriteString("[↑ Back to top](#top)\n\n")
 	for _, item := range references {
-		markdown.WriteString(fmt.Sprintf("## %s\n\n", item.Word))
-		markdown.WriteString(fmt.Sprintf("**Type:** %s\n\n", item.Type))
-
-		if item.Definition != nil && *item.Definition != "" {
-			resolved := resolveTagsForMarkdown(*item.Definition)
-			markdown.WriteString(fmt.Sprintf("### Definition\n\n%s\n\n", resolved))
-		}
-
-		if item.Derivation != nil && *item.Derivation != "" {
-			resolved := resolveTagsForMarkdown(*item.Derivation)
-			markdown.WriteString(fmt.Sprintf("### Etymology\n\n%s\n\n", resolved))
-		}
-
-		if item.Appendicies != nil && *item.Appendicies != "" {
-			resolved := resolveTagsForMarkdown(*item.Appendicies)
-			markdown.WriteString(fmt.Sprintf("### Notes\n\n%s\n\n", resolved))
-		}
-
-		if (item.Source != nil && *item.Source != "") || (item.SourcePg != nil && *item.SourcePg != "") {
-			if item.Source != nil {
-				resolved := resolveTagsForMarkdown(*item.Source)
-				markdown.WriteString(fmt.Sprintf("**Source:** %s", resolved))
-			}
-			if item.SourcePg != nil && *item.SourcePg != "" {
-				markdown.WriteString(fmt.Sprintf(", p. %s", *item.SourcePg))
-			}
-			markdown.WriteString("\n\n")
-		}
-
-		markdown.WriteString("---\n\n")
+		writeItemToMarkdown(item, &markdown, exportFolder)
 	}
 
 	// Writers Section
 	markdown.WriteString("\n# Writers\n\n")
 	markdown.WriteString("[↑ Back to top](#top)\n\n")
 	for _, item := range writers {
-		markdown.WriteString(fmt.Sprintf("## %s\n\n", item.Word))
-		markdown.WriteString(fmt.Sprintf("**Type:** %s\n\n", item.Type))
-
-		if item.Definition != nil && *item.Definition != "" {
-			resolved := resolveTagsForMarkdown(*item.Definition)
-			markdown.WriteString(fmt.Sprintf("### Definition\n\n%s\n\n", resolved))
-		}
-
-		if item.Derivation != nil && *item.Derivation != "" {
-			resolved := resolveTagsForMarkdown(*item.Derivation)
-			markdown.WriteString(fmt.Sprintf("### Etymology\n\n%s\n\n", resolved))
-		}
-
-		if item.Appendicies != nil && *item.Appendicies != "" {
-			resolved := resolveTagsForMarkdown(*item.Appendicies)
-			markdown.WriteString(fmt.Sprintf("### Notes\n\n%s\n\n", resolved))
-		}
-
-		if (item.Source != nil && *item.Source != "") || (item.SourcePg != nil && *item.SourcePg != "") {
-			if item.Source != nil {
-				resolved := resolveTagsForMarkdown(*item.Source)
-				markdown.WriteString(fmt.Sprintf("**Source:** %s", resolved))
-			}
-			if item.SourcePg != nil && *item.SourcePg != "" {
-				markdown.WriteString(fmt.Sprintf(", p. %s", *item.SourcePg))
-			}
-			markdown.WriteString("\n\n")
-		}
-
-		markdown.WriteString("---\n\n")
+		writeItemToMarkdown(item, &markdown, exportFolder)
 	}
 
 	// Titles Section
 	markdown.WriteString("\n# Titles\n\n")
 	markdown.WriteString("[↑ Back to top](#top)\n\n")
 	for _, item := range titles {
-		markdown.WriteString(fmt.Sprintf("## %s\n\n", item.Word))
-		markdown.WriteString(fmt.Sprintf("**Type:** %s\n\n", item.Type))
-
-		if item.Definition != nil && *item.Definition != "" {
-			resolved := resolveTagsForMarkdown(*item.Definition)
-			markdown.WriteString(fmt.Sprintf("### Definition\n\n%s\n\n", resolved))
-		}
-
-		if item.Derivation != nil && *item.Derivation != "" {
-			resolved := resolveTagsForMarkdown(*item.Derivation)
-			markdown.WriteString(fmt.Sprintf("### Etymology\n\n%s\n\n", resolved))
-		}
-
-		if item.Appendicies != nil && *item.Appendicies != "" {
-			resolved := resolveTagsForMarkdown(*item.Appendicies)
-			markdown.WriteString(fmt.Sprintf("### Notes\n\n%s\n\n", resolved))
-		}
-
-		if (item.Source != nil && *item.Source != "") || (item.SourcePg != nil && *item.SourcePg != "") {
-			if item.Source != nil {
-				resolved := resolveTagsForMarkdown(*item.Source)
-				markdown.WriteString(fmt.Sprintf("**Source:** %s", resolved))
-			}
-			if item.SourcePg != nil && *item.SourcePg != "" {
-				markdown.WriteString(fmt.Sprintf(", p. %s", *item.SourcePg))
-			}
-			markdown.WriteString("\n\n")
-		}
-
-		markdown.WriteString("---\n\n")
+		writeItemToMarkdown(item, &markdown, exportFolder)
 	}
 
 	// Other Section
 	markdown.WriteString("\n# Other\n\n")
 	markdown.WriteString("[↑ Back to top](#top)\n\n")
 	for _, item := range other {
-		markdown.WriteString(fmt.Sprintf("## %s\n\n", item.Word))
-		markdown.WriteString(fmt.Sprintf("**Type:** %s\n\n", item.Type))
-
-		if item.Definition != nil && *item.Definition != "" {
-			resolved := resolveTagsForMarkdown(*item.Definition)
-			markdown.WriteString(fmt.Sprintf("### Definition\n\n%s\n\n", resolved))
-		}
-
-		if item.Derivation != nil && *item.Derivation != "" {
-			resolved := resolveTagsForMarkdown(*item.Derivation)
-			markdown.WriteString(fmt.Sprintf("### Etymology\n\n%s\n\n", resolved))
-		}
-
-		if item.Appendicies != nil && *item.Appendicies != "" {
-			resolved := resolveTagsForMarkdown(*item.Appendicies)
-			markdown.WriteString(fmt.Sprintf("### Notes\n\n%s\n\n", resolved))
-		}
-
-		if (item.Source != nil && *item.Source != "") || (item.SourcePg != nil && *item.SourcePg != "") {
-			if item.Source != nil {
-				resolved := resolveTagsForMarkdown(*item.Source)
-				markdown.WriteString(fmt.Sprintf("**Source:** %s", resolved))
-			}
-			if item.SourcePg != nil && *item.SourcePg != "" {
-				markdown.WriteString(fmt.Sprintf(", p. %s", *item.SourcePg))
-			}
-			markdown.WriteString("\n\n")
-		}
-
-		markdown.WriteString("---\n\n")
+		writeItemToMarkdown(item, &markdown, exportFolder)
 	}
 
 	// Add Reports Section
@@ -470,21 +449,6 @@ func (a *App) ExportToMarkdown() (string, error) {
 		markdown.WriteString("\n")
 	} else {
 		markdown.WriteString("✓ No unknown tags found.\n\n")
-	}
-
-	// Get export path from settings or use default
-	exportFolder = s.ExportFolder
-	if exportFolder == "" {
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			return "", fmt.Errorf("failed to get home directory: %w", err)
-		}
-		exportFolder = filepath.Join(homeDir, "Documents", "PoetryExports")
-	}
-
-	// Create export directory
-	if err := os.MkdirAll(exportFolder, 0755); err != nil {
-		return "", fmt.Errorf("failed to create export directory: %w", err)
 	}
 
 	// Create filename
