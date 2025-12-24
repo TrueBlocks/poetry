@@ -83,19 +83,19 @@ func (a *App) runMigration4() error {
 	if err != nil {
 		return fmt.Errorf("failed to add has_image column: %w", err)
 	}
-	
+
 	// Add has_tts column
 	_, err = a.db.Conn().Exec("ALTER TABLE items ADD COLUMN has_tts INTEGER DEFAULT 0")
 	if err != nil {
 		return fmt.Errorf("failed to add has_tts column: %w", err)
 	}
-	
+
 	// Create index on has_image
 	_, err = a.db.Conn().Exec("CREATE INDEX idx_items_has_image ON items(has_image)")
 	if err != nil {
 		return fmt.Errorf("failed to create has_image index: %w", err)
 	}
-	
+
 	// Create index on has_tts
 	_, err = a.db.Conn().Exec("CREATE INDEX idx_items_has_tts ON items(has_tts)")
 	if err != nil {
