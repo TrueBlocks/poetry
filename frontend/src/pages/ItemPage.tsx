@@ -112,7 +112,7 @@ export default function ItemPage() {
       </Tabs.Panel>
 
       <Tabs.Panel value="graph" pt="md">
-        <Graph selectedItemId={id ? Number(id) : undefined} />
+        <Graph />
       </Tabs.Panel>
     </Tabs>
   );

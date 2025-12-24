@@ -154,26 +154,7 @@ export default function ItemDetail({
         e.preventDefault();
         if (item) {
           try {
-            await UpdateItem({
-              itemId: item.itemId,
-              word: item.word,
-              type: item.type,
-              definition: item.definition || "",
-              derivation: item.derivation || "",
-              appendicies: item.appendicies || "",
-              source: item.source || "",
-              sourcePg: item.sourcePg || "",
-              mark: item.mark || "",
-              createdAt: new Date(),
-              modifiedAt: new Date(),
-              convertValues: function (
-                _a: unknown,
-                _classs: unknown,
-                _asMap?: boolean,
-              ) {
-                throw new Error("Function not implemented.");
-              },
-            });
+            await UpdateItem(item);
             // Invalidate and refetch to show normalized definition
             queryClient.invalidateQueries({ queryKey: ["item", id] });
             notifications.show({
@@ -296,7 +277,26 @@ export default function ItemDetail({
           const linkedItems = Object.values(
             linkedItemsQueries.data as Record<number, database.Item>,
           );
-          const writer = linkedItems.find((i) => i.type === "Writer");
+
+          // Look for the writer mentioned in "Written by:" tag first
+          let writer: database.Item | undefined;
+          if (item.definition) {
+            const writtenByMatch = item.definition.match(
+              /Written by:\s*\{writer:\s*([^}]+)\}/i,
+            );
+            if (writtenByMatch) {
+              const writerName = writtenByMatch[1].trim();
+              writer = linkedItems.find(
+                (i) => i.type === "Writer" && i.word === writerName,
+              );
+            }
+          }
+
+          // Fall back to any Writer if "Written by:" not found
+          if (!writer) {
+            writer = linkedItems.find((i) => i.type === "Writer");
+          }
+
           if (writer) {
             const writerImage = await GetItemImage(writer.itemId);
             if (isMounted && writerImage) {
@@ -318,7 +318,7 @@ export default function ItemDetail({
     return () => {
       isMounted = false;
     };
-  }, [item?.itemId, item?.type, linkedItemsQueries.data]);
+  }, [item?.itemId, item?.type, item?.definition, linkedItemsQueries.data]);
 
   // Data quality checks
   const dataQuality = useMemo(() => {

@@ -145,12 +145,7 @@ const nodeTypes: NodeTypes = {
   custom: CustomNode,
 };
 
-export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
-  useEffect(() => {
-    if (selectedItemId) {
-      LogInfo(`Graph selected item: ${selectedItemId}`);
-    }
-  }, [selectedItemId]);
+export default function Graph() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { colorScheme } = useMantineColorScheme();
@@ -431,6 +426,8 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
           definition: centerItem.definition,
           createdAt: centerItem.createdAt,
           modifiedAt: centerItem.modifiedAt,
+          hasImage: centerItem.hasImage || 0,
+          hasTts: centerItem.hasTts || 0,
           convertValues: centerItem.convertValues,
           x: 0,
           y: 0,
@@ -463,6 +460,8 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
             definition: item.definition,
             createdAt: item.createdAt,
             modifiedAt: item.modifiedAt,
+            hasImage: item.hasImage || 0,
+            hasTts: item.hasTts || 0,
             convertValues: item.convertValues,
             x: Math.random() * 500,
             y: Math.random() * 500,
@@ -480,6 +479,8 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
             definition: item.definition,
             createdAt: item.createdAt,
             modifiedAt: item.modifiedAt,
+            hasImage: item.hasImage || 0,
+            hasTts: item.hasTts || 0,
             convertValues: item.convertValues,
             x: Math.random() * 500,
             y: Math.random() * 500,
@@ -498,6 +499,8 @@ export default function Graph({ selectedItemId }: { selectedItemId?: number }) {
         definition: item.definition,
         createdAt: item.createdAt,
         modifiedAt: item.modifiedAt,
+        hasImage: item.hasImage || 0,
+        hasTts: item.hasTts || 0,
         convertValues: item.convertValues,
         x: Math.random() * 500,
         y: Math.random() * 500,

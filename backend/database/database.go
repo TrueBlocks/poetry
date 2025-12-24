@@ -735,7 +735,7 @@ func scanItems(rows *sql.Rows) ([]Item, error) {
 		err := rows.Scan(
 			&item.ItemID, &item.Word, &item.Type, &item.Definition,
 			&item.Derivation, &item.Appendicies, &item.Source, &item.SourcePg,
-			&item.Mark, &item.CreatedAt, &item.ModifiedAt,
+			&item.Mark, &item.HasImage, &item.HasTts, &item.CreatedAt, &item.ModifiedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan item: %w", err)
