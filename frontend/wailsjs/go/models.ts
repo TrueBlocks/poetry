@@ -4,8 +4,7 @@ export namespace database {
 	    clicheId: number;
 	    phrase: string;
 	    definition?: string;
-	    // Go type: time
-	    createdAt: any;
+	    createdAt: Date;
 	
 	    static createFrom(source: any = {}) {
 	        return new Cliche(source);
@@ -16,26 +15,8 @@ export namespace database {
 	        this.clicheId = source["clicheId"];
 	        this.phrase = source["phrase"];
 	        this.definition = source["definition"];
-	        this.createdAt = this.convertValues(source["createdAt"], null);
+	        this.createdAt = source["createdAt"];
 	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 	export class DashboardStats {
 	    totalItems: number;
@@ -70,8 +51,7 @@ export namespace database {
 	    sourceItemId: number;
 	    destinationItemId: number;
 	    linkType: string;
-	    // Go type: time
-	    createdAt: any;
+	    createdAt: Date;
 	
 	    static createFrom(source: any = {}) {
 	        return new Link(source);
@@ -83,26 +63,8 @@ export namespace database {
 	        this.sourceItemId = source["sourceItemId"];
 	        this.destinationItemId = source["destinationItemId"];
 	        this.linkType = source["linkType"];
-	        this.createdAt = this.convertValues(source["createdAt"], null);
+	        this.createdAt = source["createdAt"];
 	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 	export class Item {
 	    itemId: number;
@@ -115,10 +77,8 @@ export namespace database {
 	    source?: string;
 	    sourcePg?: string;
 	    mark?: string;
-	    // Go type: time
-	    createdAt: any;
-	    // Go type: time
-	    modifiedAt: any;
+	    createdAt: Date;
+	    modifiedAt: Date;
 	
 	    static createFrom(source: any = {}) {
 	        return new Item(source);
@@ -136,8 +96,8 @@ export namespace database {
 	        this.source = source["source"];
 	        this.sourcePg = source["sourcePg"];
 	        this.mark = source["mark"];
-	        this.createdAt = this.convertValues(source["createdAt"], null);
-	        this.modifiedAt = this.convertValues(source["modifiedAt"], null);
+	        this.createdAt = source["createdAt"];
+	        this.modifiedAt = source["modifiedAt"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -217,8 +177,7 @@ export namespace database {
 	    definition?: string;
 	    examples?: string;
 	    notes?: string;
-	    // Go type: time
-	    createdAt: any;
+	    createdAt: Date;
 	    existsInItems: boolean;
 	
 	    static createFrom(source: any = {}) {
@@ -233,27 +192,9 @@ export namespace database {
 	        this.definition = source["definition"];
 	        this.examples = source["examples"];
 	        this.notes = source["notes"];
-	        this.createdAt = this.convertValues(source["createdAt"], null);
+	        this.createdAt = source["createdAt"];
 	        this.existsInItems = source["existsInItems"];
 	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 	export class Name {
 	    nameId: number;
@@ -262,8 +203,7 @@ export namespace database {
 	    gender?: string;
 	    description?: string;
 	    notes?: string;
-	    // Go type: time
-	    createdAt: any;
+	    createdAt: Date;
 	
 	    static createFrom(source: any = {}) {
 	        return new Name(source);
@@ -277,26 +217,8 @@ export namespace database {
 	        this.gender = source["gender"];
 	        this.description = source["description"];
 	        this.notes = source["notes"];
-	        this.createdAt = this.convertValues(source["createdAt"], null);
+	        this.createdAt = source["createdAt"];
 	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 	export class SearchOptions {
 	    query: string;
@@ -327,8 +249,7 @@ export namespace database {
 	    title: string;
 	    author?: string;
 	    notes?: string;
-	    // Go type: time
-	    createdAt: any;
+	    createdAt: Date;
 	
 	    static createFrom(source: any = {}) {
 	        return new Source(source);
@@ -340,26 +261,8 @@ export namespace database {
 	        this.title = source["title"];
 	        this.author = source["author"];
 	        this.notes = source["notes"];
-	        this.createdAt = this.convertValues(source["createdAt"], null);
+	        this.createdAt = source["createdAt"];
 	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 
 }
