@@ -7,15 +7,20 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/TrueBlocks/trueblocks-poetry/backend/database"
 	"github.com/TrueBlocks/trueblocks-poetry/pkg/constants"
 )
 
 // ImageService handles image operations
-type ImageService struct{}
+type ImageService struct {
+	db *database.DB
+}
 
 // NewImageService creates a new ImageService
-func NewImageService() *ImageService {
-	return &ImageService{}
+func NewImageService(db *database.DB) *ImageService {
+	return &ImageService{
+		db: db,
+	}
 }
 
 // GetItemImage retrieves an image for an item from the cache
@@ -60,6 +65,12 @@ func (s *ImageService) DeleteItemImage(itemId int) error {
 		return fmt.Errorf("failed to delete image file: %w", err)
 	}
 
+	// Update database flag
+	_, err = s.db.Conn().Exec("UPDATE items SET has_image = 0 WHERE item_id = ?", itemId)
+	if err != nil {
+		return fmt.Errorf("failed to update has_image flag: %w", err)
+	}
+
 	return nil
 }
 
@@ -90,6 +101,12 @@ func (s *ImageService) SaveItemImage(itemId int, imageData string) error {
 	imagePath := filepath.Join(cacheDir, fmt.Sprintf("%d.png", itemId))
 	if err := os.WriteFile(imagePath, decoded, 0644); err != nil {
 		return fmt.Errorf("failed to write image file: %w", err)
+	}
+
+	// Update database flag
+	_, err = s.db.Conn().Exec("UPDATE items SET has_image = 1 WHERE item_id = ?", itemId)
+	if err != nil {
+		return fmt.Errorf("failed to update has_image flag: %w", err)
 	}
 
 	return nil

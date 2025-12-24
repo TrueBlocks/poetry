@@ -86,7 +86,7 @@ func (a *App) startup(ctx context.Context) {
 	a.db = db
 	a.adhoc = components.NewAdHocQueryComponent(db)
 	a.ttsService = services.NewTTSService(db)
-	a.imageService = services.NewImageService()
+	a.imageService = services.NewImageService(db)
 	a.itemService = services.NewItemService(db, a.imageService)
 
 	// Run one-time data migrations

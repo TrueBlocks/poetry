@@ -1,11 +1,9 @@
 package services
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/TrueBlocks/trueblocks-poetry/backend/database"
@@ -53,54 +51,15 @@ func (s *ItemService) SearchItemsWithOptions(options database.SearchOptions) ([]
 		return nil, err
 	}
 
-	// Post-filter based on HasImage and HasTts if either is enabled
-	if !options.HasImage && !options.HasTts {
-		// Parse definitions for all items
-		for i := range items {
-			if items[i].Definition != nil {
-				isPoem := parser.IsPoem(items[i].Type, *items[i].Definition)
-				items[i].ParsedDef = parser.ParseDefinition(*items[i].Definition, isPoem)
-			}
-		}
-		return items, nil
-	}
-
-	var filtered []database.Item
-	for _, item := range items {
-		includeItem := true
-
-		// Check HasImage filter
-		if options.HasImage {
-			imagesDir, _ := constants.GetImagesDir()
-			imagePath := filepath.Join(imagesDir, fmt.Sprintf("%d.png", item.ItemID))
-			if _, err := os.Stat(imagePath); os.IsNotExist(err) {
-				includeItem = false
-			}
-		}
-
-		// Check HasTts filter (only if still included after image check)
-		if includeItem && options.HasTts {
-			// TTS files are stored with hash of the word, not itemId
-			// We need to check if any TTS file exists for this item's word
-			cacheDir, _ := constants.GetTTSCacheDir()
-			hash := fmt.Sprintf("%x", sha256.Sum256([]byte(item.Word)))
-			ttsPath := filepath.Join(cacheDir, hash+".mp3")
-			if _, err := os.Stat(ttsPath); os.IsNotExist(err) {
-				includeItem = false
-			}
-		}
-
-		if includeItem {
-			// Parse definition
-			if item.Definition != nil {
-				isPoem := parser.IsPoem(item.Type, *item.Definition)
-				item.ParsedDef = parser.ParseDefinition(*item.Definition, isPoem)
-			}
-			filtered = append(filtered, item)
+	// Parse definitions for all items
+	for i := range items {
+		if items[i].Definition != nil {
+			isPoem := parser.IsPoem(items[i].Type, *items[i].Definition)
+			items[i].ParsedDef = parser.ParseDefinition(*items[i].Definition, isPoem)
 		}
 	}
 
-	return filtered, nil
+	return items, nil
 }
 
 // GetItem retrieves a single item by ID

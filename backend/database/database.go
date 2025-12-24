@@ -627,6 +627,14 @@ func (db *DB) SearchItemsWithOptions(options SearchOptions) ([]Item, error) {
 		args = append(args, options.Source)
 	}
 
+	if options.HasImage {
+		whereClauses = append(whereClauses, "items.has_image = 1")
+	}
+
+	if options.HasTts {
+		whereClauses = append(whereClauses, "items.has_tts = 1")
+	}
+
 	// Empty query returns all items with filters
 	if options.Query == "" {
 		sqlQuery = `
@@ -1588,5 +1596,82 @@ func (db *DB) SetSetting(key, value string) error {
 	if err != nil {
 		return fmt.Errorf("failed to set setting: %w", err)
 	}
+	return nil
+}
+
+// SyncFileFlags updates has_image and has_tts flags based on existing files.
+// This function is idempotent and can be called multiple times safely.
+func (db *DB) SyncFileFlags() error {
+	slog.Info("Starting file flags sync...")
+	
+	// Get all item IDs
+	rows, err := db.conn.Query("SELECT item_id FROM items")
+	if err != nil {
+		return fmt.Errorf("failed to query items: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	
+	var itemIDs []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return fmt.Errorf("failed to scan item ID: %w", err)
+		}
+		itemIDs = append(itemIDs, id)
+	}
+	
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error iterating items: %w", err)
+	}
+	
+	// Get directory paths
+	imagesDir, err := constants.GetImagesDir()
+	if err != nil {
+		return fmt.Errorf("failed to get images directory: %w", err)
+	}
+	
+	ttsDir, err := constants.GetTTSCacheDir()
+	if err != nil {
+		return fmt.Errorf("failed to get TTS cache directory: %w", err)
+	}
+	
+	// Check for existing files and update flags
+	imageCount := 0
+	ttsCount := 0
+	
+	for _, itemID := range itemIDs {
+		var hasImage, hasTTS int
+		
+		// Check for image file
+		imagePath := filepath.Join(imagesDir, fmt.Sprintf("%d.png", itemID))
+		if _, err := os.Stat(imagePath); err == nil {
+			hasImage = 1
+			imageCount++
+		}
+		
+		// Check for TTS file
+		ttsPath := filepath.Join(ttsDir, fmt.Sprintf("%d.mp3", itemID))
+		if _, err := os.Stat(ttsPath); err == nil {
+			hasTTS = 1
+			ttsCount++
+		}
+		
+		// Update database flags
+		_, err := db.conn.Exec(`
+			UPDATE items 
+			SET has_image = ?, has_tts = ?
+			WHERE item_id = ?
+		`, hasImage, hasTTS, itemID)
+		
+		if err != nil {
+			return fmt.Errorf("failed to update flags for item %d: %w", itemID, err)
+		}
+	}
+	
+	slog.Info("File flags sync complete", 
+		"total_items", len(itemIDs),
+		"images_found", imageCount,
+		"tts_found", ttsCount)
+	
 	return nil
 }

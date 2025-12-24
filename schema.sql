@@ -15,6 +15,8 @@ CREATE TABLE items (
     source TEXT,
     source_pg TEXT,
     mark TEXT,
+    has_image INTEGER DEFAULT 0,
+    has_tts INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     modified_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -159,6 +161,8 @@ END;
 CREATE INDEX idx_items_word ON items(word COLLATE NOCASE);
 CREATE INDEX idx_items_type ON items(type);
 CREATE INDEX idx_items_modified ON items(modified_at DESC);
+CREATE INDEX idx_items_has_image ON items(has_image);
+CREATE INDEX idx_items_has_tts ON items(has_tts);
 
 -- Link indexes - covering indexes include all columns to avoid table lookups
 CREATE INDEX idx_links_source_covering ON links(source_item_id, created_at DESC, destination_item_id, link_type);

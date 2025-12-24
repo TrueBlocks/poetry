@@ -151,7 +151,7 @@ CREATE INDEX IF NOT EXISTS idx_links_destination ON links(destination_item_id);
 `
 
 	if _, err := sqlDB.Exec(schema); err != nil {
-		sqlDB.Close()
+		_ = sqlDB.Close()
 		t.Fatalf("Failed to execute schema: %v", err)
 	}
 
@@ -161,7 +161,7 @@ CREATE INDEX IF NOT EXISTS idx_links_destination ON links(destination_item_id);
 
 func TestCreateItem(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	def := "The art of rhythmical composition"
 	item := Item{
@@ -198,7 +198,7 @@ func TestCreateItem(t *testing.T) {
 
 func TestGetItemByWord(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create test item
 	item := Item{
@@ -245,7 +245,7 @@ func TestGetItemByWord(t *testing.T) {
 
 func TestUpdateItem(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create initial item
 	origDef := "Original definition"
@@ -285,7 +285,7 @@ func TestUpdateItem(t *testing.T) {
 
 func TestDeleteItem(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create item
 	item := Item{
@@ -311,7 +311,7 @@ func TestDeleteItem(t *testing.T) {
 
 func TestCreateLink(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create two items
 	item1 := Item{Word: "poetry", Type: "Reference"}
@@ -349,7 +349,7 @@ func TestCreateLink(t *testing.T) {
 
 func TestSearchItems(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create test items one at a time to avoid ID conflicts
 	// Note: CreateItem uses ItemID=0 for all new items, which causes PRIMARY KEY conflicts
@@ -394,7 +394,7 @@ func TestSearchItems(t *testing.T) {
 
 func TestToggleItemMark(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create item
 	item := Item{Word: "poetry", Type: "Reference"}
