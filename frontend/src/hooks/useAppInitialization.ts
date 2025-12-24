@@ -47,6 +47,9 @@ export function useAppInitialization() {
             case "tables":
               setInitialPath("/tables");
               break;
+            case "experimental":
+              setInitialPath("/experimental");
+              break;
             case "item":
               if (settings.lastWordId && settings.lastWordId > 0) {
                 GetItem(settings.lastWordId)

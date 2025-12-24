@@ -19,6 +19,7 @@ import {
   Settings as SettingsIcon,
   FileText,
   Table2,
+  Beaker,
 } from "lucide-react";
 import useDarkMode from "@hooks/useDarkMode";
 import Footer from "./Footer";
@@ -128,6 +129,14 @@ export default function Layout({ stats }: LayoutProps) {
               label={showLabels ? "Export" : undefined}
               leftSection={<Download size={20} />}
               active={location.pathname === "/export"}
+            />
+            <NavLink
+              component={Link}
+              to="/experimental"
+              label={showLabels ? "Experimental" : undefined}
+              leftSection={<Beaker size={20} />}
+              active={location.pathname === "/experimental"}
+              onClick={() => LogInfo("[Layout] Experimental link clicked")}
             />
             <NavLink
               component={Link}
