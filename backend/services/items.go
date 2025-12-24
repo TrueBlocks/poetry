@@ -158,6 +158,11 @@ func (s *ItemService) UpdateItem(item database.Item) error {
 		cacheFile := fmt.Sprintf("%s/%d.mp3", cacheDir, item.ItemID)
 		if err := os.Remove(cacheFile); err != nil && !os.IsNotExist(err) {
 			slog.Warn("Failed to delete TTS cache", "id", item.ItemID, "error", err)
+		} else if err == nil {
+			// Clear has_tts flag since file was deleted
+			if _, err := s.db.Conn().Exec("UPDATE items SET has_tts = 0 WHERE item_id = ?", item.ItemID); err != nil {
+				slog.Warn("Failed to clear has_tts flag", "id", item.ItemID, "error", err)
+			}
 		}
 	}
 
@@ -182,6 +187,11 @@ func (s *ItemService) DeleteItem(itemID int) error {
 		cacheFile := fmt.Sprintf("%s/%d.mp3", cacheDir, itemID)
 		if err := os.Remove(cacheFile); err != nil && !os.IsNotExist(err) {
 			slog.Warn("Failed to delete TTS cache", "id", itemID, "error", err)
+		} else if err == nil {
+			// Clear has_tts flag since file was deleted
+			if _, err := s.db.Conn().Exec("UPDATE items SET has_tts = 0 WHERE item_id = ?", itemID); err != nil {
+				slog.Warn("Failed to clear has_tts flag", "id", itemID, "error", err)
+			}
 		}
 	}
 

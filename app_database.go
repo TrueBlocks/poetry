@@ -65,6 +65,58 @@ func (a *App) runMigration1() error {
 	return nil
 }
 
+// runMigration4 adds has_image and has_tts columns to items table
+func (a *App) runMigration4() error {
+	migrationKey := "migration_4"
+
+	// Check if migration already ran
+	val, err := a.db.GetSetting(migrationKey)
+	if err == nil && val == "true" {
+		slog.Info("Migration 4 already applied, skipping")
+		return nil
+	}
+
+	slog.Info("Running migration 4: adding has_image and has_tts columns")
+
+	// Add has_image column
+	_, err = a.db.Conn().Exec("ALTER TABLE items ADD COLUMN has_image INTEGER DEFAULT 0")
+	if err != nil {
+		return fmt.Errorf("failed to add has_image column: %w", err)
+	}
+	
+	// Add has_tts column
+	_, err = a.db.Conn().Exec("ALTER TABLE items ADD COLUMN has_tts INTEGER DEFAULT 0")
+	if err != nil {
+		return fmt.Errorf("failed to add has_tts column: %w", err)
+	}
+	
+	// Create index on has_image
+	_, err = a.db.Conn().Exec("CREATE INDEX idx_items_has_image ON items(has_image)")
+	if err != nil {
+		return fmt.Errorf("failed to create has_image index: %w", err)
+	}
+	
+	// Create index on has_tts
+	_, err = a.db.Conn().Exec("CREATE INDEX idx_items_has_tts ON items(has_tts)")
+	if err != nil {
+		return fmt.Errorf("failed to create has_tts index: %w", err)
+	}
+
+	// Sync file flags from existing files
+	if err := a.db.SyncFileFlags(); err != nil {
+		slog.Warn("Failed to sync file flags after migration", "error", err)
+		// Don't fail the migration if sync fails
+	}
+
+	// Mark migration as complete
+	if err := a.db.SetSetting(migrationKey, "true"); err != nil {
+		return fmt.Errorf("failed to mark migration as complete: %w", err)
+	}
+
+	slog.Info("Migration 4 completed successfully")
+	return nil
+}
+
 // CheckpointDatabase flushes WAL to main database file
 func (a *App) CheckpointDatabase() error {
 	// slog.Info("[App] Checkpointing database WAL")

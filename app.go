@@ -94,7 +94,11 @@ func (a *App) startup(ctx context.Context) {
 		slog.Warn("Migration 1 failed", "error", err)
 	}
 
-	// Sync file flags on startup
+	if err := a.runMigration4(); err != nil {
+		slog.Warn("Migration 4 failed", "error", err)
+	}
+
+	// Sync file flags on startup (runMigration4 already does this once)
 	if err := db.SyncFileFlags(); err != nil {
 		slog.Warn("Failed to sync file flags", "error", err)
 	}
