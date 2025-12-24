@@ -640,7 +640,8 @@ export default function Tables() {
           try {
             const img = await GetItemImage(id);
             newImages[id] = img || null;
-          } catch {
+          } catch (error) {
+            LogError(`Failed to load image for item ${id}: ${error}`);
             newImages[id] = null;
           }
         }),

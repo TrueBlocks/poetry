@@ -53,7 +53,10 @@ export function useAppInitialization() {
                   .then(() => {
                     setInitialPath(`/item/${settings.lastWordId}`);
                   })
-                  .catch(() => {
+                  .catch((e) => {
+                    LogError(
+                      `Failed to load last item ${settings.lastWordId}, falling back to poetry: ${e}`,
+                    );
                     GetItemByWord("poetry")
                       .then((poetryItem) => {
                         if (poetryItem) {
@@ -77,7 +80,10 @@ export function useAppInitialization() {
             .then(() => {
               setInitialPath(`/item/${settings.lastWordId}`);
             })
-            .catch(() => {
+            .catch((e) => {
+              LogError(
+                `Failed to load last item ${settings.lastWordId}, falling back to poetry: ${e}`,
+              );
               GetItemByWord("poetry")
                 .then((poetryItem) => {
                   if (poetryItem) {
