@@ -164,8 +164,8 @@ export default function ItemDetail({
               source: item.source || "",
               sourcePg: item.sourcePg || "",
               mark: item.mark || "",
-              createdAt: undefined,
-              modifiedAt: undefined,
+              createdAt: new Date(),
+              modifiedAt: new Date(),
               convertValues: function (
                 _a: unknown,
                 _classs: unknown,

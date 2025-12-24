@@ -93,6 +93,11 @@ func (a *App) startup(ctx context.Context) {
 	if err := a.runMigration1(); err != nil {
 		slog.Warn("Migration 1 failed", "error", err)
 	}
+
+	// Sync file flags on startup
+	if err := db.SyncFileFlags(); err != nil {
+		slog.Warn("Failed to sync file flags", "error", err)
+	}
 }
 
 // Capabilities defines what features are available based on configuration
