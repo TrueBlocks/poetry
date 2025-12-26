@@ -1,0 +1,18 @@
+[book]
+authors = ["TrueBlocks"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Poetry Application Documentation"
+
+[output.html]
+additional-css = ["theme/custom.css"]
+git-repository-url = "https://github.com/TrueBlocks/poetry"
+edit-url-template = "https://github.com/TrueBlocks/poetry/edit/main/book/{path}"
+
+[output.html.fold]
+enable = true
+level = 0
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
