@@ -50,11 +50,11 @@ func EnsureConfigExists() (string, error) {
 	// Check if config exists
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		// Ensure directory exists
-		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(path), appkit.DirPermissions); err != nil {
 			return "", err
 		}
 		// Write default config
-		if err := os.WriteFile(path, defaultConfig, 0644); err != nil {
+		if err := os.WriteFile(path, defaultConfig, appkit.FilePermissions); err != nil {
 			return "", err
 		}
 	}
@@ -67,7 +67,7 @@ func LoadConfig() (*AppConfig, error) {
 		return nil, err
 	}
 
-	cfg, err := appkit.LoadJSON[AppConfig](path, AppConfig{})
+	cfg, err := appkit.LoadJSON(path, AppConfig{})
 	if err != nil {
 		return nil, err
 	}
@@ -94,5 +94,5 @@ func SaveConfig(content string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, []byte(content), 0644)
+	return os.WriteFile(path, []byte(content), appkit.FilePermissions)
 }

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	appkit "github.com/TrueBlocks/trueblocks-art/packages/appkit/v2"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/internal/db"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/internal/services"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/pkg/constants"
@@ -186,11 +187,11 @@ func (a *App) SaveEnvVar(key, value string) error {
 
 	output := strings.Join(newLines, "\n") + "\n"
 	dir := filepath.Dir(envPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, appkit.DirPermissions); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
-	if err := os.WriteFile(envPath, []byte(output), 0600); err != nil {
+	if err := os.WriteFile(envPath, []byte(output), 0o600); err != nil {
 		return fmt.Errorf("failed to write .env file: %w", err)
 	}
 
@@ -221,12 +222,12 @@ func (a *App) SkipAiSetup() error {
 	}
 
 	dir := filepath.Dir(envPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, appkit.DirPermissions); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	content := "# AI Setup Skipped\n"
-	if err := os.WriteFile(envPath, []byte(content), 0600); err != nil {
+	if err := os.WriteFile(envPath, []byte(content), 0o600); err != nil {
 		return fmt.Errorf("failed to write .env file: %w", err)
 	}
 

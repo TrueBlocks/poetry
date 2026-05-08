@@ -9,7 +9,8 @@ import {
 import { DuplicateItemsReport } from "./DuplicateItemsReport";
 import { OrphanedItemsReport } from "./OrphanedItemsReport";
 import { SelfReferentialReport } from "./SelfReferentialReport";
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useReport } from "@trueblocks/scaffold";
 import {
   GetDuplicateEntities,
   GetOrphanedEntities,
@@ -38,21 +39,21 @@ export function ItemHealthReport() {
     await SaveReportItemHealthCollapsed(newValue);
   };
 
-  const [duplicates, setDuplicates] = useState<unknown[] | null>(null);
-  const [orphans, setOrphans] = useState<unknown[] | null>(null);
-  const [selfRefs, setSelfRefs] = useState<unknown[] | null>(null);
-
-  useEffect(() => {
-    GetDuplicateEntities()
-      .then((res) => setDuplicates(res || []))
-      .catch(() => {});
-    GetOrphanedEntities()
-      .then((res) => setOrphans(res || []))
-      .catch(() => {});
-    GetSelfReferentialEntities()
-      .then((res) => setSelfRefs(res || []))
-      .catch(() => {});
-  }, []);
+  const loadDuplicates = useCallback(
+    async () => ((await GetDuplicateEntities()) || []) as unknown[],
+    [],
+  );
+  const loadOrphans = useCallback(
+    async () => ((await GetOrphanedEntities()) || []) as unknown[],
+    [],
+  );
+  const loadSelfRefs = useCallback(
+    async () => ((await GetSelfReferentialEntities()) || []) as unknown[],
+    [],
+  );
+  const { data: duplicates } = useReport<unknown>(loadDuplicates);
+  const { data: orphans } = useReport<unknown>(loadOrphans);
+  const { data: selfRefs } = useReport<unknown>(loadSelfRefs);
 
   return (
     <Paper p="lg" withBorder>
@@ -82,13 +83,13 @@ export function ItemHealthReport() {
         >
           <Tabs.List mb="md">
             <Tabs.Tab value="duplicates" leftSection={<IconCopy size={16} />}>
-              Duplicate Items ({duplicates?.length || 0})
+              Duplicate Items ({duplicates.length})
             </Tabs.Tab>
             <Tabs.Tab value="orphans" leftSection={<IconGhost size={16} />}>
-              Orphaned Items ({orphans?.length || 0})
+              Orphaned Items ({orphans.length})
             </Tabs.Tab>
             <Tabs.Tab value="selfrefs" leftSection={<IconRefresh size={16} />}>
-              Self References ({selfRefs?.length || 0})
+              Self References ({selfRefs.length})
             </Tabs.Tab>
           </Tabs.List>
 

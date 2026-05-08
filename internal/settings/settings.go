@@ -76,7 +76,7 @@ func NewManager() (*Manager, error) {
 		return nil, fmt.Errorf("failed to get config directory: %w", err)
 	}
 
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, appkit.DirPermissions); err != nil {
 		return nil, fmt.Errorf("failed to create config directory: %w", err)
 	}
 

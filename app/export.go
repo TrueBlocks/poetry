@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	appkit "github.com/TrueBlocks/trueblocks-art/packages/appkit/v2"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/internal/db"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/pkg/constants"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/pkg/parser"
@@ -32,7 +33,7 @@ func copyImageToExport(itemID int, exportFolder string) (string, error) {
 	}
 
 	exportImagesDir := filepath.Join(exportFolder, "images")
-	if err := os.MkdirAll(exportImagesDir, 0755); err != nil {
+	if err := os.MkdirAll(exportImagesDir, appkit.DirPermissions); err != nil {
 		return "", fmt.Errorf("failed to create export images directory: %w", err)
 	}
 
@@ -42,7 +43,7 @@ func copyImageToExport(itemID int, exportFolder string) (string, error) {
 		return "", fmt.Errorf("failed to read image: %w", err)
 	}
 
-	if err := os.WriteFile(destPath, data, 0644); err != nil {
+	if err := os.WriteFile(destPath, data, appkit.FilePermissions); err != nil {
 		return "", fmt.Errorf("failed to write image: %w", err)
 	}
 
@@ -143,11 +144,11 @@ func (a *App) ExportToJSON() (string, error) {
 
 	for _, item := range items {
 		switch item.TypeSlug {
-		case "reference":
+		case constants.EntityTypeReference:
 			references = append(references, item)
-		case "writer":
+		case constants.EntityTypeWriter:
 			writers = append(writers, item)
-		case "title":
+		case constants.EntityTypeTitle:
 			titles = append(titles, item)
 		default:
 			other = append(other, item)
@@ -222,14 +223,14 @@ func (a *App) ExportToJSON() (string, error) {
 		exportFolder = filepath.Join(homeDir, "Documents", "Poetry", "exports")
 	}
 
-	if err := os.MkdirAll(exportFolder, 0755); err != nil {
+	if err := os.MkdirAll(exportFolder, appkit.DirPermissions); err != nil {
 		return "", fmt.Errorf("failed to create export directory: %w", err)
 	}
 
 	filename := "poetry-database.json"
 	fullPath := filepath.Join(exportFolder, filename)
 
-	err = os.WriteFile(fullPath, jsonData, 0644)
+	err = os.WriteFile(fullPath, jsonData, appkit.FilePermissions)
 	if err != nil {
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}
@@ -250,11 +251,11 @@ func (a *App) ExportToMarkdown() (string, error) {
 
 	for _, item := range items {
 		switch item.TypeSlug {
-		case "reference":
+		case constants.EntityTypeReference:
 			references = append(references, item)
-		case "writer":
+		case constants.EntityTypeWriter:
 			writers = append(writers, item)
-		case "title":
+		case constants.EntityTypeTitle:
 			titles = append(titles, item)
 		default:
 			other = append(other, item)
@@ -287,7 +288,7 @@ func (a *App) ExportToMarkdown() (string, error) {
 		exportFolder = filepath.Join(homeDir, "Documents", "PoetryExports")
 	}
 
-	if err := os.MkdirAll(exportFolder, 0755); err != nil {
+	if err := os.MkdirAll(exportFolder, appkit.DirPermissions); err != nil {
 		return "", fmt.Errorf("failed to create export directory: %w", err)
 	}
 
@@ -448,7 +449,7 @@ func (a *App) ExportToMarkdown() (string, error) {
 	filename := "poetry-database.md"
 	fullPath := filepath.Join(exportFolder, filename)
 
-	err = os.WriteFile(fullPath, []byte(markdown.String()), 0644)
+	err = os.WriteFile(fullPath, []byte(markdown.String()), appkit.FilePermissions)
 	if err != nil {
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}

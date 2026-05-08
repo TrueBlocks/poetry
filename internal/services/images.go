@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/TrueBlocks/trueblocks-art/packages/appkit/v2"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/internal/db"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/pkg/constants"
 )
@@ -23,7 +24,8 @@ func NewImageService(db *db.DB) *ImageService {
 	}
 }
 
-func (s *ImageService) SetDB(db *db.DB) { s.db = db
+func (s *ImageService) SetDB(db *db.DB) {
+	s.db = db
 }
 
 // GetEntityImage retrieves an image for an entity from the cache
@@ -84,7 +86,7 @@ func (s *ImageService) SaveEntityImage(entityId int, imageData string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get images directory: %w", err)
 	}
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	if err := os.MkdirAll(cacheDir, appkit.DirPermissions); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
@@ -102,7 +104,7 @@ func (s *ImageService) SaveEntityImage(entityId int, imageData string) error {
 
 	// Save to file
 	imagePath := filepath.Join(cacheDir, fmt.Sprintf("%d.png", entityId))
-	if err := os.WriteFile(imagePath, decoded, 0644); err != nil {
+	if err := os.WriteFile(imagePath, decoded, appkit.FilePermissions); err != nil {
 		return fmt.Errorf("failed to write image file: %w", err)
 	}
 

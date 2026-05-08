@@ -9,7 +9,8 @@ import {
 import { UnlinkedReferencesReport } from "./UnlinkedReferencesReport";
 import { LinkedItemsNotInDefinitionReport } from "./LinkedItemsNotInDefinitionReport";
 import { DanglingLinksReport } from "./DanglingLinksReport";
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useReport } from "@trueblocks/scaffold";
 import {
   GetUnlinkedReferences,
   GetLinkedEntitiesNotInDescription,
@@ -38,21 +39,22 @@ export function LinkIntegrityReport() {
     await SaveReportLinkIntegrityCollapsed(newValue);
   };
 
-  const [unlinkedRefs, setUnlinkedRefs] = useState<unknown[] | null>(null);
-  const [linkedNotInDef, setLinkedNotInDef] = useState<unknown[] | null>(null);
-  const [danglingLinks, setDanglingLinks] = useState<unknown[] | null>(null);
-
-  useEffect(() => {
-    GetUnlinkedReferences()
-      .then((res) => setUnlinkedRefs(res || []))
-      .catch(() => {});
-    GetLinkedEntitiesNotInDescription()
-      .then((res) => setLinkedNotInDef(res || []))
-      .catch(() => {});
-    GetDanglingRelationships()
-      .then((res) => setDanglingLinks(res || []))
-      .catch(() => {});
-  }, []);
+  const loadUnlinked = useCallback(
+    async () => ((await GetUnlinkedReferences()) || []) as unknown[],
+    [],
+  );
+  const loadLinkedNotInDef = useCallback(
+    async () =>
+      ((await GetLinkedEntitiesNotInDescription()) || []) as unknown[],
+    [],
+  );
+  const loadDangling = useCallback(
+    async () => ((await GetDanglingRelationships()) || []) as unknown[],
+    [],
+  );
+  const { data: unlinkedRefs } = useReport<unknown>(loadUnlinked);
+  const { data: linkedNotInDef } = useReport<unknown>(loadLinkedNotInDef);
+  const { data: danglingLinks } = useReport<unknown>(loadDangling);
 
   return (
     <Paper p="lg" withBorder>
@@ -82,13 +84,13 @@ export function LinkIntegrityReport() {
         >
           <Tabs.List mb="md">
             <Tabs.Tab value="missing" leftSection={<IconLink size={16} />}>
-              Missing Links ({unlinkedRefs?.length || 0})
+              Missing Links ({unlinkedRefs.length})
             </Tabs.Tab>
             <Tabs.Tab value="hidden" leftSection={<IconEyeOff size={16} />}>
-              Hidden Links ({linkedNotInDef?.length || 0})
+              Hidden Links ({linkedNotInDef.length})
             </Tabs.Tab>
             <Tabs.Tab value="broken" leftSection={<IconUnlink size={16} />}>
-              Broken Links ({danglingLinks?.length || 0})
+              Broken Links ({danglingLinks.length})
             </Tabs.Tab>
           </Tabs.List>
 

@@ -360,12 +360,12 @@ func (db *DB) GetExtendedStats() (*DashboardStats, error) {
 
 		var prefix string
 		switch strings.ToLower(itemType) {
-		case "title":
-			prefix = "title"
-		case "writer":
-			prefix = "writer"
-		case "reference":
-			prefix = "word"
+		case constants.EntityTypeTitle:
+			prefix = constants.EntityTypeTitle
+		case constants.EntityTypeWriter:
+			prefix = constants.EntityTypeWriter
+		case constants.EntityTypeReference:
+			prefix = constants.EntityTypeWord
 		default:
 			continue
 		}

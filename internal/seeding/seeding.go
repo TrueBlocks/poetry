@@ -11,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/TrueBlocks/trueblocks-art/packages/appkit/v2"
 )
 
 //go:embed data.tar.gz
@@ -26,7 +28,7 @@ func ensureDataSeededWithFS(dataFolder string, sourceFS fs.FS) error {
 	slog.Info("[Seeding] Checking data folder", "path", dataFolder)
 
 	// Ensure data folder exists
-	if err := os.MkdirAll(dataFolder, 0755); err != nil {
+	if err := os.MkdirAll(dataFolder, appkit.DirPermissions); err != nil {
 		return fmt.Errorf("failed to create data folder: %w", err)
 	}
 
@@ -61,7 +63,7 @@ func ensureDataSeededWithFS(dataFolder string, sourceFS fs.FS) error {
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(target, 0755); err != nil {
+			if err := os.MkdirAll(target, appkit.DirPermissions); err != nil {
 				return fmt.Errorf("failed to create directory %s: %w", target, err)
 			}
 		case tar.TypeReg:
@@ -82,7 +84,7 @@ func ensureDataSeededWithFS(dataFolder string, sourceFS fs.FS) error {
 			slog.Info("[Seeding] Extracting missing file", "file", header.Name)
 
 			// Ensure parent directory exists
-			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(target), appkit.DirPermissions); err != nil {
 				return fmt.Errorf("failed to create parent directory for %s: %w", target, err)
 			}
 

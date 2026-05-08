@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/TrueBlocks/trueblocks-poetry/v2/internal/db"
+	"github.com/TrueBlocks/trueblocks-poetry/v2/pkg/constants"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/pkg/parser"
 )
 
@@ -191,7 +192,7 @@ func (s *EntityService) CreateEntity(e db.Entity) (int, error) {
 		if e.Attributes == nil {
 			e.Attributes = make(map[string]interface{})
 		}
-		isPoem := strings.ToLower(e.TypeSlug) == "title"
+		isPoem := strings.ToLower(e.TypeSlug) == constants.EntityTypeTitle
 		segments := parser.ParseDefinition(*e.Description, isPoem)
 		e.Attributes["parsedDefinition"] = segments
 	}
@@ -217,7 +218,7 @@ func (s *EntityService) UpdateEntity(e db.Entity) error {
 		if e.Attributes == nil {
 			e.Attributes = make(map[string]interface{})
 		}
-		isPoem := strings.ToLower(e.TypeSlug) == "title"
+		isPoem := strings.ToLower(e.TypeSlug) == constants.EntityTypeTitle
 		segments := parser.ParseDefinition(*e.Description, isPoem)
 		e.Attributes["parsedDefinition"] = segments
 	}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/TrueBlocks/trueblocks-poetry/v2/internal/db"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/internal/services"
+	"github.com/TrueBlocks/trueblocks-poetry/v2/pkg/constants"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/pkg/parser"
 )
 
@@ -50,7 +51,7 @@ func (a *App) GetUnlinkedReferences() ([]services.UnlinkedReferenceResult, error
 			refWord := ref.Value
 
 			matchWord := refWord
-			if refType == "writer" {
+			if refType == constants.EntityTypeWriter {
 				lowerWord := strings.ToLower(refWord)
 				if strings.HasSuffix(lowerWord, "'s") {
 					matchWord = refWord[:len(refWord)-2]
@@ -170,12 +171,12 @@ func (a *App) GetSelfReferentialEntities() ([]services.SelfReferenceResult, erro
 
 		var prefix string
 		switch entity.TypeSlug {
-		case "title":
-			prefix = "title"
-		case "writer":
-			prefix = "writer"
-		case "reference":
-			prefix = "word"
+		case constants.EntityTypeTitle:
+			prefix = constants.EntityTypeTitle
+		case constants.EntityTypeWriter:
+			prefix = constants.EntityTypeWriter
+		case constants.EntityTypeReference:
+			prefix = constants.EntityTypeWord
 		default:
 			continue
 		}
@@ -336,7 +337,11 @@ func (a *App) GetEntitiesWithUnknownTypes() ([]services.EntityWithUnknownTypeRes
 	}
 
 	var results []services.EntityWithUnknownTypeResult
-	knownTypes := map[string]bool{"writer": true, "title": true, "reference": true}
+	knownTypes := map[string]bool{
+		constants.EntityTypeWriter:    true,
+		constants.EntityTypeTitle:     true,
+		constants.EntityTypeReference: true,
+	}
 
 	for _, entity := range allEntities {
 		if !knownTypes[strings.ToLower(entity.TypeSlug)] {
@@ -365,7 +370,7 @@ func (a *App) GetUnknownTags() ([]services.UnknownTagResult, error) {
 		refs := parser.ParseReferences(*entity.Description)
 		var unknownTags []string
 		for _, ref := range refs {
-			if ref.Type != "word" && ref.Type != "writer" && ref.Type != "title" {
+			if ref.Type != constants.EntityTypeWord && ref.Type != constants.EntityTypeWriter && ref.Type != constants.EntityTypeTitle {
 				unknownTags = append(unknownTags, ref.Original)
 			}
 		}

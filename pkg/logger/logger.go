@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/TrueBlocks/trueblocks-art/packages/appkit/v2"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/pkg/constants"
 )
 
@@ -20,13 +21,13 @@ func InitLogger() error {
 
 	// Create logs directory
 	logsDir := filepath.Join(configDir, "logs")
-	if err := os.MkdirAll(logsDir, 0755); err != nil {
+	if err := os.MkdirAll(logsDir, appkit.DirPermissions); err != nil {
 		return err
 	}
 
 	// Open log file
 	logPath := filepath.Join(logsDir, "app.log")
-	file, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, appkit.FilePermissions)
 	if err != nil {
 		return err
 	}

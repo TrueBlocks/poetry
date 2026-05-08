@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/TrueBlocks/trueblocks-art/packages/appkit/v2"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/internal/db"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/pkg/constants"
 )
@@ -34,7 +35,8 @@ func NewTTSService(db *db.DB) *TTSService {
 	}
 }
 
-func (s *TTSService) SetDB(db *db.DB) { s.db = db
+func (s *TTSService) SetDB(db *db.DB) {
+	s.db = db
 }
 
 // SpeakWord uses OpenAI's text-to-speech API to pronounce text with gender-matched voices and caching
@@ -48,7 +50,7 @@ func (s *TTSService) SpeakWord(text string, itemType string, itemWord string, it
 		}
 	}
 
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	if err := os.MkdirAll(cacheDir, appkit.DirPermissions); err != nil {
 		return TTSResult{
 			Error:     fmt.Sprintf("Failed to create cache directory: %v", err),
 			ErrorType: "unknown",
@@ -171,7 +173,7 @@ func (s *TTSService) SpeakWord(text string, itemType string, itemWord string, it
 	}
 
 	// Cache the audio data for future use
-	if err := os.WriteFile(cacheFile, audioData, 0644); err != nil {
+	if err := os.WriteFile(cacheFile, audioData, appkit.FilePermissions); err != nil {
 		slog.Warn("Failed to cache audio data", "error", err)
 		// Don't fail the request if caching fails
 	} else {
