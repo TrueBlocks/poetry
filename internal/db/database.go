@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	appkit "github.com/TrueBlocks/trueblocks-art/packages/appkit/v2"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/pkg/constants"
 	sqlite "modernc.org/sqlite"
 )
@@ -90,25 +91,9 @@ type DashboardStats struct {
 
 // NewDB creates a new database connection
 func NewDB(dbPath string) (*DB, error) {
-	conn, err := sql.Open("sqlite", dbPath)
+	conn, err := appkit.OpenSQLite(dbPath, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %w", err)
-	}
-
-	// Configure SQLite for concurrent writes
-	// WAL mode allows concurrent readers during writes
-	if _, err := conn.Exec("PRAGMA journal_mode = WAL"); err != nil {
-		return nil, fmt.Errorf("failed to set WAL mode: %w", err)
-	}
-
-	// Set busy timeout to 5 seconds - retries if database is locked
-	if _, err := conn.Exec("PRAGMA busy_timeout = 5000"); err != nil {
-		return nil, fmt.Errorf("failed to set busy timeout: %w", err)
-	}
-
-	// Enable foreign keys
-	if _, err := conn.Exec("PRAGMA foreign_keys = ON"); err != nil {
-		return nil, fmt.Errorf("failed to enable foreign keys: %w", err)
+		return nil, err
 	}
 
 	triggers := []string{"cliches_ai", "cliches_ad", "cliches_au", "literary_terms_ai", "literary_terms_ad", "literary_terms_au"}
@@ -118,8 +103,8 @@ func NewDB(dbPath string) (*DB, error) {
 		}
 	}
 
-	// Test connection
 	if err := conn.Ping(); err != nil {
+		conn.Close()
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
