@@ -82,6 +82,16 @@ export default function ItemPage() {
     }
   };
 
+  useEffect(() => {
+    const onCycleTab = (e: Event) => {
+      if ((e as CustomEvent).detail !== "itemView") return;
+      setSearchParams({ tab: activeTab === "detail" ? "graph" : "detail" });
+      setIsEditMode(false);
+    };
+    window.addEventListener("view:cycleTab", onCycleTab);
+    return () => window.removeEventListener("view:cycleTab", onCycleTab);
+  }, [activeTab, setSearchParams]);
+
   const handleEnterEditMode = () => {
     setSearchParams({ tab: "detail", edit: "true" });
     setIsEditMode(true);

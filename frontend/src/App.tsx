@@ -22,7 +22,9 @@ import CommandPalette from "./components/CommandPalette";
 import KeyboardShortcutsHelp from "./components/KeyboardShortcutsHelp";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
-import { useWindowPersistence } from "./hooks/useWindowPersistence";
+import { useWindowGeometry } from "@trueblocks/ui";
+import { SaveWindowGeometry } from "@wailsjs/go/app/App";
+import { WindowGetPosition, WindowGetSize } from "@wailsjs/runtime/runtime";
 import { FirstRunModal } from "./components/FirstRunModal";
 import { UIProvider, useUI } from "./contexts/UIContext";
 import { useAppInitialization } from "./hooks/useAppInitialization";
@@ -35,7 +37,7 @@ function AppContent({ initialPath }: { initialPath: string }) {
   const { setLastView } = useUI();
 
   useKeyboardShortcuts(commandPaletteOpen, setCommandPaletteOpen);
-  useWindowPersistence();
+  useWindowGeometry(SaveWindowGeometry, WindowGetPosition, WindowGetSize);
 
   // Navigate to initial path (last viewed word) ONCE on mount only
   useEffect(() => {

@@ -134,6 +134,10 @@ export function GetImageCacheInfo() {
   return window['go']['app']['App']['GetImageCacheInfo']();
 }
 
+export function GetLastRoute() {
+  return window['go']['app']['App']['GetLastRoute']();
+}
+
 export function GetLinkedEntitiesNotInDescription() {
   return window['go']['app']['App']['GetLinkedEntitiesNotInDescription']();
 }
@@ -188,6 +192,10 @@ export function GetStats() {
 
 export function GetTTSCacheInfo() {
   return window['go']['app']['App']['GetTTSCacheInfo']();
+}
+
+export function GetTab(arg1) {
+  return window['go']['app']['App']['GetTab'](arg1);
 }
 
 export function GetTopHubs(arg1) {
@@ -290,8 +298,8 @@ export function SaveTableSort(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['app']['App']['SaveTableSort'](arg1, arg2, arg3, arg4, arg5);
 }
 
-export function SaveWindowPosition(arg1, arg2, arg3, arg4) {
-  return window['go']['app']['App']['SaveWindowPosition'](arg1, arg2, arg3, arg4);
+export function SaveWindowGeometry(arg1, arg2, arg3, arg4) {
+  return window['go']['app']['App']['SaveWindowGeometry'](arg1, arg2, arg3, arg4);
 }
 
 export function SearchEntities(arg1, arg2) {
@@ -300,6 +308,14 @@ export function SearchEntities(arg1, arg2) {
 
 export function SelectExportFolder() {
   return window['go']['app']['App']['SelectExportFolder']();
+}
+
+export function SetLastRoute(arg1) {
+  return window['go']['app']['App']['SetLastRoute'](arg1);
+}
+
+export function SetTab(arg1, arg2) {
+  return window['go']['app']['App']['SetTab'](arg1, arg2);
 }
 
 export function SkipAiSetup() {

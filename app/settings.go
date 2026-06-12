@@ -24,8 +24,10 @@ func (a *App) UpdateSettings(s settings.Settings) error {
 	return a.settings.Update(s)
 }
 
-func (a *App) SaveWindowPosition(x, y, width, height int) error {
-	return a.settings.UpdateWindowPosition(x, y, width, height)
+// SaveWindowGeometry is part of the standard cross-app navigation surface
+// (see ai/Architecture.md §7); the shared useWindowGeometry hook calls it.
+func (a *App) SaveWindowGeometry(x, y, width, height int) {
+	_ = a.settings.UpdateWindowPosition(x, y, width, height)
 }
 
 func (a *App) SaveLeftbarWidth(width int) error {
@@ -34,6 +36,25 @@ func (a *App) SaveLeftbarWidth(width int) error {
 
 func (a *App) SaveTabSelection(viewID, tabID string) error {
 	return a.settings.UpdateTabSelection(viewID, tabID)
+}
+
+// GetTab, SetTab, GetLastRoute, and SetLastRoute are the standard
+// cross-app navigation persistence surface (see ai/Architecture.md §7).
+// They delegate to the poetry-specific settings manager.
+func (a *App) GetTab(viewID string) string {
+	return a.settings.Get().TabSelections[viewID]
+}
+
+func (a *App) SetTab(viewID string, tabID string) error {
+	return a.settings.UpdateTabSelection(viewID, tabID)
+}
+
+func (a *App) GetLastRoute() string {
+	return a.settings.Get().LastView
+}
+
+func (a *App) SetLastRoute(route string) error {
+	return a.settings.UpdateLastView(route)
 }
 
 func (a *App) SaveTableSort(tableName, field1, dir1, field2, dir2 string) error {
@@ -223,9 +244,9 @@ func (a *App) DeleteSavedSearch(name string) error {
 	return a.settings.DeleteSavedSearch(name)
 }
 
-func (a *App) GetAllSettings() map[string]interface{} {
+func (a *App) GetAllSettings() map[string]any {
 	s := a.settings.Get()
-	return map[string]interface{}{
+	return map[string]any{
 		"window":         s.Window,
 		"exportFolder":   s.ExportFolder,
 		"lastWordId":     s.LastWordID,

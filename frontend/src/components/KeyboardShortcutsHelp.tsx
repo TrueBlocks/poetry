@@ -39,8 +39,12 @@ export default function KeyboardShortcutsHelp() {
       description: "Export both formats (JSON + Markdown)",
     },
     {
-      key: "⌘1-7",
+      key: "⌘1-8",
       description: "Navigate sections (Dashboard, Item, Search...)",
+    },
+    {
+      key: "⌘1-8 (repeat)",
+      description: "Cycle tabs within the current section",
     },
     { key: "↑ / ↓", description: "Navigate search results" },
     { key: "Enter", description: "Open selected search result" },

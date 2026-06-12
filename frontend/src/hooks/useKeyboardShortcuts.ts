@@ -1,8 +1,52 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
+import { useViewHotkeys } from "@trueblocks/ui";
 import { GetSettings } from "@wailsjs/go/app/App";
 import { LogError } from "@utils/logger";
+
+// The standard cross-app navigation (see ai/Architecture.md §7): Cmd+N jumps
+// to a view, repeating it cycles the view's tabs. View ids double as the
+// cycle-event keys that ItemPage, Settings, and Experimental listen for.
+const VIEWS = [
+  { num: 1, id: "dashboard" },
+  { num: 2, id: "itemView" },
+  { num: 3, id: "search" },
+  { num: 4, id: "tables" },
+  { num: 5, id: "reports" },
+  { num: 6, id: "export" },
+  { num: 7, id: "settings" },
+  { num: 8, id: "experimental" },
+];
+
+const VIEW_PATHS: Record<string, string> = {
+  dashboard: "/",
+  search: "/search",
+  tables: "/tables",
+  reports: "/reports",
+  export: "/export",
+  settings: "/settings",
+  experimental: "/experimental",
+};
+
+function activeViewFromPath(pathname: string): string {
+  if (pathname === "/") return "dashboard";
+  if (pathname.startsWith("/item")) return "itemView";
+  const entry = Object.entries(VIEW_PATHS).find(
+    ([, path]) =>
+      path !== "/" && (pathname === path || pathname.startsWith(path + "/")),
+  );
+  return entry ? entry[0] : "";
+}
+
+function focusSearchInput() {
+  setTimeout(() => {
+    const searchInput = document.querySelector(
+      'input[type="text"]',
+    ) as HTMLInputElement;
+    searchInput?.focus();
+  }, 100);
+}
 
 export default function useKeyboardShortcuts(
   commandPaletteOpen: boolean,
@@ -10,6 +54,27 @@ export default function useKeyboardShortcuts(
 ) {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const onNavigate = useCallback(
+    (id: string) => {
+      if (id === "itemView") {
+        GetSettings().then((settings) => {
+          const lastId = settings.lastWordId || 1;
+          navigate(`/item/${lastId}`);
+        });
+        return;
+      }
+      navigate(VIEW_PATHS[id] ?? "/");
+      if (id === "search") focusSearchInput();
+    },
+    [navigate],
+  );
+
+  useViewHotkeys({
+    views: VIEWS,
+    activeView: activeViewFromPath(location.pathname),
+    onNavigate,
+  });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -22,53 +87,6 @@ export default function useKeyboardShortcuts(
       ) {
         return;
       }
-
-      // Navigation Shortcuts (Cmd+1 to Cmd+7)
-      if (e.metaKey || e.ctrlKey) {
-        switch (e.key) {
-          case "1":
-            e.preventDefault();
-            navigate("/");
-            return;
-          case "2":
-            e.preventDefault();
-            GetSettings().then((settings) => {
-              const lastId = settings.lastWordId || 1;
-              navigate(`/item/${lastId}?tab=detail`);
-            });
-            return;
-          case "3":
-            e.preventDefault();
-            navigate("/search");
-            // Focus search input
-            setTimeout(() => {
-              const searchInput = document.querySelector(
-                'input[type="text"]',
-              ) as HTMLInputElement;
-              searchInput?.focus();
-            }, 100);
-            return;
-          case "4":
-            e.preventDefault();
-            navigate("/tables");
-            return;
-          case "5":
-            e.preventDefault();
-            navigate("/reports");
-            return;
-          case "6":
-            e.preventDefault();
-            navigate("/export");
-            return;
-          case "7":
-            e.preventDefault();
-            navigate("/settings");
-            return;
-        }
-      }
-
-      // Command Palette is handled in CommandPalette component
-      // Just handle other shortcuts here
 
       // Cmd+N or Ctrl+N to create new item
       if ((e.metaKey || e.ctrlKey) && e.key === "n") {
@@ -156,13 +174,7 @@ export default function useKeyboardShortcuts(
         case "/":
           e.preventDefault();
           navigate("/search");
-          // Focus the search input after navigation
-          setTimeout(() => {
-            const searchInput = document.querySelector(
-              'input[type="text"]',
-            ) as HTMLInputElement;
-            searchInput?.focus();
-          }, 100);
+          focusSearchInput();
           break;
 
         case "n":

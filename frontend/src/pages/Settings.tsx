@@ -22,6 +22,17 @@ export default function Settings() {
     }
   };
 
+  useEffect(() => {
+    const tabOrder = ["general", "maintenance", "config"];
+    const onCycleTab = (e: Event) => {
+      if ((e as CustomEvent).detail !== "settings") return;
+      const idx = tabOrder.indexOf(activeTab);
+      setTabSelection("settings", tabOrder[(idx + 1) % tabOrder.length]);
+    };
+    window.addEventListener("view:cycleTab", onCycleTab);
+    return () => window.removeEventListener("view:cycleTab", onCycleTab);
+  }, [activeTab, setTabSelection]);
+
   if (isLoading && !tabSelections["settings"]) {
     return (
       <Container size="lg">

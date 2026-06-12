@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Container, Title, Text, Tabs, Paper, Stack } from "@mantine/core";
 import { IconFlask } from "@tabler/icons-react";
 import { useUI } from "@/contexts/UIContext";
@@ -25,6 +26,17 @@ export default function Experimental() {
       setTabSelection("experimental", value);
     }
   };
+
+  useEffect(() => {
+    const tabOrder = Object.keys(FEATURES);
+    const onCycleTab = (e: Event) => {
+      if ((e as CustomEvent).detail !== "experimental") return;
+      const idx = tabOrder.indexOf(activeTab);
+      setTabSelection("experimental", tabOrder[(idx + 1) % tabOrder.length]);
+    };
+    window.addEventListener("view:cycleTab", onCycleTab);
+    return () => window.removeEventListener("view:cycleTab", onCycleTab);
+  }, [activeTab, setTabSelection]);
 
   return (
     <Container size="100%" py="xl" px="xl">

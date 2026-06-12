@@ -72,6 +72,8 @@ export function GetExtendedStats():Promise<db.DashboardStats>;
 
 export function GetImageCacheInfo():Promise<app.ImageCacheInfo>;
 
+export function GetLastRoute():Promise<string>;
+
 export function GetLinkedEntitiesNotInDescription():Promise<Array<services.LinkedEntityNotInDescriptionResult>>;
 
 export function GetMarkedEntities():Promise<Array<db.Entity>>;
@@ -99,6 +101,8 @@ export function GetSettings():Promise<settings.Settings>;
 export function GetStats():Promise<Record<string, number>>;
 
 export function GetTTSCacheInfo():Promise<app.TTSCacheInfo>;
+
+export function GetTab(arg1:string):Promise<string>;
 
 export function GetTopHubs(arg1:number):Promise<Array<db.Entity>>;
 
@@ -150,11 +154,15 @@ export function SaveTabSelection(arg1:string,arg2:string):Promise<void>;
 
 export function SaveTableSort(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;
 
-export function SaveWindowPosition(arg1:number,arg2:number,arg3:number,arg4:number):Promise<void>;
+export function SaveWindowGeometry(arg1:number,arg2:number,arg3:number,arg4:number):Promise<void>;
 
 export function SearchEntities(arg1:string,arg2:string):Promise<Array<db.Entity>>;
 
 export function SelectExportFolder():Promise<string>;
+
+export function SetLastRoute(arg1:string):Promise<void>;
+
+export function SetTab(arg1:string,arg2:string):Promise<void>;
 
 export function SkipAiSetup():Promise<void>;
 
