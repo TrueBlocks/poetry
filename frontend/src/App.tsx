@@ -19,7 +19,8 @@ import Experimental from "./pages/Experimental";
 import GenericEntityList from "./pages/GenericEntityList";
 import GenericEntityDetail from "./pages/GenericEntityDetail";
 import CommandPalette from "./components/CommandPalette";
-import KeyboardShortcutsHelp from "./components/KeyboardShortcutsHelp";
+import { KeyboardShortcutsHelp } from "@trueblocks/ui";
+import type { ShortcutEntry } from "@trueblocks/ui";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useWindowGeometry } from "@trueblocks/ui";
@@ -28,6 +29,26 @@ import { WindowGetPosition, WindowGetSize } from "@wailsjs/runtime/runtime";
 import { FirstRunModal } from "./components/FirstRunModal";
 import { UIProvider, useUI } from "./contexts/UIContext";
 import { useAppInitialization } from "./hooks/useAppInitialization";
+
+const VIEWS = [
+  { num: 1, id: "dashboard", label: "Dashboard" },
+  { num: 2, id: "itemView", label: "Item" },
+  { num: 3, id: "search", label: "Search" },
+  { num: 4, id: "tables", label: "Tables" },
+  { num: 5, id: "reports", label: "Reports" },
+  { num: 6, id: "export", label: "Export" },
+  { num: 7, id: "settings", label: "Settings" },
+  { num: 8, id: "experimental", label: "Experimental" },
+];
+
+const EXTRA_SHORTCUTS: ShortcutEntry[] = [
+  { key: "⌘K", description: "Open command palette" },
+  { key: "/", description: "Jump to search" },
+  { key: "n", description: "Create new item" },
+  { key: "g", description: "Open graph view" },
+  { key: "⌘S", description: "Save current item" },
+  { key: "⌘X", description: "Export both formats" },
+];
 
 function AppContent({ initialPath }: { initialPath: string }) {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -80,7 +101,7 @@ function AppContent({ initialPath }: { initialPath: string }) {
         open={commandPaletteOpen}
         onOpenChange={setCommandPaletteOpen}
       />
-      <KeyboardShortcutsHelp />
+      <KeyboardShortcutsHelp views={VIEWS} extraShortcuts={EXTRA_SHORTCUTS} />
       <ErrorBoundary>
         <Routes>
           <Route path="/" element={<Layout />}>
