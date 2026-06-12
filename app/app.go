@@ -16,6 +16,7 @@ import (
 	applogger "github.com/TrueBlocks/trueblocks-poetry/v2/pkg/logger"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/pkg/parser"
 
+	appkit "github.com/TrueBlocks/trueblocks-art/packages/appkit/v2"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -66,6 +67,11 @@ func (a *App) Startup(ctx context.Context) {
 	}
 
 	slog.Info("Database path", "path", dbPath)
+
+	bm := appkit.NewBackupManager(dbPath, filepath.Join(appkit.BackupDirFor("poetry"), "backups"), "poetry")
+	if _, err := bm.AutoBackup(); err != nil {
+		slog.Warn("Auto-backup failed", "error", err)
+	}
 
 	if err := seeding.EnsureDataSeeded(filepath.Dir(dbPath)); err != nil {
 		slog.Warn("Failed to seed data", "error", err)
