@@ -578,18 +578,18 @@
   resolved "https://registry.yarnpkg.com/@mantine/hooks/-/hooks-8.3.18.tgz#7e5601c0683ed2411e3aee8fcb81a151e5341ad2"
   integrity sha512-QoWr9+S8gg5050TQ06aTSxtlpGjYOpIllRbjYYXlRvZeTsUqiTbVfvQROLexu4rEaK+yy9Wwriwl9PMRgbLqPw==
 
-"@mantine/notifications@^8.3.10":
-  version "8.3.18"
-  resolved "https://registry.yarnpkg.com/@mantine/notifications/-/notifications-8.3.18.tgz#50b9463afab3af0ea3de375dd92cf2fa60aed964"
-  integrity sha512-IpQ0lmwbigTBbZCR6iSYWqIOKEx1tlcd7PcEJ5M5X1qeVSY/N3mmDQt1eJmObvcyDeL5cTJMbSA9UPqhRqo9jw==
+"@mantine/notifications@^9.4.1":
+  version "9.4.1"
+  resolved "https://registry.yarnpkg.com/@mantine/notifications/-/notifications-9.4.1.tgz#c730908c11b59f09502153c573d36a05513b34c6"
+  integrity sha512-Sm1g8E8RkFmesxpNz9zFvOjkTVxOa7dJJjMGoHNIXH+9/wO0s9kInny4mVnxTbLJJsD6nTqIQlk1v8tq2C4Ftw==
   dependencies:
-    "@mantine/store" "8.3.18"
+    "@mantine/store" "9.4.1"
     react-transition-group "4.4.5"
 
-"@mantine/store@8.3.18":
-  version "8.3.18"
-  resolved "https://registry.yarnpkg.com/@mantine/store/-/store-8.3.18.tgz#fda5e84bb58d4fa4a86cf4e158e166904867caf6"
-  integrity sha512-i+QRTLmZzLldea0egtUVnGALd6UMIu8jd44nrNWBSNIXJU/8B6rMlC6gyX+l4szopZSuOaaNJIXkqRdC1gQsVg==
+"@mantine/store@9.4.1":
+  version "9.4.1"
+  resolved "https://registry.yarnpkg.com/@mantine/store/-/store-9.4.1.tgz#c071271624c70acca1cb432d8c26d8a10c2ff452"
+  integrity sha512-/DCZq0aqqIdm03J0RJ7pbzoau2cwY8ndSOjskHOKHhTeWMnOBdCKXA3oMO5aIDldDqJ9T7Io4Boh4Pt461zNQw==
 
 "@napi-rs/wasm-runtime@^0.2.11":
   version "0.2.12"
