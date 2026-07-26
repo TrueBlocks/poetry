@@ -82,6 +82,10 @@ export function GetConstants() {
   return window['go']['app']['App']['GetConstants']();
 }
 
+export function GetCredentialsPath() {
+  return window['go']['app']['App']['GetCredentialsPath']();
+}
+
 export function GetDanglingRelationships() {
   return window['go']['app']['App']['GetDanglingRelationships']();
 }
@@ -116,14 +120,6 @@ export function GetEntity(arg1) {
 
 export function GetEntityImage(arg1) {
   return window['go']['app']['App']['GetEntityImage'](arg1);
-}
-
-export function GetEnvLocation() {
-  return window['go']['app']['App']['GetEnvLocation']();
-}
-
-export function GetEnvVars() {
-  return window['go']['app']['App']['GetEnvVars']();
 }
 
 export function GetExtendedStats() {
@@ -218,10 +214,6 @@ export function Greet(arg1) {
   return window['go']['app']['App']['Greet'](arg1);
 }
 
-export function HasEnvFile() {
-  return window['go']['app']['App']['HasEnvFile']();
-}
-
 export function ImageService() {
   return window['go']['app']['App']['ImageService']();
 }
@@ -248,10 +240,6 @@ export function SaveCurrentSearch(arg1) {
 
 export function SaveEntityImage(arg1, arg2) {
   return window['go']['app']['App']['SaveEntityImage'](arg1, arg2);
-}
-
-export function SaveEnvVar(arg1, arg2) {
-  return window['go']['app']['App']['SaveEnvVar'](arg1, arg2);
 }
 
 export function SaveIncomingCollapsed(arg1) {
@@ -316,10 +304,6 @@ export function SetLastRoute(arg1) {
 
 export function SetTab(arg1, arg2) {
   return window['go']['app']['App']['SetTab'](arg1, arg2);
-}
-
-export function SkipAiSetup() {
-  return window['go']['app']['App']['SkipAiSetup']();
 }
 
 export function SpeakWord(arg1, arg2, arg3, arg4) {

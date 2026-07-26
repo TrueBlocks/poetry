@@ -34,14 +34,6 @@ func GetTTSCacheDir() (string, error) {
 	return filepath.Join(configDir, "tts-cache"), nil
 }
 
-func GetEnvPath() (string, error) {
-	configDir, err := GetConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(configDir, ".env"), nil
-}
-
 func GetDatabasePath() (string, error) {
 	configDir, err := GetConfigDir()
 	if err != nil {

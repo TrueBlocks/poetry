@@ -45,3 +45,5 @@ require (
 )
 
 replace github.com/TrueBlocks/trueblocks-art/packages/appkit/v2 => ../packages/appkit
+
+replace github.com/TrueBlocks/trueblocks-art/packages/creds => ../packages/creds

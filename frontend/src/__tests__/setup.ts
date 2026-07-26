@@ -36,11 +36,12 @@ vi.mock("../../wailsjs/go/app/App", () => ({
   GetSettings: vi.fn(() => Promise.resolve({})),
   SaveSettings: vi.fn(() => Promise.resolve()),
   GetItemImage: vi.fn(() => Promise.resolve("")),
-  GetEnvVars: vi.fn(() => Promise.resolve({})),
+  GetCredentialsPath: vi.fn(() =>
+    Promise.resolve("/home/test/.config/trueblocks/credentials"),
+  ),
   GetCapabilities: vi.fn(() =>
     Promise.resolve({ hasTts: false, hasImages: true, hasAi: false }),
   ),
-  HasEnvFile: vi.fn(() => Promise.resolve(true)),
 }));
 
 // Mock React Router

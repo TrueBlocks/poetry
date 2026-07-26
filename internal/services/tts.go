@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/TrueBlocks/trueblocks-art/packages/appkit/v2"
+	"github.com/TrueBlocks/trueblocks-art/packages/creds"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/internal/db"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/pkg/constants"
 )
@@ -71,10 +72,10 @@ func (s *TTSService) SpeakWord(text string, itemType string, itemWord string, it
 
 	slog.Info("Cache miss, calling OpenAI API", "itemID", itemID)
 
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
+	apiKey, err := creds.Get("OPENAI_API_KEY")
+	if err != nil {
 		return TTSResult{
-			Error:     "OpenAI API key not configured. Please add OPENAI_API_KEY to your .env file.",
+			Error:     "OpenAI API key not configured. Please add OPENAI_API_KEY to your credentials file.",
 			ErrorType: "missing_key",
 		}
 	}

@@ -13,14 +13,18 @@ import {
 } from "@mantine/core";
 import {
   GetAllSettings,
-  GetEnvVars,
-  GetEnvLocation,
+  GetCredentialsPath,
+  GetCapabilities,
   GetTTSCacheInfo,
   GetImageCacheInfo,
   GetDatabaseFileSize,
   GetEntity,
 } from "@wailsjs/go/app/App";
-import { IconAlertCircle, IconSearch, IconEdit } from "@tabler/icons-react";
+import {
+  IconAlertCircle,
+  IconSearch,
+  IconInfoCircle,
+} from "@tabler/icons-react";
 import { useState, useRef, useEffect } from "react";
 import { FirstRunModal } from "@components/FirstRunModal";
 
@@ -35,10 +39,8 @@ export function GeneralSettings() {
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [dbPath, setDbPath] = useState<string | null>(null);
-  const [envVars, setEnvVars] = useState<Record<string, string> | null>(null);
-  const [envLoading, setEnvLoading] = useState(true);
-  const [envError, setEnvError] = useState<string | null>(null);
-  const [envLocation, setEnvLocation] = useState<string | null>(null);
+  const [credsPath, setCredsPath] = useState<string | null>(null);
+  const [hasAi, setHasAi] = useState<boolean | null>(null);
   const [cacheInfo, setCacheInfo] = useState<Awaited<
     ReturnType<typeof GetTTSCacheInfo>
   > | null>(null);
@@ -89,21 +91,13 @@ export function GeneralSettings() {
     });
   }, []);
 
-  const loadEnvVars = () => {
-    GetEnvVars()
-      .then((v) => {
-        setEnvVars(v);
-        setEnvError(null);
-      })
-      .catch((e: Error) => setEnvError(e.message))
-      .finally(() => setEnvLoading(false));
-  };
-
   useEffect(() => {
-    loadEnvVars();
-    GetEnvLocation()
-      .then(setEnvLocation)
+    GetCredentialsPath()
+      .then(setCredsPath)
       .catch(() => {});
+    GetCapabilities()
+      .then((c) => setHasAi(c.hasAi))
+      .catch(() => setHasAi(false));
     GetTTSCacheInfo()
       .then(setCacheInfo)
       .catch(() => {})
@@ -126,7 +120,7 @@ export function GeneralSettings() {
     }
   }, [settings?.lastWordId]);
 
-  if (settingsLoading || envLoading) {
+  if (settingsLoading) {
     return (
       <Stack align="center" justify="center" style={{ height: "50vh" }}>
         <Loader size="xl" />
@@ -304,82 +298,37 @@ export function GeneralSettings() {
         )}
       </Paper>
 
-      {/* Environment Variables Section */}
+      {/* AI Credentials Section */}
       <Paper shadow="sm" radius="md" withBorder p="sm">
         <Group mb="xs" justify="space-between">
           <Group gap="xs">
-            <Title order={3}>Environment Variables</Title>
-            <Badge color="green">.env</Badge>
+            <Title order={3}>AI Credentials</Title>
+            <Badge color={hasAi ? "green" : "gray"}>
+              {hasAi === null
+                ? "checking..."
+                : hasAi
+                  ? "configured"
+                  : "not configured"}
+            </Badge>
           </Group>
           <Button
-            leftSection={<IconEdit size={16} />}
+            leftSection={<IconInfoCircle size={16} />}
             variant="light"
             size="xs"
             onClick={() => setEditEnvModalOpen(true)}
           >
-            Edit .env
+            How to configure
           </Button>
         </Group>
         <Text size="sm" c="dimmed">
-          Location: {envLocation || "Loading..."}
+          Managed by hand in: {credsPath || "Loading..."}
         </Text>
-
-        {envError ? (
-          <Alert icon={<IconAlertCircle size={16} />} color="red" title="Error">
-            Failed to load environment variables
-          </Alert>
-        ) : envVars && Object.keys(envVars).length > 0 ? (
-          <Table>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th w={300}>Setting</Table.Th>
-                <Table.Th>Value</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {Object.entries(envVars)
-                .filter(
-                  ([key, value]) =>
-                    !searchQuery ||
-                    key.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    value.toLowerCase().includes(searchQuery.toLowerCase()),
-                )
-                .map(([key, value]) => (
-                  <Table.Tr key={key}>
-                    <Table.Td>
-                      <Text fw={500}>{key}</Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text>{value}</Text>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-            </Table.Tbody>
-          </Table>
-        ) : (
-          <Alert
-            icon={<IconAlertCircle size={16} />}
-            color="blue"
-            title="No .env file found"
-          >
-            No .env file found in the current working directory. Create one to
-            set environment variables.
-          </Alert>
-        )}
       </Paper>
 
       <FirstRunModal
         opened={editEnvModalOpen}
-        onClose={() => {
-          setEditEnvModalOpen(false);
-          loadEnvVars();
-        }}
+        onClose={() => setEditEnvModalOpen(false)}
         mode="edit"
-        initialKey={
-          envVars?.["OPENAI_API_KEY"] === "***REDACTED***"
-            ? ""
-            : envVars?.["OPENAI_API_KEY"]
-        }
       />
     </>
   );

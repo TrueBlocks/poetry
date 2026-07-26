@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
 	"path/filepath"
 
 	"github.com/TrueBlocks/trueblocks-poetry/v2/internal/components"
@@ -17,6 +16,7 @@ import (
 	"github.com/TrueBlocks/trueblocks-poetry/v2/pkg/parser"
 
 	appkit "github.com/TrueBlocks/trueblocks-art/packages/appkit/v2"
+	"github.com/TrueBlocks/trueblocks-art/packages/creds"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -51,7 +51,6 @@ func (a *App) Startup(ctx context.Context) {
 		println("Failed to initialize logger:", err.Error())
 	}
 
-	a.loadEnvFile()
 
 	settingsMgr, err := settings.NewManager()
 	if err != nil {
@@ -124,9 +123,9 @@ type Capabilities struct {
 
 func (a *App) GetCapabilities() *Capabilities {
 	return &Capabilities{
-		HasTTS:    os.Getenv("OPENAI_API_KEY") != "",
+		HasTTS:    creds.Has("OPENAI_API_KEY"),
 		HasImages: true,
-		HasAI:     os.Getenv("OPENAI_API_KEY") != "",
+		HasAI:     creds.Has("OPENAI_API_KEY"),
 	}
 }
 

@@ -46,6 +46,8 @@ export function GetCapabilities():Promise<app.Capabilities>;
 
 export function GetConstants():Promise<Record<string, string>>;
 
+export function GetCredentialsPath():Promise<string>;
+
 export function GetDanglingRelationships():Promise<Array<services.DanglingRelationshipResult>>;
 
 export function GetDatabaseFileSize():Promise<number>;
@@ -63,10 +65,6 @@ export function GetEntitiesWithoutDescriptions():Promise<Array<services.EntityWi
 export function GetEntity(arg1:number):Promise<db.Entity>;
 
 export function GetEntityImage(arg1:number):Promise<string>;
-
-export function GetEnvLocation():Promise<string>;
-
-export function GetEnvVars():Promise<Record<string, string>>;
 
 export function GetExtendedStats():Promise<db.DashboardStats>;
 
@@ -114,8 +112,6 @@ export function GetWindowGeometry():Promise<number>;
 
 export function Greet(arg1:string):Promise<string>;
 
-export function HasEnvFile():Promise<boolean>;
-
 export function ImageService():Promise<services.ImageService>;
 
 export function MergeDuplicateEntities(arg1:number,arg2:Array<number>):Promise<void>;
@@ -129,8 +125,6 @@ export function SaveAppConfigContent(arg1:string):Promise<void>;
 export function SaveCurrentSearch(arg1:string):Promise<void>;
 
 export function SaveEntityImage(arg1:number,arg2:string):Promise<void>;
-
-export function SaveEnvVar(arg1:string,arg2:string):Promise<void>;
 
 export function SaveIncomingCollapsed(arg1:boolean):Promise<void>;
 
@@ -163,8 +157,6 @@ export function SelectExportFolder():Promise<string>;
 export function SetLastRoute(arg1:string):Promise<void>;
 
 export function SetTab(arg1:string,arg2:string):Promise<void>;
-
-export function SkipAiSetup():Promise<void>;
 
 export function SpeakWord(arg1:string,arg2:string,arg3:string,arg4:number):Promise<services.TTSResult>;
 

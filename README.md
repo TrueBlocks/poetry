@@ -77,7 +77,7 @@ Current modernization direction:
 2. Edit `.env` and add your API keys:
    ```bash
    # Required for text-to-speech functionality (optional)
-   OPENAI_API_KEY=sk-your-actual-key-here
+   OPENAI_API_KEY=sk-your-actual-key-here  # credentials-scanner: ignore-line — documentation placeholder
    ```
 
 3. Get an OpenAI API key at: <https://platform.openai.com/api-keys>

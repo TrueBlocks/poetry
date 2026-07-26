@@ -4,7 +4,7 @@ import {
   GetSettings,
   GetEntity,
   SearchEntities,
-  HasEnvFile,
+  GetCapabilities,
   GetConstants,
 } from "@wailsjs/go/app/App";
 import { updatePatterns } from "@utils/constants";
@@ -17,15 +17,13 @@ export function useAppInitialization() {
 
   useEffect(() => {
     // Load initial stats and settings
-    Promise.all([GetStats(), GetSettings(), HasEnvFile(), GetConstants()])
-      .then(([_statsData, settings, hasEnv, constants]) => {
+    Promise.all([GetStats(), GetSettings(), GetCapabilities(), GetConstants()])
+      .then(([_statsData, settings, capabilities, constants]) => {
         if (constants) updatePatterns(constants);
-        // We don't need to store stats in local state as they are not used in App.tsx
-        // If they are needed globally, they should be in a store, but for now we just fetch them to ensure backend is ready
 
         // Check for First Run condition
-        // If .env file does not exist, show First Run Modal
-        if (!hasEnv) {
+        // If no AI credential is configured, show First Run Modal
+        if (!capabilities?.hasAi) {
           setFirstRunModalOpen(true);
         }
 
