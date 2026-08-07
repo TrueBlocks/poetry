@@ -4,6 +4,7 @@ go 1.25.1
 
 require (
 	github.com/TrueBlocks/trueblocks-art/packages/appkit/v2 v2.0.0
+	github.com/TrueBlocks/trueblocks-art/packages/creds v0.0.0-00010101000000-000000000000
 	github.com/wailsapp/wails/v2 v2.10.2
 	modernc.org/sqlite v1.52.0
 )
