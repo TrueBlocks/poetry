@@ -5,11 +5,12 @@ go 1.25.1
 require (
 	github.com/TrueBlocks/trueblocks-art/packages/appkit/v2 v2.0.0
 	github.com/TrueBlocks/trueblocks-art/packages/creds v0.0.0-00010101000000-000000000000
-	github.com/wailsapp/wails/v2 v2.10.2
+	github.com/wailsapp/wails/v2 v2.13.0
 	modernc.org/sqlite v1.52.0
 )
 
 require (
+	git.sr.ht/~jackmordaunt/go-toast/v2 v2.0.3 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
