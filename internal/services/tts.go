@@ -1,15 +1,13 @@
 package services
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
-	"io"
 	"log/slog"
-	"net/http"
 	"os"
 	"strings"
 
+	"github.com/TrueBlocks/trueblocks-art/packages/ai"
 	"github.com/TrueBlocks/trueblocks-art/packages/appkit/v2"
 	"github.com/TrueBlocks/trueblocks-art/packages/creds"
 	"github.com/TrueBlocks/trueblocks-poetry/v2/internal/db"
@@ -80,16 +78,6 @@ func (s *TTSService) SpeakWord(text string, itemType string, itemWord string, it
 		}
 	}
 
-	// Create request to OpenAI TTS API
-	url := "https://api.openai.com/v1/audio/speech"
-
-	// Properly marshal JSON to handle special characters
-	type TTSRequest struct {
-		Model string `json:"model"`
-		Input string `json:"input"`
-		Voice string `json:"voice"`
-	}
-
 	// Determine voice based on item type and gender
 	voice := "alloy" // Default voice
 	if itemType == "Writer" && itemWord != "" {
@@ -108,68 +96,27 @@ func (s *TTSService) SpeakWord(text string, itemType string, itemWord string, it
 		}
 	}
 
-	requestData := TTSRequest{
-		Model: "tts-1",
-		Input: text,
-		Voice: voice,
-	}
-
-	jsonData, err := json.Marshal(requestData)
+	provider := &ai.OpenAI{APIKey: apiKey}
+	audioData, err := provider.Speak(context.Background(), text, ai.SpeechOptions{Voice: voice})
 	if err != nil {
-		return TTSResult{
-			Error:     fmt.Sprintf("Failed to prepare request: %v", err),
-			ErrorType: "unknown",
-		}
-	}
-
-	req, err := http.NewRequest("POST", url, bytes.NewReader(jsonData))
-	if err != nil {
-		return TTSResult{
-			Error:     fmt.Sprintf("Failed to create request: %v", err),
-			ErrorType: "unknown",
-		}
-	}
-
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return TTSResult{
-			Error:     fmt.Sprintf("Network error: %v. Please check your internet connection.", err),
-			ErrorType: "network",
-		}
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != 200 {
-		body, _ := io.ReadAll(resp.Body)
-		errorMsg := fmt.Sprintf("OpenAI API error (%d): %s", resp.StatusCode, string(body))
+		msg := err.Error()
+		errorMsg := fmt.Sprintf("OpenAI API error: %v", err)
 		errorType := "api"
-
-		// Detect specific API error types
-		if resp.StatusCode == 401 {
-			errorMsg = "Invalid API key. Please check your OPENAI_API_KEY in .env file."
+		switch {
+		case strings.Contains(msg, "speech API error 401"):
+			errorMsg = "Invalid API key. Please check your OPENAI_API_KEY credential."
 			errorType = "missing_key"
-		} else if resp.StatusCode == 429 {
+		case strings.Contains(msg, "speech API error 429"):
 			errorMsg = "Rate limit exceeded. Please try again in a moment."
-		} else if resp.StatusCode >= 500 {
-			errorMsg = fmt.Sprintf("OpenAI server error (%d). Please try again later.", resp.StatusCode)
+		case strings.Contains(msg, "speech API error 5"):
+			errorMsg = "OpenAI server error. Please try again later."
+		case !strings.Contains(msg, "speech API error"):
+			errorMsg = fmt.Sprintf("Network error: %v. Please check your internet connection.", err)
+			errorType = "network"
 		}
-
 		return TTSResult{
 			Error:     errorMsg,
 			ErrorType: errorType,
-		}
-	}
-
-	// Read audio data
-	audioData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return TTSResult{
-			Error:     fmt.Sprintf("Failed to read audio data: %v", err),
-			ErrorType: "network",
 		}
 	}
 

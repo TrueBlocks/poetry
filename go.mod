@@ -10,6 +10,7 @@ require (
 )
 
 require (
+	github.com/TrueBlocks/trueblocks-art/packages/ai v0.0.0
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
@@ -48,3 +49,5 @@ require (
 replace github.com/TrueBlocks/trueblocks-art/packages/appkit/v2 => ../packages/appkit
 
 replace github.com/TrueBlocks/trueblocks-art/packages/creds => ../packages/creds
+
+replace github.com/TrueBlocks/trueblocks-art/packages/ai => ../packages/ai
